@@ -164,6 +164,35 @@ class BoosterIjazahService
                 'pendidikan_terakhir' => $pengajuan->jenjang_pendidikan,
             ]);
 
+            // Update penetapan_ak untuk tahun berjalan jika ada
+            $tahunBerjalan = (int) now()->year;
+            $penetapan = \App\Models\PenetapanAK::firstOrCreate(
+                [
+                    'pegawai_id' => $pegawai->id,
+                    'tahun'      => $tahunBerjalan,
+                ],
+                [
+                    'ak_dasar'          => $pegawai->pangkatGolongan?->ak_dasar ?? 0,
+                    'ak_pak_pelantikan' => 0,
+                    'ak_historis'       => 0,
+                    'ak_lama'           => 0,
+                    'ak_baru'           => 0,
+                    'ak_booster'        => 0,
+                    'ak_carry_over'     => 0,
+                    'ak_kumulatif'      => 0,
+                ]
+            );
+
+            $totalBooster = (float) PengajuanPendidikan::where('pegawai_id', $pegawai->id)
+                ->where('status', 'DISETUJUI')
+                ->whereYear('diverifikasi_pada', $tahunBerjalan)
+                ->sum('ak_bonus') + $akBonus;
+
+            $penetapan->update([
+                'ak_booster'   => $totalBooster,
+                'ak_kumulatif' => round((float) $penetapan->ak_lama + (float) $penetapan->ak_pak_pelantikan + (float) $penetapan->ak_historis + (float) $penetapan->ak_baru + $totalBooster, 2),
+            ]);
+
             // Kirim notifikasi sukses ke pegawai
             if ($pegawai->user) {
                 Notifikasi::create([

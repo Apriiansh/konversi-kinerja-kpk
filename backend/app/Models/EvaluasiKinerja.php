@@ -16,11 +16,24 @@ class EvaluasiKinerja extends Model
         'pegawai_id',
         'atasan_penilai_id',
         'tahun',
+        'triwulan',
         'periode_bulan',
+        'jumlah_bulan',
         'predikat_id',
         'angka_kredit',
         'is_locked',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'triwulan' => 'integer',
+            'periode_bulan' => 'integer',
+            'jumlah_bulan' => 'integer',
+            'angka_kredit' => 'decimal:2',
+            'is_locked' => 'boolean',
+        ];
+    }
 
     public function pegawai(): BelongsTo
     {

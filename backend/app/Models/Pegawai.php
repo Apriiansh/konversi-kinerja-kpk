@@ -20,7 +20,15 @@ class Pegawai extends Model
         'atasan_id',
         'pangkat_golongan_id',
         'pendidikan_terakhir',
+        'tmt_jabatan',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'tmt_jabatan' => 'date',
+        ];
+    }
 
     public function user(): BelongsTo
     {

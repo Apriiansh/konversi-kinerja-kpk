@@ -16,10 +16,33 @@ class PenetapanAK extends Model
         'pegawai_id',
         'tahun',
         'ak_dasar',
+        'ak_pak_pelantikan',
+        'ak_historis',
         'ak_lama',
         'ak_baru',
+        'ak_booster',
+        'ak_carry_over',
         'ak_kumulatif',
+        'status_kelayakan',
+        'catatan_kelayakan',
+        'is_final',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'tahun' => 'integer',
+            'ak_dasar' => 'decimal:2',
+            'ak_pak_pelantikan' => 'decimal:2',
+            'ak_historis' => 'decimal:2',
+            'ak_lama' => 'decimal:2',
+            'ak_baru' => 'decimal:2',
+            'ak_booster' => 'decimal:2',
+            'ak_carry_over' => 'decimal:2',
+            'ak_kumulatif' => 'decimal:2',
+            'is_final' => 'boolean',
+        ];
+    }
 
     public function pegawai(): BelongsTo
     {

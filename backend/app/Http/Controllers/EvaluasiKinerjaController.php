@@ -49,34 +49,43 @@ class EvaluasiKinerjaController extends Controller
     }
 
     /**
-     * Simpan evaluasi kinerja & hitung AK otomatis menggunakan rumus BKN.
-     * Rumus: (Periode_Bulan / 12) x Persentase_Predikat x Koefisien_Tahunan_Jenjang
+     * Simpan evaluasi kinerja triwulanan/periodik & hitung AK otomatis menggunakan rumus BKN.
+     * Rumus: (Bulan / 12) x Persentase_Predikat x Koefisien_Tahunan_Jenjang
      */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'pegawai_id'    => 'required|uuid|exists:pegawai,id',
             'tahun'         => 'required|integer|min:2020',
-            'periode_bulan' => 'required|integer|min:1|max:12',
+            'triwulan'      => 'nullable|integer|min:1|max:4',
+            'periode_bulan' => 'nullable|integer|min:1|max:12',
+            'jumlah_bulan'  => 'nullable|integer|min:1|max:12',
             'predikat_id'   => 'required|uuid|exists:master_predikat_kinerja,id',
         ]);
+
+        // Default jumlah_bulan & triwulan jika salah satu diisi
+        $triwulan = $validated['triwulan'] ?? (isset($validated['periode_bulan']) ? (int) ceil($validated['periode_bulan'] / 3) : 1);
+        $jumlahBulan = $validated['jumlah_bulan'] ?? ($validated['periode_bulan'] ?? 3);
+        $periodeBulan = $validated['periode_bulan'] ?? ($triwulan * 3);
 
         // Ambil atasan penilai dari relasi user yang sedang login
         $atasanPenilaiId = $request->user()->pegawai()->first()?->id;
 
-        // Hitung AK melalui service (seluruh logika rumus BKN di sini)
+        // Hitung AK melalui service (Formula A)
         $angkaKredit = $this->konversiService->hitungAk(
             $validated['pegawai_id'],
             $validated['predikat_id'],
-            $validated['periode_bulan']
+            $jumlahBulan
         );
 
-        $evaluasi = DB::transaction(function () use ($validated, $atasanPenilaiId, $angkaKredit) {
+        $evaluasi = DB::transaction(function () use ($validated, $atasanPenilaiId, $angkaKredit, $triwulan, $jumlahBulan, $periodeBulan) {
             $data = EvaluasiKinerja::create([
                 'pegawai_id'        => $validated['pegawai_id'],
                 'atasan_penilai_id' => $atasanPenilaiId,
                 'tahun'             => $validated['tahun'],
-                'periode_bulan'     => $validated['periode_bulan'],
+                'triwulan'          => $triwulan,
+                'periode_bulan'     => $periodeBulan,
+                'jumlah_bulan'      => $jumlahBulan,
                 'predikat_id'       => $validated['predikat_id'],
                 'angka_kredit'      => $angkaKredit,
                 'is_locked'         => false,
@@ -85,7 +94,7 @@ class EvaluasiKinerjaController extends Controller
             $this->auditTrail->log(
                 'EVALUASI_KINERJA',
                 'CREATE',
-                "Membuat evaluasi kinerja untuk pegawai ID: {$validated['pegawai_id']} | AK Dihitung: {$angkaKredit}",
+                "Membuat evaluasi kinerja TW{$triwulan} ({$jumlahBulan} bln) untuk pegawai ID: {$validated['pegawai_id']} | AK: {$angkaKredit}",
                 null,
                 $data->toArray()
             );
@@ -136,31 +145,57 @@ class EvaluasiKinerjaController extends Controller
         $validated = $request->validate([
             'pegawai_id'    => 'required|uuid|exists:pegawai,id',
             'predikat_id'   => 'required|uuid|exists:master_predikat_kinerja,id',
-            'periode_bulan' => 'required|integer|min:1|max:12',
+            'triwulan'      => 'nullable|integer|min:1|max:4',
+            'periode_bulan' => 'nullable|integer|min:1|max:12',
+            'jumlah_bulan'  => 'nullable|integer|min:1|max:12',
+            'tipe'          => 'nullable|in:periodik,tahunan',
+            'tahun'         => 'nullable|integer',
         ]);
 
+        $jumlahBulan = $validated['jumlah_bulan'] ?? ($validated['periode_bulan'] ?? 3);
         $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($validated['pegawai_id']);
-
-        $akHasil = $this->konversiService->hitungAk(
-            $validated['pegawai_id'],
-            $validated['predikat_id'],
-            $validated['periode_bulan']
-        );
 
         $jenjang  = $pegawai->pangkatGolongan->jenjangJabatan;
         $pangkat  = $pegawai->pangkatGolongan;
 
+        if (($validated['tipe'] ?? 'periodik') === 'tahunan') {
+            $tahun = $validated['tahun'] ?? (int) now()->year;
+            $hasilTahunan = $this->konversiService->hitungAkTahunan($pegawai->id, $tahun, $validated['predikat_id']);
+
+            return response()->json([
+                'message' => 'Hasil simulasi konversi Angka Kredit Tahunan (Formula B - TW4 Anchor).',
+                'data'    => [
+                    'pegawai'                   => $pegawai->nama_lengkap,
+                    'jenjang'                   => $jenjang->nama,
+                    'golongan'                  => $pangkat->golongan,
+                    'koefisien_tahunan'         => $jenjang->koefisien_tahunan,
+                    'total_bulan_aktif'         => $hasilTahunan['total_bulan_aktif'],
+                    'predikat_anchor'           => $hasilTahunan['predikat_anchor'],
+                    'angka_kredit'              => $hasilTahunan['ak_baru'],
+                    'rumus'                     => $hasilTahunan['rumus'],
+                    'kebutuhan_ak_kp'           => $jenjang->kebutuhan_ak_kp,
+                    'kebutuhan_ak_naik_jenjang' => $jenjang->kebutuhan_ak_jenjang,
+                ],
+            ]);
+        }
+
+        $akHasil = $this->konversiService->hitungAk(
+            $validated['pegawai_id'],
+            $validated['predikat_id'],
+            $jumlahBulan
+        );
+
         return response()->json([
-            'message' => 'Hasil simulasi konversi Angka Kredit.',
+            'message' => 'Hasil simulasi konversi Angka Kredit Periodik (Formula A).',
             'data'    => [
-                'pegawai'            => $pegawai->nama_lengkap,
-                'jenjang'            => $jenjang->nama,
-                'golongan'           => $pangkat->golongan,
-                'koefisien_tahunan'  => $jenjang->koefisien_tahunan,
-                'periode_bulan'      => $validated['periode_bulan'],
-                'angka_kredit'       => $akHasil,
-                'rumus'              => "({$validated['periode_bulan']}/12) × Predikat × {$jenjang->koefisien_tahunan} = {$akHasil} AK",
-                'kebutuhan_ak_kp'    => $jenjang->kebutuhan_ak_kp,
+                'pegawai'                   => $pegawai->nama_lengkap,
+                'jenjang'                   => $jenjang->nama,
+                'golongan'                  => $pangkat->golongan,
+                'koefisien_tahunan'         => $jenjang->koefisien_tahunan,
+                'jumlah_bulan'              => $jumlahBulan,
+                'angka_kredit'              => $akHasil,
+                'rumus'                     => "({$jumlahBulan}/12) × Predikat × {$jenjang->koefisien_tahunan} = {$akHasil} AK",
+                'kebutuhan_ak_kp'           => $jenjang->kebutuhan_ak_kp,
                 'kebutuhan_ak_naik_jenjang' => $jenjang->kebutuhan_ak_jenjang,
             ],
         ]);
