@@ -1,0 +1,72 @@
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import './login.css'
+
+export default function Login() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+    try {
+      await login(email, password)
+      navigate('/', { replace: true })
+    } catch (err: unknown) {
+      const msg = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
+      const errors = msg.response?.data?.errors
+      const serverMsg = msg.response?.data?.message
+      setError(errors?.email?.[0] ?? serverMsg ?? 'Login gagal. Periksa kembali email dan password.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <main className="login-page">
+      <form className="login-card" onSubmit={handleSubmit}>
+        <h1 className="login-title">Konversi Kinerja</h1>
+        <p className="login-subtitle">Masuk ke Dashboard</p>
+
+        {error && <div className="login-error">{error}</div>}
+
+        <label className="login-label" htmlFor="email">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          className="login-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+        />
+
+        <label className="login-label" htmlFor="password">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          className="login-input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+        />
+
+        <button type="submit" className="login-button" disabled={submitting}>
+          {submitting ? 'Memproses...' : 'Masuk'}
+        </button>
+      </form>
+    </main>
+  )
+}
