@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import './login.css'
 
 export default function Login() {
@@ -31,14 +31,24 @@ export default function Login() {
 
   return (
     <main className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <h1 className="login-title">Konversi Kinerja</h1>
-        <p className="login-subtitle">Masuk ke Dashboard</p>
+      <div className="login-bg" aria-hidden="true">
+        <img src="/gedung-1.jpg" alt="" className="login-bg-img" />
+        <div className="login-bg-overlay" />
+        <span className="login-blob login-blob-1" />
+        <span className="login-blob login-blob-2" />
+        <span className="login-blob login-blob-3" />
+        <div className="login-particles" />
+      </div>
+
+      <form className="login-card" onSubmit={handleSubmit} noValidate>
+        <img src="/logo-kpk.png" alt="KPK" className="login-logo" />
+        <h1 className="login-title">Sistem Konversi Kinerja</h1>
+        <span className="login-badge">PerBKN No. 3 Tahun 2023</span>
 
         {error && <div className="login-error">{error}</div>}
 
         <label className="login-label" htmlFor="email">
-          Email
+          Email Kedinasan
         </label>
         <input
           id="email"
@@ -46,12 +56,13 @@ export default function Login() {
           className="login-input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="nama@kpk.go.id"
           required
           autoComplete="email"
         />
 
         <label className="login-label" htmlFor="password">
-          Password
+          Kata Sandi
         </label>
         <input
           id="password"
@@ -59,6 +70,7 @@ export default function Login() {
           className="login-input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
           required
           autoComplete="current-password"
         />
@@ -66,6 +78,8 @@ export default function Login() {
         <button type="submit" className="login-button" disabled={submitting}>
           {submitting ? 'Memproses...' : 'Masuk'}
         </button>
+
+        <p className="login-footer">Konversi Kinerja v2 · © 2026 KPK</p>
       </form>
     </main>
   )

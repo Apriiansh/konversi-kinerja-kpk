@@ -202,14 +202,15 @@ Setelah kinerja tahun berjalan (predikat Sangat Baik, 12 bulan):
 
 Contoh pegawai Ahli Pertama, predikat Sangat Baik, tersebar 12 bulan:
 
-| Triwulan | Bulan | AK/Bulan | AK Akumulasi Triwulan |
+| Triwulan | Bulan | AK Diperoleh per Periode (3 Bulan) | AK Akumulasi Berjalan (Cumulative) |
 |---|---|---|---|
-| Q1 | 1–3 | 4.6875 × 3 = 14.0625 | 14.06 |
-| Q2 | 4–6 | 4.6875 × 3 = 14.0625 | 28.13 |
-| Q3 | 7–9 | 4.6875 × 3 = 14.0625 | 42.19 |
-| Q4 | 10–12 | 4.6875 × 3 = 14.0625 | 56.25 |
+| Q1 | 1–3 | 3 × 1.5625 = 4.6875 | **4.69** |
+| Q2 | 4–6 | 3 × 1.5625 = 4.6875 | **9.38** |
+| Q3 | 7–9 | 3 × 1.5625 = 4.6875 | **14.06** |
+| Q4 | 10–12 | 3 × 1.5625 = 4.6875 | **18.75** |
 
 > AK per bulan (Ahli Pertama, Sangat Baik) = (1/12) × 1.50 × 12.5 = 1.5625.
+> Total 12 bulan = 4 × 4.6875 = **18.75 AK**, sinkron dengan Bagian 3, 4, dan 9.
 
 ---
 
