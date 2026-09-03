@@ -32,7 +32,7 @@ class RekapitulasiController extends Controller
 
         if ($user->role !== 'ADMIN') {
             $pegawaiId = $user->pegawai->id ?? null;
-            if (!$pegawaiId) {
+            if (! $pegawaiId) {
                 return response()->json(['message' => 'Profil pegawai tidak ditemukan.'], 404);
             }
             $query->where('pegawai_id', $pegawaiId);
@@ -40,7 +40,7 @@ class RekapitulasiController extends Controller
 
         return response()->json([
             'message' => 'Rekapitulasi PAK.',
-            'data'    => $query->paginate($request->input('per_page', 15)),
+            'data' => $query->paginate($request->input('per_page', 15)),
         ]);
     }
 
@@ -72,32 +72,32 @@ class RekapitulasiController extends Controller
             $rows = $evaluasi->filter(fn ($e) => $e->periode_bulan >= $from && $e->periode_bulan <= $to);
 
             $triwulan[$q] = [
-                'label'      => "Triwulan {$q}",
+                'label' => "Triwulan {$q}",
                 'jumlah_bulan' => $rows->count(),
-                'ak_total'   => round($rows->sum('angka_kredit'), 2),
-                'rincian'    => $rows->map(fn ($e) => [
-                    'bulan'        => $e->periode_bulan,
-                    'predikat'     => $e->predikat?->nama,
+                'ak_total' => round($rows->sum('angka_kredit'), 2),
+                'rincian' => $rows->map(fn ($e) => [
+                    'bulan' => $e->periode_bulan,
+                    'predikat' => $e->predikat?->nama,
                     'angka_kredit' => $e->angka_kredit,
-                    'is_locked'    => $e->is_locked,
+                    'is_locked' => $e->is_locked,
                 ])->values(),
             ];
         }
 
         return response()->json([
             'message' => 'Detail PAK dan rincian triwulan.',
-            'data'    => [
-                'pegawai'    => $penetapan->pegawai->only(['id', 'nama_lengkap', 'nip']),
-                'pangkat'    => [
+            'data' => [
+                'pegawai' => $penetapan->pegawai->only(['id', 'nama_lengkap', 'nip']),
+                'pangkat' => [
                     'golongan' => $penetapan->pegawai->pangkatGolongan?->golongan,
-                    'jenjang'  => $penetapan->pegawai->pangkatGolongan?->jenjangJabatan?->nama,
+                    'jenjang' => $penetapan->pegawai->pangkatGolongan?->jenjangJabatan?->nama,
                 ],
-                'tahun'       => $penetapan->tahun,
-                'ak_dasar'    => $penetapan->ak_dasar,
-                'ak_lama'     => $penetapan->ak_lama,
-                'ak_baru'     => $penetapan->ak_baru,
-                'ak_kumulatif'=> $penetapan->ak_kumulatif,
-                'triwulan'    => $triwulan,
+                'tahun' => $penetapan->tahun,
+                'ak_dasar' => $penetapan->ak_dasar,
+                'ak_lama' => $penetapan->ak_lama,
+                'ak_baru' => $penetapan->ak_baru,
+                'ak_kumulatif' => $penetapan->ak_kumulatif,
+                'triwulan' => $triwulan,
                 'total_ak_baru' => round($evaluasi->sum('angka_kredit'), 2),
             ],
         ]);
@@ -122,9 +122,9 @@ class RekapitulasiController extends Controller
 
         return response()->json([
             'message' => 'Ringkasan statistik.',
-            'data'    => [
+            'data' => [
                 'total_pegawai' => $totalPegawai,
-                'per_jenjang'   => $perJenjang,
+                'per_jenjang' => $perJenjang,
             ],
         ]);
     }

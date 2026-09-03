@@ -37,7 +37,7 @@ class PegawaiController extends Controller
 
         if ($user->role !== 'ADMIN') {
             $pegawaiId = $user->pegawai->id ?? null;
-            if (!$pegawaiId) {
+            if (! $pegawaiId) {
                 return response()->json(['message' => 'Profil pegawai tidak ditemukan.'], 404);
             }
             $query->where('id', $pegawaiId);
@@ -52,7 +52,7 @@ class PegawaiController extends Controller
 
         return response()->json([
             'message' => 'Daftar pegawai.',
-            'data'    => $query->paginate($request->input('per_page', 15)),
+            'data' => $query->paginate($request->input('per_page', 15)),
         ]);
     }
 
@@ -62,28 +62,28 @@ class PegawaiController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'nip'                  => 'required|string|unique:pegawai,nip',
-            'nama_lengkap'         => 'required|string|max:255',
-            'pangkat_golongan_id'  => 'required|uuid|exists:master_pangkat_golongan,id',
-            'atasan_id'            => 'nullable|uuid|exists:pegawai,id',
-            'pendidikan_terakhir'  => 'nullable|string|max:100',
-            'email'                => 'required|email|unique:users,email',
-            'password'             => 'required|string|min:8',
+            'nip' => 'required|string|unique:pegawai,nip',
+            'nama_lengkap' => 'required|string|max:255',
+            'pangkat_golongan_id' => 'required|uuid|exists:master_pangkat_golongan,id',
+            'atasan_id' => 'nullable|uuid|exists:pegawai,id',
+            'pendidikan_terakhir' => 'nullable|string|max:100',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
         ]);
 
         $pegawai = DB::transaction(function () use ($validated) {
             $user = User::create([
-                'name'     => $validated['nama_lengkap'],
-                'email'    => $validated['email'],
+                'name' => $validated['nama_lengkap'],
+                'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'role'     => 'PEGAWAI',
+                'role' => 'PEGAWAI',
             ]);
 
             $pegawai = Pegawai::create([
-                'user_id'             => $user->id,
-                'nip'                 => $validated['nip'],
-                'nama_lengkap'        => $validated['nama_lengkap'],
-                'atasan_id'           => $validated['atasan_id'] ?? null,
+                'user_id' => $user->id,
+                'nip' => $validated['nip'],
+                'nama_lengkap' => $validated['nama_lengkap'],
+                'atasan_id' => $validated['atasan_id'] ?? null,
                 'pangkat_golongan_id' => $validated['pangkat_golongan_id'],
                 'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
             ]);
@@ -101,7 +101,7 @@ class PegawaiController extends Controller
 
         return response()->json([
             'message' => 'Pegawai berhasil ditambahkan.',
-            'data'    => $pegawai->load('pangkatGolongan.jenjangJabatan', 'user:id,name,email,role'),
+            'data' => $pegawai->load('pangkatGolongan.jenjangJabatan', 'user:id,name,email,role'),
         ], 201);
     }
 
@@ -119,7 +119,7 @@ class PegawaiController extends Controller
 
         return response()->json([
             'message' => 'Detail pegawai.',
-            'data'    => $pegawai,
+            'data' => $pegawai,
         ]);
     }
 
@@ -131,10 +131,10 @@ class PegawaiController extends Controller
         $pegawai = Pegawai::findOrFail($id);
 
         $validated = $request->validate([
-            'nama_lengkap'          => 'sometimes|string|max:255',
-            'pangkat_golongan_id'   => 'sometimes|uuid|exists:master_pangkat_golongan,id',
-            'atasan_id'             => 'nullable|uuid|exists:pegawai,id',
-            'pendidikan_terakhir'   => 'nullable|string|max:100',
+            'nama_lengkap' => 'sometimes|string|max:255',
+            'pangkat_golongan_id' => 'sometimes|uuid|exists:master_pangkat_golongan,id',
+            'atasan_id' => 'nullable|uuid|exists:pegawai,id',
+            'pendidikan_terakhir' => 'nullable|string|max:100',
         ]);
 
         $sebelumnya = $pegawai->toArray();
@@ -150,7 +150,7 @@ class PegawaiController extends Controller
 
         return response()->json([
             'message' => 'Data pegawai berhasil diperbarui.',
-            'data'    => $pegawai->load('pangkatGolongan.jenjangJabatan', 'user:id,name,email,role'),
+            'data' => $pegawai->load('pangkatGolongan.jenjangJabatan', 'user:id,name,email,role'),
         ]);
     }
 
