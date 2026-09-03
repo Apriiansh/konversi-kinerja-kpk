@@ -9,14 +9,14 @@ use App\Models\Pegawai;
 use App\Models\PengajuanPendidikan;
 use App\Models\User;
 use Database\Seeders\MasterDataSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class KonversiKinerjaTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -41,7 +41,7 @@ class KonversiKinerjaTest extends TestCase
         ]);
 
         // 1. Simpan Evaluasi Kinerja (12 bulan x 150% x 12.5 = 18.75 AK)
-        $response = $this->actingAs($userPegawai)->postJson('/api/evaluasi', [
+        $response = $this->actingAs($userPegawai, 'sanctum')->postJson('/api/evaluasi', [
             'pegawai_id'    => $pegawai->id,
             'tahun'         => 2024,
             'periode_bulan' => 12,
@@ -54,7 +54,7 @@ class KonversiKinerjaTest extends TestCase
         $evaluasiId = $response->json('data.id');
 
         // 2. Kunci Predikat (Lock Predicate)
-        $lockResponse = $this->actingAs($userPegawai)->postJson("/api/evaluasi/{$evaluasiId}/lock");
+        $lockResponse = $this->actingAs($userPegawai, 'sanctum')->postJson("/api/evaluasi/{$evaluasiId}/lock");
         $lockResponse->assertStatus(200);
         $this->assertTrue($lockResponse->json('data.is_locked'));
 
@@ -83,7 +83,7 @@ class KonversiKinerjaTest extends TestCase
         ]);
 
         // Buat evaluasi kinerja terakhir minimal "Baik"
-        $this->actingAs($userPegawai)->postJson('/api/evaluasi', [
+        $this->actingAs($userPegawai, 'sanctum')->postJson('/api/evaluasi', [
             'pegawai_id'    => $pegawai->id,
             'tahun'         => 2024,
             'periode_bulan' => 12,
@@ -94,7 +94,7 @@ class KonversiKinerjaTest extends TestCase
         $fileIjazah = UploadedFile::fake()->create('ijazah_s2.pdf', 500, 'application/pdf');
         $fileBkn = UploadedFile::fake()->create('surat_bkn.pdf', 300, 'application/pdf');
 
-        $submitResponse = $this->actingAs($userPegawai)->postJson('/api/pengajuan-pendidikan', [
+        $submitResponse = $this->actingAs($userPegawai, 'sanctum')->postJson('/api/pengajuan-pendidikan', [
             'jenjang_pendidikan' => 'S2',
             'jurusan'            => 'Magister Teknologi Informasi',
             'nama_institusi'     => 'Universitas Indonesia',
@@ -107,7 +107,7 @@ class KonversiKinerjaTest extends TestCase
         $pengajuanId = $submitResponse->json('data.id');
 
         // 2. Admin verifikasi berkas VALID
-        $verifResponse = $this->actingAs($admin)->postJson("/api/pengajuan-pendidikan/{$pengajuanId}/verifikasi", [
+        $verifResponse = $this->actingAs($admin, 'sanctum')->postJson("/api/pengajuan-pendidikan/{$pengajuanId}/verifikasi", [
             'is_valid' => true,
         ]);
 

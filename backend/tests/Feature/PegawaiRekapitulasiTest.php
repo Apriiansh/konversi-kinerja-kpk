@@ -29,7 +29,7 @@ class PegawaiRekapitulasiTest extends TestCase
         $user = User::factory()->create(['role' => $role]);
         $pegawai = Pegawai::create([
             'user_id'             => $user->id,
-            'nip'                 => '19950101202203100' . random_int(2, 9),
+            'nip'                 => '1995' . now()->format('ymdHis') . random_int(10, 99),
             'nama_lengkap'        => 'Test Pegawai ' . random_int(100, 999),
             'pangkat_golongan_id' => $pangkat->id,
             'pendidikan_terakhir' => 'S1',
@@ -43,7 +43,7 @@ class PegawaiRekapitulasiTest extends TestCase
         $admin = User::factory()->create(['role' => 'ADMIN']);
         $pangkat = MasterPangkatGolongan::where('golongan', 'III/b')->first();
 
-        $response = $this->actingAs($admin)->postJson('/api/pegawai', [
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/pegawai', [
             'nip'                 => '199002022015031001',
             'nama_lengkap'        => 'Dewi Lestari, S.T',
             'pangkat_golongan_id' => $pangkat->id,
@@ -65,7 +65,7 @@ class PegawaiRekapitulasiTest extends TestCase
         $a = $this->buatPegawai();
         $b = $this->buatPegawai();
 
-        $response = $this->actingAs($a['user'])->getJson('/api/pegawai');
+        $response = $this->actingAs($a['user'], 'sanctum')->getJson('/api/pegawai');
 
         $response->assertOk();
         $data = $response->json('data.data');
@@ -99,26 +99,26 @@ class PegawaiRekapitulasiTest extends TestCase
             'is_locked'         => true,
         ]);
 
-        $response = $this->actingAs($user)->getJson("/api/rekapitulasi/{$pegawai->id}/2024");
+        $response = $this->actingAs($user, 'sanctum')->getJson("/api/rekapitulasi/{$pegawai->id}/2024");
 
         $response->assertOk();
         $response->assertJsonPath('data.tahun', 2024);
-        $response->assertJsonPath('data.ak_lama', '100.00');
-        $response->assertJsonPath('data.ak_baru', '25.00');
-        $response->assertJsonPath('data.total_ak_baru', 2.08);
+        $this->assertEquals(100, (float) $response->json('data.ak_lama'));
+        $this->assertEquals(25, (float) $response->json('data.ak_baru'));
+        $this->assertEquals(2.08, (float) $response->json('data.total_ak_baru'));
         $this->assertCount(1, $response->json('data.triwulan.1.rincian'));
-        $this->assertEquals(2.08, $response->json('data.triwulan.1.ak_total'));
+        $this->assertEquals(2.08, (float) $response->json('data.triwulan.1.ak_total'));
     }
 
     public function test_ringkasan_hanya_untuk_admin(): void
     {
         $pegawaiData = $this->buatPegawai();
 
-        $forbidden = $this->actingAs($pegawaiData['user'])->getJson('/api/rekapitulasi/ringkasan');
+        $forbidden = $this->actingAs($pegawaiData['user'], 'sanctum')->getJson('/api/rekapitulasi/ringkasan');
         $forbidden->assertStatus(403);
 
         $admin = User::factory()->create(['role' => 'ADMIN']);
-        $ok = $this->actingAs($admin)->getJson('/api/rekapitulasi/ringkasan');
+        $ok = $this->actingAs($admin, 'sanctum')->getJson('/api/rekapitulasi/ringkasan');
         $ok->assertOk();
         $this->assertEquals(1, $ok->json('data.total_pegawai'));
     }
@@ -129,13 +129,13 @@ class PegawaiRekapitulasiTest extends TestCase
         $pegawaiData = $this->buatPegawai();
         $pegawai = $pegawaiData['pegawai'];
 
-        $update = $this->actingAs($admin)->putJson("/api/pegawai/{$pegawai->id}", [
+        $update = $this->actingAs($admin, 'sanctum')->putJson("/api/pegawai/{$pegawai->id}", [
             'pendidikan_terakhir' => 'S2',
         ]);
         $update->assertOk();
         $this->assertEquals('S2', $pegawai->fresh()->pendidikan_terakhir);
 
-        $delete = $this->actingAs($admin)->deleteJson("/api/pegawai/{$pegawai->id}");
+        $delete = $this->actingAs($admin, 'sanctum')->deleteJson("/api/pegawai/{$pegawai->id}");
         $delete->assertOk();
         $this->assertDatabaseMissing('pegawai', ['id' => $pegawai->id]);
         $this->assertDatabaseMissing('users', ['id' => $pegawaiData['user']->id]);

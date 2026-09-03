@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * Login user (Session / SPA).
+     * Login user (Bearer token via Sanctum).
      */
     public function login(Request $request): JsonResponse
     {
@@ -19,31 +19,30 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (!Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
                 'email' => ['Kredensial yang diberikan tidak cocok dengan data kami.'],
             ]);
         }
 
-        $request->session()->regenerate();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-        $user = Auth::user()->load('pegawai.pangkatGolongan.jenjangJabatan');
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil.',
-            'user'    => $user,
+            'token'   => $token,
+            'user'    => $user->load('pegawai.pangkatGolongan.jenjangJabatan'),
         ]);
     }
 
     /**
-     * Logout user.
+     * Logout user — hapus token aktif.
      */
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logout berhasil.',

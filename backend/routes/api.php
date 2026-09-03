@@ -10,10 +10,15 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RekapitulasiController;
 
 // Public Auth Endpoints
-Route::post('/login', [AuthController::class, 'login'])->middleware('web');
+Route::post('/login', [AuthController::class, 'login']);
+
+// Fallback untuk unauthenticated request (mencegah error "Route [login] not defined").
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+})->name('login');
 
 // Authenticated Endpoints
-Route::middleware(['web', 'auth'])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user', function (Request $request) {
