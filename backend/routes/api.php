@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EvaluasiKinerjaController;
 use App\Http\Controllers\PengajuanPendidikanController;
+use App\Http\Controllers\ImportExportController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RekapitulasiController;
@@ -52,8 +53,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rekapitulasi / PAK
     Route::get('/rekapitulasi', [RekapitulasiController::class, 'index']);
     Route::get('/rekapitulasi/ringkasan', [RekapitulasiController::class, 'ringkasan']);
+    Route::get('/rekapitulasi/export', [ImportExportController::class, 'export']);
     Route::get('/rekapitulasi/{pegawaiId}/{tahun}', [RekapitulasiController::class, 'show'])->whereNumber('tahun');
     Route::post('/rekapitulasi/{pegawaiId}/{tahun}/finalisasi', [RekapitulasiController::class, 'finalisasi'])->whereNumber('tahun');
     Route::post('/rekapitulasi/{pegawaiId}/pak-pelantikan', [RekapitulasiController::class, 'simpanPakPelantikan']);
     Route::post('/rekapitulasi/{pegawaiId}/saldo-historis', [RekapitulasiController::class, 'simpanSaldoHistoris']);
+
+    // Modul Import & Auto-Konversi Kinerja Massal (All-in-One)
+    Route::get('/import/template', [ImportExportController::class, 'downloadTemplate']);
+    Route::post('/import/preview', [ImportExportController::class, 'preview']);
+    Route::post('/import/proses', [ImportExportController::class, 'proses']);
 });
