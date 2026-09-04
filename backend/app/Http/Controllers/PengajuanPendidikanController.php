@@ -72,6 +72,7 @@ class PengajuanPendidikanController extends Controller
         $pengajuan = PengajuanPendidikan::create([
             'pegawai_id'         => $pegawai->id,
             'jenjang_pendidikan' => $request->jenjang_pendidikan,
+            'program_studi'      => $request->program_studi,
             'jurusan'            => $request->jurusan,
             'nama_institusi'     => $request->nama_institusi,
             'tahun_lulus'        => $request->tahun_lulus,

@@ -23,6 +23,7 @@ class StorePengajuanPendidikanRequest extends FormRequest
     {
         return [
             'jenjang_pendidikan' => 'required|in:D3,S1,S2,S3',
+            'program_studi'      => 'required|string|max:150',
             'jurusan'            => 'required|string|max:150',
             'nama_institusi'     => 'required|string|max:150',
             'tahun_lulus'        => 'required|integer|min:1980|max:' . (date('Y') + 1),

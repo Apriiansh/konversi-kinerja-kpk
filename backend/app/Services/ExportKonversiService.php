@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PenetapanAK;
+use App\Support\XlsxWriter;
 
 class ExportKonversiService
 {
@@ -14,12 +15,12 @@ class ExportKonversiService
     }
 
     /**
-     * Ekspor seluruh data rekapitulasi konversi PAK menjadi format CSV.
+     * Ambil baris-baris data rekapitulasi (baris pertama selalu header).
      *
      * @param int|null $tahun
-     * @return string
+     * @return array<int, array<int, mixed>>
      */
-    public function exportCsv(?int $tahun = null): string
+    protected function buildRows(?int $tahun = null): array
     {
         $query = PenetapanAK::with([
             'pegawai.pangkatGolongan.jenjangJabatan',
@@ -53,8 +54,7 @@ class ExportKonversiService
             'Keterangan',
         ];
 
-        $output = fopen('php://temp', 'r+');
-        fputcsv($output, $headers);
+        $rows = [$headers];
 
         foreach ($records as $item) {
             $pegawai = $item->pegawai;
@@ -66,7 +66,7 @@ class ExportKonversiService
                 (float) $item->ak_kumulatif
             );
 
-            fputcsv($output, [
+            $rows[] = [
                 $item->tahun,
                 $pegawai?->nip ?? '-',
                 $pegawai?->nama_lengkap ?? '-',
@@ -86,13 +86,20 @@ class ExportKonversiService
                 number_format((float) $kelayakan['carry_over'], 2, '.', ''),
                 number_format((float) $kelayakan['kurang_ak'], 2, '.', ''),
                 $kelayakan['catatan'],
-            ]);
+            ];
         }
 
-        rewind($output);
-        $csvContent = stream_get_contents($output);
-        fclose($output);
+        return $rows;
+    }
 
-        return $csvContent;
+    /**
+     * Ekspor seluruh data rekapitulasi konversi PAK menjadi format XLSX.
+     *
+     * @param int|null $tahun
+     * @return string biner file .xlsx
+     */
+    public function exportXlsx(?int $tahun = null): string
+    {
+        return XlsxWriter::build($this->buildRows($tahun), 'Rekap PAK');
     }
 }

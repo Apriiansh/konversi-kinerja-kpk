@@ -57,16 +57,33 @@ class ImportKonversiTest extends TestCase
         return UploadedFile::fake()->createWithContent('import_konversi.csv', $content);
     }
 
-    public function test_admin_dapat_mengunduh_template_csv(): void
+    public function test_admin_dapat_mengunduh_template_xlsx(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
 
         $response = $this->actingAs($admin, 'sanctum')->get('/api/import/template');
 
         $response->assertOk();
-        $this->assertStringContainsString('text/csv', $response->headers->get('Content-Type'));
-        $this->assertStringContainsString('199503012025031001', $response->getContent());
-        $this->assertStringContainsString('Budi Santoso, S.T', $response->getContent());
+        $this->assertStringContainsString(
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            $response->headers->get('Content-Type')
+        );
+
+        // Buka response biner sebagai ZIP XLSX dan verifikasi isi sheet
+        $tempPath = tempnam(sys_get_temp_dir(), 'template') . '.xlsx';
+        file_put_contents($tempPath, $response->getContent());
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($tempPath) === true, 'Respons bukan arsip XLSX yang valid.');
+
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        @unlink($tempPath);
+
+        $this->assertNotFalse($sheet, 'Worksheet sheet1.xml tidak ditemukan.');
+        $this->assertStringContainsString('nip', $sheet);
+        $this->assertStringContainsString('199503012025031001', $sheet);
+        $this->assertStringContainsString('Budi Santoso, S.T', $sheet);
     }
 
     public function test_preview_import_kalkulasi_otomatis_studi_kasus_budi(): void
@@ -185,14 +202,31 @@ class ImportKonversiTest extends TestCase
         ]);
     }
 
-    public function test_admin_dapat_mengekspor_rekapitulasi_ke_csv(): void
+    public function test_admin_dapat_mengekspor_rekapitulasi_ke_xlsx(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
 
         $response = $this->actingAs($admin, 'sanctum')->get('/api/rekapitulasi/export?tahun=2025');
 
         $response->assertOk();
-        $this->assertStringContainsString('text/csv', $response->headers->get('Content-Type'));
-        $this->assertStringContainsString('Tahun,NIP,Nama Lengkap', $response->getContent());
+        $this->assertStringContainsString(
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            $response->headers->get('Content-Type')
+        );
+
+        // Buka response biner sebagai ZIP XLSX dan verifikasi isi sheet
+        $tempPath = tempnam(sys_get_temp_dir(), 'rekap') . '.xlsx';
+        file_put_contents($tempPath, $response->getContent());
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($tempPath) === true, 'Respons bukan arsip XLSX yang valid.');
+
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        @unlink($tempPath);
+
+        $this->assertNotFalse($sheet, 'Worksheet sheet1.xml tidak ditemukan.');
+        $this->assertStringContainsString('Tahun', $sheet);
+        $this->assertStringContainsString('Nama Lengkap', $sheet);
     }
 }

@@ -15,6 +15,7 @@ class PengajuanPendidikan extends Model
     protected $fillable = [
         'pegawai_id',
         'jenjang_pendidikan',
+        'program_studi',
         'jurusan',
         'nama_institusi',
         'tahun_lulus',

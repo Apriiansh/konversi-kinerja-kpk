@@ -10,6 +10,7 @@ use App\Models\Pegawai;
 use App\Models\PenetapanAK;
 use App\Models\PengajuanPendidikan;
 use App\Models\User;
+use App\Support\XlsxWriter;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -33,65 +34,29 @@ class ImportKonversiService
     }
 
     /**
-     * Dapatkan string CSV template resmi untuk import data konversi kinerja massal.
+     * Bangun berkas template XLSX resmi untuk import data konversi kinerja massal.
+     * Dibangun secara native (tanpa dependensi pihak ketiga) memakai ZIP + XML OpenXML.
      *
-     * @return string
+     * @return string berisi biner file .xlsx
      */
-    public function getCsvTemplate(): string
+    public function getXlsxTemplate(): string
     {
-        $headers = [
-            'nip',
-            'nama_lengkap',
-            'email',
-            'golongan',
-            'pendidikan_terakhir',
-            'tmt_jabatan',
-            'masa_kerja_tahun',
-            'masa_kerja_bulan',
-            'saldo_historis',
-            'tahun',
-            'tw1_predikat',
-            'tw1_bulan',
-            'tw2_predikat',
-            'tw2_bulan',
-            'tw3_predikat',
-            'tw3_bulan',
-            'tw4_predikat',
-            'tw4_bulan',
-            'klaim_ijazah_baru',
+        $rows = [
+            [
+                'nip', 'nama_lengkap', 'email', 'golongan', 'pendidikan_terakhir',
+                'tmt_jabatan', 'masa_kerja_tahun', 'masa_kerja_bulan', 'saldo_historis',
+                'tahun', 'tw1_predikat', 'tw1_bulan', 'tw2_predikat', 'tw2_bulan',
+                'tw3_predikat', 'tw3_bulan', 'tw4_predikat', 'tw4_bulan', 'klaim_ijazah_baru',
+            ],
+            [
+                '199503012025031001', 'Budi Santoso, S.T', 'budi.santoso@kpk.go.id',
+                'III/a', 'S1', '2025-03-01', '3', '5', '10.00', '2025',
+                'Sangat Baik', '1', 'Sangat Baik', '3', 'Sangat Baik', '3',
+                'Baik', '3', 'S1',
+            ],
         ];
 
-        // Baris contoh kasus Sdr. Budi (UAT KPK)
-        $sampleRow = [
-            '199503012025031001',
-            'Budi Santoso, S.T',
-            'budi.santoso@kpk.go.id',
-            'III/a',
-            'S1',
-            '2025-03-01',
-            '3',
-            '5',
-            '10.00',
-            '2025',
-            'Sangat Baik',
-            '1',
-            'Sangat Baik',
-            '3',
-            'Sangat Baik',
-            '3',
-            'Baik',
-            '3',
-            'S1',
-        ];
-
-        $output = fopen('php://temp', 'r+');
-        fputcsv($output, $headers);
-        fputcsv($output, $sampleRow);
-        rewind($output);
-        $csvContent = stream_get_contents($output);
-        fclose($output);
-
-        return $csvContent;
+        return XlsxWriter::build($rows, 'Template');
     }
 
     /**
@@ -542,6 +507,7 @@ class ImportKonversiService
                             'jenjang_pendidikan' => $klaimIjazah,
                         ],
                         [
+                            'program_studi'      => 'Pendidikan Terkait Penugasan',
                             'jurusan'            => 'Pendidikan Terkait Penugasan',
                             'nama_institusi'     => 'Institusi Terakreditasi',
                             'tahun_lulus'        => $tahun,

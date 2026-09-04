@@ -22,15 +22,15 @@ class ImportExportController extends Controller
     }
 
     /**
-     * Download template resmi CSV/Excel untuk import konversi kinerja.
+     * Download template resmi XLSX untuk import konversi kinerja.
      */
     public function downloadTemplate(): Response
     {
-        $csv = $this->importService->getCsvTemplate();
+        $xlsx = $this->importService->getXlsxTemplate();
 
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="template_import_konversi_kinerja_kpk.csv"',
+        return response($xlsx, 200, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="template_import_konversi_kinerja_kpk.xlsx"',
         ]);
     }
 
@@ -89,17 +89,17 @@ class ImportExportController extends Controller
     }
 
     /**
-     * Ekspor rekapitulasi konversi PAK menjadi file CSV.
+     * Ekspor rekapitulasi konversi PAK menjadi file XLSX.
      */
     public function export(Request $request): Response
     {
         $tahun = $request->has('tahun') ? (int) $request->input('tahun') : null;
-        $csv = $this->exportService->exportCsv($tahun);
+        $xlsx = $this->exportService->exportXlsx($tahun);
 
-        $filename = $tahun ? "rekap_konversi_pak_kpk_{$tahun}.csv" : "rekap_konversi_pak_kpk_semua_tahun.csv";
+        $filename = $tahun ? "rekap_konversi_pak_kpk_{$tahun}.xlsx" : "rekap_konversi_pak_kpk_semua_tahun.xlsx";
 
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        return response($xlsx, 200, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

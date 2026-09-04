@@ -96,6 +96,7 @@ class KonversiKinerjaTest extends TestCase
 
         $submitResponse = $this->actingAs($userPegawai, 'sanctum')->postJson('/api/pengajuan-pendidikan', [
             'jenjang_pendidikan' => 'S2',
+            'program_studi'      => 'Magister Teknologi Informasi',
             'jurusan'            => 'Magister Teknologi Informasi',
             'nama_institusi'     => 'Universitas Indonesia',
             'tahun_lulus'        => 2024,
