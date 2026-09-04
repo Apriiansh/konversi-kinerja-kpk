@@ -8,6 +8,7 @@ import { ImportKonversi } from './pages/admin/ImportKonversi'
 import { Rekapitulasi } from './pages/admin/Rekapitulasi'
 import { VerifikasiPendidikan } from './pages/admin/VerifikasiPendidikan'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
+import { Kalkulator as KalkulatorAdmin } from './pages/admin/Kalkulator'
 import MasterData from './pages/admin/MasterData'
 
 // Modul Peer / Pegawai
@@ -160,6 +161,16 @@ export default function App() {
             <ProtectedRoute role="ADMIN">
               <InLayout>
                 <ComingSoon title="Kelola Data Pegawai" />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kalkulator"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <KalkulatorAdmin />
               </InLayout>
             </ProtectedRoute>
           }

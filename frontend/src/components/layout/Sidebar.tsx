@@ -85,8 +85,8 @@ const ADMIN_MENU: MenuItem[] = [
     icon: <i className="fa-solid fa-user-check text-xs w-4 text-center" />,
   },
   {
-    to: '/kalkulator',
-    label: 'Kalkulator BKN',
+    to: '/admin/kalkulator',
+    label: 'Kalkulator',
     icon: <i className="fa-solid fa-calculator text-xs w-4 text-center" />,
   },
 ]
