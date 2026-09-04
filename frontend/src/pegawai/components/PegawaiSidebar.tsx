@@ -243,7 +243,7 @@ export default function PegawaiSidebar({ onNavigate, onCloseMobile, collapsed = 
                 } text-xs`}
             />
 
-            {!collapsed && <span>Minimize</span>}
+            {!collapsed && <span></span>}
           </button>
 
           {/* Logout hanya muncul saat sidebar tidak minimize */}
@@ -257,7 +257,7 @@ export default function PegawaiSidebar({ onNavigate, onCloseMobile, collapsed = 
               title="Keluar Sistem"
             >
               <i className="fa-solid fa-right-from-bracket text-xs" />
-              <span>Keluar</span>
+              <span></span>
             </motion.button>
           )}
 
