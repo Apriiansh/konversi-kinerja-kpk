@@ -27,11 +27,23 @@ body,
   height: 100%;
 }
 
+* {
+  font-family: 'Tahoma', 'Segoe UI', Geneva, Verdana, sans-serif;
+}
+
 body {
   margin: 0;
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "Tahoma", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  font-family: 'Tahoma', 'Segoe UI', Geneva, Verdana, sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Red KPK Batik Background Pattern */
+.bg-batik-pattern {
+  background-color: #7f1216;
+  background-image: radial-gradient(#ba191d 1.5px, transparent 1.5px), radial-gradient(#ba191d 1.5px, #7f1216 1.5px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}

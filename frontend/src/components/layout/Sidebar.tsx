@@ -14,6 +14,47 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
+  return (
+    <div className="flex h-full w-60 flex-col bg-white">
+      {/* Header Sidebar: Logo KPK & Nama Sistem */}
+      <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-4 sm:px-6">
+        <img src="/logo-kpk.png" alt="KPK" className="h-8 w-8" />
+        <span className="text-sm font-extrabold text-gray-900 leading-tight">
+          Sistem Konversi<br />Kinerja
+        </span>
+      </div>
+
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3 mt-2">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors ${
+                isActive
+                  ? 'bg-[#ba191d] text-white'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`
+            }
+          >
+            <svg
+              className="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d={ICONS[item.label] ?? ''} />
+            </svg>
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
   const { user } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
 

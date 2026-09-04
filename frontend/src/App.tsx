@@ -10,33 +10,53 @@ import { VerifikasiPendidikan } from './pages/admin/VerifikasiPendidikan'
 import { Kalkulator } from './pages/admin/Kalkulator'
 import MasterData from './pages/admin/MasterData'
 
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center">
-      <p className="text-base font-extrabold text-gray-900">{title}</p>
-      <p className="mt-1 text-sm font-medium text-gray-400">Segera hadir</p>
-    </div>
-  )
-}
+// Import Modul Dedicated UI Pegawai
+import PegawaiLayout from './pegawai/components/PegawaiLayout'
+import PegawaiDashboard from './pegawai/pages/PegawaiDashboard'
+import InisialisasiSaldoAwal from './pegawai/pages/InisialisasiSaldoAwal'
+import PenilaianTriwulan from './pegawai/pages/PenilaianTriwulan'
+import RekapitulasiPAK from './pegawai/pages/RekapitulasiPAK'
+import KalkulatorBKN from './pegawai/pages/KalkulatorBKN'
+import PengajuanPendidikan from './pegawai/pages/PengajuanPendidikan'
 
-function InLayout({ children }: { children: React.ReactNode }) {
-  return <AppLayout>{children}</AppLayout>
-}
+import Login from './pages/Login'
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        
+        {/* Rute Modul Pegawai */}
 
         {/* Route Utama */}
         <Route
           path="/"
           element={
             <ProtectedRoute>
-              <InLayout>
-                <Dashboard />
-              </InLayout>
+              <PegawaiLayout>
+                <PegawaiDashboard />
+              </PegawaiLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inisialisasi-saldo"
+          element={
+            <ProtectedRoute>
+              <PegawaiLayout>
+                <InisialisasiSaldoAwal />
+              </PegawaiLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/penilaian-triwulan"
+          element={
+            <ProtectedRoute>
+              <PegawaiLayout>
+                <PenilaianTriwulan />
+              </PegawaiLayout>
             </ProtectedRoute>
           }
         />
@@ -49,6 +69,10 @@ export default function App() {
         <Route
           path="/admin/import"
           element={
+            <ProtectedRoute>
+              <PegawaiLayout>
+                <RekapitulasiPAK />
+              </PegawaiLayout>
             <ProtectedRoute role="ADMIN">
               <InLayout>
                 <ImportKonversi />
@@ -103,15 +127,33 @@ export default function App() {
           path="/kalkulator"
           element={
             <ProtectedRoute>
+              <PegawaiLayout>
+                <KalkulatorBKN />
+              </PegawaiLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pengajuan-pendidikan"
+          element={
+            <ProtectedRoute>
+              <PegawaiLayout>
+                <PengajuanPendidikan />
+              </PegawaiLayout>
               <InLayout>
                 <Kalkulator />
               </InLayout>
             </ProtectedRoute>
           }
         />
+        {/* Alias rute lama ke pengajuan-pendidikan */}
         <Route
           path="/pengajuan"
           element={
+            <ProtectedRoute>
+              <PegawaiLayout>
+                <PengajuanPendidikan />
+              </PegawaiLayout>
             <ProtectedRoute role="ADMIN">
               <InLayout>
                 <VerifikasiPendidikan />

@@ -40,6 +40,17 @@ export default function Header() {
           </span>
         </button>
 
+        <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-red-200 bg-red-50 text-[#ba191d]">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          </div>
+          <div className="hidden min-w-0 sm:block">
+            <p className="max-w-[160px] truncate text-sm font-extrabold text-gray-900">
+              {user?.name ?? 'Ahmad Fajar, S.Kom'}
+            </p>
+            <p className="text-[11px] font-medium text-gray-500">{user?.role ?? 'Pegawai PNS'}</p>
         <div className="flex items-center gap-2.5 border-l border-gray-200 pl-3 sm:pl-4">
           <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-red-50 text-sm font-extrabold text-[#ba191d] border border-red-100 shadow-xs">
             {(user?.name ?? 'U').charAt(0).toUpperCase()}
@@ -60,6 +71,7 @@ export default function Header() {
               </span>
             </div>
           </div>
+
           <button
             type="button"
             onClick={handleLogout}
