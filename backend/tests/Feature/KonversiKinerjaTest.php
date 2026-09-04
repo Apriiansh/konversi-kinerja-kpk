@@ -25,6 +25,19 @@ class KonversiKinerjaTest extends TestCase
         $this->seed(MasterDataSeeder::class);
     }
 
+    public function test_master_data_berisi_informasi_bkn_no_3_tahun_2023(): void
+    {
+        $response = $this->getJson('/api/master-data');
+
+        $response->assertOk();
+        $this->assertEquals('Ahli Pertama', $response->json('data.jenjang_jabatan.0.nama'));
+        $this->assertEquals('Sangat Baik', $response->json('data.predikat_kinerja.0.nama'));
+        $this->assertEquals('Ahli Pertama-III/a', $response->json('data.ak_dasar.0.kunci_pencarian'));
+        $this->assertCount(4, $response->json('data.jenjang_jabatan'));
+        $this->assertCount(5, $response->json('data.predikat_kinerja'));
+        $this->assertCount(9, $response->json('data.ak_dasar'));
+    }
+
     public function test_evaluasi_kinerja_dan_rumus_bkn_berhasil_dihitung_dan_dikunci(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);

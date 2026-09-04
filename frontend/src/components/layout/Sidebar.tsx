@@ -30,6 +30,11 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       icon: FileSpreadsheet,
     },
     {
+      to: '/admin/master-data',
+      label: 'Master Data',
+      icon: FileText,
+    },
+    {
       to: '/admin/rekapitulasi',
       label: 'Rekapitulasi & PAK',
       icon: FileText,

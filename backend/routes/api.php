@@ -4,11 +4,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EvaluasiKinerjaController;
+use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PengajuanPendidikanController;
 use App\Http\Controllers\ImportExportController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RekapitulasiController;
+
+// Public info master data
+Route::get('/master-data', [MasterDataController::class, 'index']);
 
 // Public Auth Endpoints
 Route::post('/login', [AuthController::class, 'login']);

@@ -127,6 +127,9 @@ flowchart TD
 *   `POST /api/logout` - Logout & revoke token.
 *   `GET /api/me` - Profil pengguna login beserta data kepegawaian.
 
+### Master Data Peraturan BKN
+*   `GET /api/master-data` - Daftar master acuan Peraturan BKN No. 3 Tahun 2023: jenjang jabatan, predikat kinerja, dan AK dasar.
+
 ### Evaluasi Kinerja
 *   `GET /api/evaluasi` - Daftar evaluasi kinerja (Admin: semua, Pegawai: milik sendiri).
 *   `POST /api/evaluasi` - Simpan evaluasi triwulanan (Formula A).

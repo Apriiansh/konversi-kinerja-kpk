@@ -8,6 +8,7 @@ import { ImportKonversi } from './pages/admin/ImportKonversi'
 import { Rekapitulasi } from './pages/admin/Rekapitulasi'
 import { VerifikasiPendidikan } from './pages/admin/VerifikasiPendidikan'
 import { Kalkulator } from './pages/admin/Kalkulator'
+import MasterData from './pages/admin/MasterData'
 
 function ComingSoon({ title }: { title: string }) {
   return (
@@ -67,6 +68,17 @@ export default function App() {
         />
 
         {/* Modul Rekapitulasi & Kalkulator */}
+        <Route
+          path="/admin/master-data"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <MasterData />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/admin/rekapitulasi"
           element={
