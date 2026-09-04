@@ -7,12 +7,13 @@ import PegawaiFooter from './PegawaiFooter'
 
 export default function PegawaiLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#f8fafc] text-gray-800 font-sans antialiased">
-      {/* Desktop Fixed Left Sidebar - tidak ikut scroll */}
-      <div className="hidden lg:flex w-64 shrink-0 h-screen sticky top-0 z-30 flex-col overflow-hidden">
-        <PegawaiSidebar />
+      {/* Desktop Fixed Left Sidebar - tidak ikut scroll, mengecil jadi 1 kolom icon saat minimize */}
+      <div className={`hidden lg:flex shrink-0 h-screen sticky top-0 z-30 flex-col overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+        <PegawaiSidebar collapsed={collapsed} onToggleCollapsed={() => setCollapsed((v) => !v)} />
       </div>
 
       {/* Mobile Drawer Navigation with Framer Motion */}
