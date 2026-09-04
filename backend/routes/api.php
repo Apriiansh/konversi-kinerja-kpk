@@ -8,6 +8,7 @@ use App\Http\Controllers\PengajuanPendidikanController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RekapitulasiController;
+use App\Http\Controllers\RiwayatAktivitasController;
 
 // Public Auth Endpoints
 Route::post('/login', [AuthController::class, 'login']);
@@ -41,6 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifikasi', [NotifikasiController::class, 'index']);
     Route::patch('/notifikasi/{id}/baca', [NotifikasiController::class, 'markAsRead']);
     Route::post('/notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRead']);
+
+    // Riwayat Aktivitas
+    Route::get('/aktivitas', [RiwayatAktivitasController::class, 'index']);
 
     // Pegawai (CRUD)
     Route::get('/pegawai', [PegawaiController::class, 'index']);
