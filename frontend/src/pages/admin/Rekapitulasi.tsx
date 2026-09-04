@@ -90,7 +90,7 @@ export const Rekapitulasi: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      await downloadRekapitulasiXlsx(selectedTahun)
+      await downloadRekapitulasiXlsx(selectedTahun ?? undefined)
     } catch {
       setErrorMessage('Gagal mengunduh berkas rekapitulasi XLSX.')
     }
