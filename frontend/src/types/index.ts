@@ -108,6 +108,8 @@ export interface PreviewPegawaiItem {
   nama_lengkap?: string
   golongan?: string
   jenjang?: string
+  asal_jabatan?: string
+  penyesuaian_khusus?: string | null
   tahun?: number
   ak_dasar?: number
   ak_pak_pelantikan?: number

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EvaluasiKinerja;
+use App\Models\MasterJenjangJabatan;
 use App\Models\MasterPredikatKinerja;
 use App\Models\Pegawai;
 
@@ -19,10 +20,10 @@ class HitungKonversiService
      */
     public function hitungAk(string $pegawaiId, string $predikatId, int $periodeBulan): float
     {
-        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($pegawaiId);
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])->findOrFail($pegawaiId);
         $predikat = MasterPredikatKinerja::findOrFail($predikatId);
 
-        $koefisienTahunan = (float) $pegawai->pangkatGolongan->jenjangJabatan->koefisien_tahunan;
+        $koefisienTahunan = (float) $pegawai->effectiveJenjang()->koefisien_tahunan;
         $persentaseKonversi = (float) $predikat->persentase_konversi;
 
         // Hitung berdasarkan rumus
@@ -69,8 +70,8 @@ class HitungKonversiService
      */
     public function hitungAkTahunan(string $pegawaiId, int $tahun, ?string $predikatTw4Id = null): array
     {
-        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($pegawaiId);
-        $koefisienTahunan = (float) $pegawai->pangkatGolongan->jenjangJabatan->koefisien_tahunan;
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])->findOrFail($pegawaiId);
+        $koefisienTahunan = (float) $pegawai->effectiveJenjang()->koefisien_tahunan;
 
         // Cari evaluasi TW4 jika predikatTw4Id tidak disediakan langsung
         if (!$predikatTw4Id) {
@@ -126,6 +127,49 @@ class HitungKonversiService
             'koefisien_tahunan'   => $koefisienTahunan,
             'ak_baru'             => $akBaru,
             'rumus'               => "({$totalBulanAktif}/12) × {$persentaseKonversi} × {$koefisienTahunan} = {$akBaru} AK",
+        ];
+    }
+
+    /**
+     * Resolusi Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran II Angka 3).
+     *
+     * @param string                 $asalJabatan      PELAKSANA / PENGAWAS / ADMINISTRATOR / PENGANGKATAN_PERTAMA
+     * @param string|null            $golongan         Golongan pegawai (mis. III/c)
+     * @param MasterJenjangJabatan|null $targetJenjang Jenjang tujuan JF (Ahli Pertama / Ahli Muda / dll)
+     * @return array{blocked:bool, block_message:?string, flat:bool, note:?string}
+     */
+    public function resolveMismatchPenyesuaian(string $asalJabatan, ?string $golongan, $targetJenjang): array
+    {
+        $asal = strtoupper($asalJabatan);
+        $namaJenjang = strtolower((string) ($targetJenjang->nama ?? ''));
+
+        // Kasus A: Pelaksana dilarang melompat ke jenjang selain Ahli Pertama.
+        if ($asal === 'PELAKSANA' && $namaJenjang !== '' && $namaJenjang !== 'ahli pertama') {
+            return [
+                'blocked'        => true,
+                'block_message'  => 'Pelaksana hanya dapat diangkat ke jenjang Ahli Pertama. Target "' . ($targetJenjang?->nama ?? '-') . '" tidak diperbolehkan (PerBKN No. 3/2023 Lampiran II).',
+                'flat'           => false,
+                'note'           => null,
+            ];
+        }
+
+        // Kasus B: Pelaksana gol. III/c, III/d, IV/a -> Ahli Pertama => 100 AK flat.
+        $golonganFlat = ['iii/c', 'iii/d', 'iv/a'];
+        if ($asal === 'PELAKSANA' && $namaJenjang === 'ahli pertama'
+            && in_array(strtolower((string) $golongan), $golonganFlat, true)) {
+            return [
+                'blocked'       => false,
+                'block_message' => null,
+                'flat'          => true,
+                'note'          => 'Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran)',
+            ];
+        }
+
+        return [
+            'blocked'       => false,
+            'block_message' => null,
+            'flat'          => false,
+            'note'          => null,
         ];
     }
 

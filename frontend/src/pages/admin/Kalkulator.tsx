@@ -10,7 +10,6 @@ import {
   ChevronRight,
   BookOpen,
   CheckCircle2,
-  AlertTriangle,
   ShieldAlert,
   Sparkles,
   UserCheck,

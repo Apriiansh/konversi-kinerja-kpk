@@ -28,6 +28,8 @@ class ImportKonversiTest extends TestCase
             'nama_lengkap',
             'email',
             'golongan',
+            'asal_jabatan',
+            'jenjang_jabatan',
             'pendidikan_terakhir',
             'tmt_jabatan',
             'masa_kerja_tahun',
@@ -55,6 +57,27 @@ class ImportKonversiTest extends TestCase
         fclose($output);
 
         return UploadedFile::fake()->createWithContent('import_konversi.csv', $content);
+    }
+
+    private function createCsvFileWithHeaders(array $headers, array $rows): UploadedFile
+    {
+        $output = fopen('php://temp', 'r+');
+        fputcsv($output, $headers);
+        foreach ($rows as $row) {
+            fputcsv($output, $row);
+        }
+        rewind($output);
+        $content = stream_get_contents($output);
+        fclose($output);
+
+        return UploadedFile::fake()->createWithContent('import_flexible.csv', $content);
+    }
+
+    private function writeTempCsv(string $content): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'import') . '.csv';
+        file_put_contents($path, $content);
+        return $path;
     }
 
     public function test_admin_dapat_mengunduh_template_xlsx(): void
@@ -95,6 +118,8 @@ class ImportKonversiTest extends TestCase
             'Budi Santoso, S.T',
             'budi@kpk.go.id',
             'III/a',
+            'PELAKSANA',
+            'Ahli Pertama',
             'S1',
             '2025-03-01',
             '3',
@@ -144,6 +169,8 @@ class ImportKonversiTest extends TestCase
             'Budi Santoso, S.T',
             'budi.santoso@kpk.go.id',
             'III/a',
+            'PELAKSANA',
+            'Ahli Pertama',
             'S1',
             '2025-03-01',
             '3',
@@ -202,6 +229,139 @@ class ImportKonversiTest extends TestCase
         ]);
     }
 
+    public function test_preview_import_tolak_pelaksana_lompat_ke_ahli_muda_kasus_a(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Pelaksana gol. III/c (jenjang natural Ahli Muda) tanpa target Ahli Pertama -> ditolak (Kasus A).
+        $row = [
+            '199503012025031001',
+            'Budi Santoso, S.T',
+            'budi@kpk.go.id',
+            'III/c',
+            'PELAKSANA',
+            '',
+            'S1',
+            '2025-03-01',
+            '3',
+            '5',
+            '10.00',
+            '2025',
+            'Sangat Baik',
+            '1',
+            'Sangat Baik',
+            '3',
+            'Sangat Baik',
+            '3',
+            'Baik',
+            '3',
+            'S1',
+        ];
+
+        $file = $this->createCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(0, $data['total_valid']);
+        $this->assertEquals(1, $data['total_error']);
+        $this->assertFalse($data['data'][0]['is_valid']);
+        $this->assertStringContainsString('Ahli Pertama', implode(' ', $data['data'][0]['errors']));
+    }
+
+    public function test_preview_import_pelaksana_iii_c_ke_ahli_pertama_flat_100_kasus_b(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Pelaksana gol. III/c diangkat ke Ahli Pertama -> 100 AK flat (Kasus B).
+        $row = [
+            '199503012025031001',
+            'Budi Santoso, S.T',
+            'budi@kpk.go.id',
+            'III/c',
+            'PELAKSANA',
+            'Ahli Pertama',
+            'S1',
+            '2025-03-01',
+            '10',
+            '0',
+            '10.00',
+            '2025',
+            'Sangat Baik',
+            '1',
+            'Sangat Baik',
+            '3',
+            'Sangat Baik',
+            '3',
+            'Baik',
+            '3',
+            'S1',
+        ];
+
+        $file = $this->createCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(1, $data['total_valid']);
+        $this->assertEquals(0, $data['total_error']);
+
+        $budi = $data['data'][0];
+        $this->assertEquals(100.00, (float) $budi['ak_pak_pelantikan']);
+        $this->assertEquals('Ahli Pertama', $budi['jenjang']);
+        $this->assertNotNull($budi['penyesuaian_khusus']);
+        $this->assertStringContainsString('Mismatch Golongan', $budi['penyesuaian_khusus']);
+    }
+
+    public function test_eksekusi_import_persist_jalur_jabatan_kasus_b(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN', 'name' => 'Admin Kepegawaian']);
+
+        // Pelaksana gol. III/c diangkat ke Ahli Pertama -> 100 AK flat & disimpan jalur jabatannya.
+        $row = [
+            '199503012025031001',
+            'Budi Santoso, S.T',
+            'budi.santoso@kpk.go.id',
+            'III/c',
+            'PELAKSANA',
+            'Ahli Pertama',
+            'S1',
+            '2025-03-01',
+            '10',
+            '0',
+            '10.00',
+            '2025',
+            'Sangat Baik',
+            '1',
+            'Sangat Baik',
+            '3',
+            'Sangat Baik',
+            '3',
+            'Baik',
+            '3',
+            'S1',
+        ];
+
+        $file = $this->createCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/proses', ['file' => $file]);
+
+        $response->assertStatus(201);
+        $this->assertEquals(1, $response->json('data.total_diproses'));
+
+        $pegawai = Pegawai::where('nip', '199503012025031001')->firstOrFail();
+        $this->assertEquals('PELAKSANA', $pegawai->asal_jabatan);
+        $this->assertNotNull($pegawai->jenjang_jabatan_id);
+        $this->assertEquals('Ahli Pertama', $pegawai->jenjangJabatan->nama);
+
+        $penetapan = PenetapanAK::where('pegawai_id', $pegawai->id)->where('tahun', 2025)->firstOrFail();
+        $this->assertEquals(100.00, (float) $penetapan->ak_pak_pelantikan);
+    }
+
     public function test_admin_dapat_mengekspor_rekapitulasi_ke_xlsx(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
@@ -228,5 +388,143 @@ class ImportKonversiTest extends TestCase
         $this->assertNotFalse($sheet, 'Worksheet sheet1.xml tidak ditemukan.');
         $this->assertStringContainsString('Tahun', $sheet);
         $this->assertStringContainsString('Nama Lengkap', $sheet);
+    }
+
+    public function test_preview_import_menerima_header_dengan_spasi(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Header menggunakan spasi antar kata, bukan underscore.
+        $headers = [
+            'nip', 'nama lengkap', 'email', 'golongan', 'asal jabatan', 'jenjang jabatan',
+            'pendidikan terakhir', 'tmt jabatan', 'masa kerja tahun', 'masa kerja bulan',
+            'saldo historis', 'tahun', 'tw1 predikat', 'tw1 bulan', 'tw2 predikat',
+            'tw2 bulan', 'tw3 predikat', 'tw3 bulan', 'tw4 predikat', 'tw4 bulan',
+            'klaim ijazah baru',
+        ];
+
+        $row = [
+            '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a', 'PELAKSANA',
+            'Ahli Pertama', 'S1', '2025-03-01', '3', '5', '10.00', '2025', 'Sangat Baik', '1',
+            'Sangat Baik', '3', 'Sangat Baik', '3', 'Baik', '3', 'S1',
+        ];
+
+        $file = $this->createCsvFileWithHeaders($headers, [$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(1, $data['total_valid']);
+        $this->assertEquals(0, $data['total_error']);
+    }
+
+    public function test_preview_import_menerima_header_alias_singkatan(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Header memakai alias singkatan / variasi umum.
+        $headers = [
+            'NIP', 'Nama', 'Email', 'Pangkat', 'Asal', 'Jenjang',
+            'Pendidikan', 'TMT', 'MK Tahun', 'MK Bulan', 'Saldo',
+            'Periode', 'Predikat TW1', 'Bulan TW1', 'Predikat TW2', 'Bulan TW2',
+            'Predikat TW3', 'Bulan TW3', 'Predikat TW4', 'Bulan TW4', 'Ijazah',
+        ];
+
+        $row = [
+            '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a', 'PELAKSANA',
+            'Ahli Pertama', 'S1', '2025-03-01', '3', '5', '10.00', '2025', 'Sangat Baik', '1',
+            'Sangat Baik', '3', 'Sangat Baik', '3', 'Baik', '3', 'S1',
+        ];
+
+        $file = $this->createCsvFileWithHeaders($headers, [$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(1, $data['total_valid']);
+        $this->assertEquals(0, $data['total_error']);
+
+        $pegawai = $data['data'][0];
+        $this->assertEquals('75.63', number_format($pegawai['ak_kumulatif'], 2, '.', ''));
+    }
+
+    public function test_preview_import_menerima_header_tidak_di_baris_pertama(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Simulasi file dengan judul/meta di atas, header baru muncul di baris berikutnya.
+        $content = implode("\n", [
+            'DATA KONVERSI KINERJA KPK TAHUN 2025',
+            '',
+            'Diolah oleh: Bagian Kepegawaian',
+            'nip,nama_lengkap,email,golongan,asal_jabatan,jenjang_jabatan,pendidikan_terakhir,tmt_jabatan,masa_kerja_tahun,masa_kerja_bulan,saldo_historis,tahun,tw1_predikat,tw1_bulan,tw2_predikat,tw2_bulan,tw3_predikat,tw3_bulan,tw4_predikat,tw4_bulan,klaim_ijazah_baru',
+            '199503012025031001,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,2025-03-01,3,5,10.00,2025,Sangat Baik,1,Sangat Baik,3,Sangat Baik,3,Baik,3,S1',
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent('import_meta.csv', $content);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(1, $data['total_valid']);
+        $this->assertEquals(0, $data['total_error']);
+        $this->assertEquals('199503012025031001', $data['data'][0]['nip']);
+        $this->assertEquals('Budi Santoso S.T', $data['data'][0]['nama_lengkap']);
+    }
+
+    public function test_preview_import_mengkonversi_tanggal_dan_nip_scientific_notation(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // NIP Excel dirender scientific notation, tanggal format d/m/Y.
+        $content = implode("\n", [
+            'nip,nama_lengkap,email,golongan,asal_jabatan,jenjang_jabatan,pendidikan_terakhir,tmt_jabatan,masa_kerja_tahun,masa_kerja_bulan,saldo_historis,tahun,tw1_predikat,tw1_bulan,tw2_predikat,tw2_bulan,tw3_predikat,tw3_bulan,tw4_predikat,tw4_bulan,klaim_ijazah_baru',
+            '1.99609E+17,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,01/03/2025,3,5,10.00,2025,Sangat Baik,1,Sangat Baik,3,Sangat Baik,3,Baik,3,S1',
+        ]);
+
+        // Verifikasi hasil parsing (NIP + tanggal) langsung lewat service.
+        $service = app(\App\Services\ImportKonversiService::class);
+        $path = $this->writeTempCsv($content);
+        $parsed = $service->parseCsvFile($path);
+        @unlink($path);
+
+        $this->assertCount(1, $parsed);
+        $this->assertEquals('199609000000000000', $parsed[0]['nip']);
+        $this->assertEquals('2025-03-01', $parsed[0]['tmt_jabatan']);
+
+        // End-to-end lewat endpoint preview tetap valid.
+        $file = UploadedFile::fake()->createWithContent('import_formats.csv', $content);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(1, $data['total_valid']);
+        $this->assertEquals('199609000000000000', $data['data'][0]['nip']);
+    }
+
+    public function test_preview_import_error_jelas_saat_kolom_golongan_hilang(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Header tidak memuat kolom golongan (tanpa alias apa pun).
+        $content = implode("\n", [
+            'nip,nama_lengkap,email,jabatan',
+            '199503012025031001,Budi Santoso S.T,budi@kpk.go.id,PELAKSANA',
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent('import_missing.csv', $content);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('message', 'Gagal memproses file: Kolom wajib golongan tidak ditemukan di header. Pastikan header file mengikuti template (nip, nama_lengkap, golongan, dst) dan berada di baris awal.');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EvaluasiKinerja;
+use App\Models\MasterJenjangJabatan;
 use App\Models\MasterPangkatGolongan;
 use App\Models\MasterPredikatKinerja;
 use App\Models\Notifikasi;
@@ -43,15 +44,16 @@ class ImportKonversiService
     {
         $rows = [
             [
-                'nip', 'nama_lengkap', 'email', 'golongan', 'pendidikan_terakhir',
-                'tmt_jabatan', 'masa_kerja_tahun', 'masa_kerja_bulan', 'saldo_historis',
-                'tahun', 'tw1_predikat', 'tw1_bulan', 'tw2_predikat', 'tw2_bulan',
-                'tw3_predikat', 'tw3_bulan', 'tw4_predikat', 'tw4_bulan', 'klaim_ijazah_baru',
+                'nip', 'nama_lengkap', 'email', 'golongan', 'asal_jabatan', 'jenjang_jabatan',
+                'pendidikan_terakhir', 'tmt_jabatan', 'masa_kerja_tahun', 'masa_kerja_bulan',
+                'saldo_historis', 'tahun', 'tw1_predikat', 'tw1_bulan', 'tw2_predikat',
+                'tw2_bulan', 'tw3_predikat', 'tw3_bulan', 'tw4_predikat', 'tw4_bulan',
+                'klaim_ijazah_baru',
             ],
             [
                 '199503012025031001', 'Budi Santoso, S.T', 'budi.santoso@kpk.go.id',
-                'III/a', 'S1', '2025-03-01', '3', '5', '10.00', '2025',
-                'Sangat Baik', '1', 'Sangat Baik', '3', 'Sangat Baik', '3',
+                'III/a', 'PELAKSANA', 'Ahli Pertama', 'S1', '2025-03-01', '3', '5',
+                '10.00', '2025', 'Sangat Baik', '1', 'Sangat Baik', '3', 'Sangat Baik', '3',
                 'Baik', '3', 'S1',
             ],
         ];
@@ -90,6 +92,221 @@ class ImportKonversiService
         $header = fread($handle, 4);
         fclose($handle);
         return $header === "PK\x03\x04";
+    }
+
+    /**
+     * Peta alias header: key = nama kolom canonical, value = array alias yang diterima.
+     */
+    protected static array $headerAliases = [
+        'nip'                 => ['nip', 'no_nip', 'nomor_nip', 'no nip', 'nomor nip'],
+        'nama_lengkap'        => ['nama_lengkap', 'nama', 'name', 'nama_pegawai', 'fullname', 'nama lengkap', 'nama pegawai'],
+        'email'               => ['email', 'e-mail', 'e_mail'],
+        'golongan'            => ['golongan', 'gol', 'pangkat', 'pangkat_golongan', 'pangkat_gol', 'pangkat golongan', 'pangkat gol'],
+        'asal_jabatan'        => ['asal_jabatan', 'asal', 'jabatan_asal', 'asal jabatan', 'jabatan asal'],
+        'jenjang_jabatan'     => ['jenjang_jabatan', 'jenjang', 'jabatan_jenjang', 'target_jenjang', 'jenjang jabatan', 'jabatan jenjang', 'target jenjang'],
+        'pendidikan_terakhir' => ['pendidikan_terakhir', 'pendidikan', 'pendidikan_last', 'pendidikan terakhir'],
+        'tmt_jabatan'         => ['tmt_jabatan', 'tmt', 'tmt jabatan'],
+        'masa_kerja_tahun'    => ['masa_kerja_tahun', 'mk_tahun', 'masa kerja tahun', 'mk tahun'],
+        'masa_kerja_bulan'    => ['masa_kerja_bulan', 'mk_bulan', 'masa kerja bulan', 'mk bulan'],
+        'saldo_historis'      => ['saldo_historis', 'saldo', 'historis', 'saldo historis'],
+        'tahun'               => ['tahun', 'year', 'periode', 'tahun evaluasi'],
+        'tw1_predikat'        => ['tw1_predikat', 'tw_1_predikat', 'predikat_tw1', 'predikat tw1', 'tw1 predikat'],
+        'tw1_bulan'           => ['tw1_bulan', 'tw_1_bulan', 'bulan_tw1', 'bulan tw1', 'tw1 bulan'],
+        'tw2_predikat'        => ['tw2_predikat', 'tw_2_predikat', 'predikat_tw2', 'predikat tw2', 'tw2 predikat'],
+        'tw2_bulan'           => ['tw2_bulan', 'tw_2_bulan', 'bulan_tw2', 'bulan tw2', 'tw2 bulan'],
+        'tw3_predikat'        => ['tw3_predikat', 'tw_3_predikat', 'predikat_tw3', 'predikat tw3', 'tw3 predikat'],
+        'tw3_bulan'           => ['tw3_bulan', 'tw_3_bulan', 'bulan_tw3', 'bulan tw3', 'tw3 bulan'],
+        'tw4_predikat'        => ['tw4_predikat', 'tw_4_predikat', 'predikat_tw4', 'predikat tw4', 'tw4 predikat'],
+        'tw4_bulan'           => ['tw4_bulan', 'tw_4_bulan', 'bulan_tw4', 'bulan tw4', 'tw4 bulan'],
+        'klaim_ijazah_baru'   => ['klaim_ijazah_baru', 'ijazah', 'klaim_ijazah', 'klaim ijazah', 'klaim ijazah baru'],
+    ];
+
+    /**
+     * Normalisasi header mentah menjadi nama kolom canonical.
+     * Langkah: trim → lowercase → hapus karakter non-printable → spasi/dash → underscore → alias resolve.
+     *
+     * @param  array $rawHeaders
+     * @return array
+     */
+    protected function normalizeHeaders(array $rawHeaders): array
+    {
+        $aliasMap = [];
+        foreach (self::$headerAliases as $canonical => $aliases) {
+            foreach ($aliases as $alias) {
+                $aliasMap[$alias] = $canonical;
+            }
+        }
+
+        return array_map(function ($raw) use ($aliasMap) {
+            $clean = trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', strtolower($raw)));
+            $underscored = preg_replace('/[\s\-]+/', '_', $clean);
+            return $aliasMap[$underscored] ?? $aliasMap[$clean] ?? $clean;
+        }, $rawHeaders);
+    }
+
+    /**
+     * Tentukan skor "keheader-an" sebuah baris: berapa banyak sel yang berhasil
+     * dinormalisasi menjadi kolom canonical yang dikenali.
+     *
+     * @param  array $rawRow
+     * @return int
+     */
+    protected function headerScore(array $rawRow): int
+    {
+        $aliasMap = [];
+        foreach (self::$headerAliases as $canonical => $aliases) {
+            foreach ($aliases as $alias) {
+                $aliasMap[$alias] = $canonical;
+            }
+        }
+
+        $score = 0;
+        foreach ($rawRow as $raw) {
+            $clean = trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', strtolower($raw)));
+            $underscored = preg_replace('/[\s\-]+/', '_', $clean);
+            if (isset($aliasMap[$underscored]) || isset($aliasMap[$clean])) {
+                $score++;
+            }
+        }
+        return $score;
+    }
+
+    /**
+     * Kurasi daftar baris mentah dengan menemukan baris header yang paling mungkin
+     * (memuat kolom wajib `nip` dan/atau `golongan` dengan skor tertinggi),
+     * lalu ubah seluruh baris menjadi associative array data.
+     *
+     * @param  array $allRowValues Baris-baris mentah (array of arrays).
+     * @param  int   $maxScan      Jumlah baris maksimal yang dipindai untuk menemukan header.
+     * @return array
+     */
+    protected function buildRowsFromHeads(array $allRowValues, int $maxScan = 30): array
+    {
+        $aliasMap = [];
+        foreach (self::$headerAliases as $canonical => $aliases) {
+            foreach ($aliases as $alias) {
+                $aliasMap[$alias] = $canonical;
+            }
+        }
+
+        $bestIdx = -1;
+        $bestScore = -1;
+        $bestHeaders = null;
+
+        $scanLimit = min(count($allRowValues), $maxScan);
+        for ($i = 0; $i < $scanLimit; $i++) {
+            $normalized = $this->normalizeHeaders($allRowValues[$i]);
+            $score = $this->headerScore($allRowValues[$i]);
+
+            $hasNip = in_array('nip', $normalized, true);
+            $hasGolongan = in_array('golongan', $normalized, true);
+
+            // Baris header wajib setidaknya memuat nip atau golongan,
+            // dan skornya harus di atas ambang minimum.
+            if (($hasNip || $hasGolongan) && $score >= 3 && $score > $bestScore) {
+                $bestIdx = $i;
+                $bestScore = $score;
+                $bestHeaders = $normalized;
+            }
+        }
+
+        if ($bestIdx < 0) {
+            // Tidak ada header valid ditemukan: coba pakai baris pertama saja.
+            $bestIdx = 0;
+            $bestHeaders = $this->normalizeHeaders($allRowValues[0] ?? []);
+        }
+
+        $rows = [];
+        foreach ($allRowValues as $index => $rowValues) {
+            if ($index <= $bestIdx) {
+                continue; // Lewati header dan baris-baris di atasnya
+            }
+            if (empty(array_filter($rowValues, fn ($v) => trim((string) $v) !== ''))) {
+                continue; // Baris kosong
+            }
+
+            $row = [];
+            foreach ($bestHeaders as $pos => $header) {
+                $row[$header] = isset($rowValues[$pos]) ? trim((string) $rowValues[$pos]) : null;
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Konversi tanggal dalam berbagai format (Y-m-d, d/m/Y, d-m-Y) menjadi Y-m-d.
+     *
+     * @param  string|null $value
+     * @return string|null
+     */
+    protected function normalizeTanggal(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        // Sudah Y-m-d
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return $value;
+        }
+
+        // d/m/Y atau d-m-Y (juga menangani 1 angka d/m)
+        if (preg_match('#^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$#', $value, $m)) {
+            $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            return "{$m[3]}-{$mo}-{$d}";
+        }
+
+        return $value;
+    }
+
+    /**
+     * Kembalikan NIP ke bentuk string penuh dari kemungkinan scientific notation
+     * (mis. "1.99609E+17") sesuai panjang digit semula.
+     *
+     * Catatan: Excel hanya menyimpan ~6 digit signifikan pada mode scientific,
+     * sehingga rekonstruksi ini bersifat best-effort. Untuk hasil sempurna, format
+     * kolom NIP sebagai Text di Excel.
+     *
+     * @param  string|null $value
+     * @return string|null
+     */
+    protected function normalizeNip(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        // Bersihkan pemisah ribuan dan koma ribuan
+        $clean = str_replace(',', '', $value);
+
+        // Scientific notation: "1.99609E+17" / "1,99609E+17"
+        if (preg_match('/^(-?[\d.]+)[eE]\+?(\d+)$/', $clean, $m)) {
+            $mantissa = $m[1];
+            $exp = (int) $m[2];
+            $isNegative = str_starts_with($mantissa, '-');
+            $mantissa = ltrim($mantissa, '-');
+
+            [$intPart, $fracPart] = array_pad(explode('.', $mantissa, 2), 2, '');
+            $sigDigits = $intPart . $fracPart;           // "199609"
+            $digitsAfterDecimal = strlen($fracPart);     // 5
+            $zerosToAppend = $exp - $digitsAfterDecimal;
+
+            $result = $sigDigits;
+            if ($zerosToAppend > 0) {
+                $result .= str_repeat('0', $zerosToAppend);
+            }
+            if ($isNegative) {
+                $result = '-' . $result;
+            }
+            return $result;
+        }
+
+        return $value;
     }
 
     /**
@@ -149,9 +366,7 @@ class ImportKonversiService
             return [];
         }
 
-        $rows = [];
-        $headers = null;
-
+        $allRowValues = [];
         foreach ($xml->sheetData->row as $rowNode) {
             $rowValues = [];
             foreach ($rowNode->c as $c) {
@@ -167,24 +382,21 @@ class ImportKonversiService
                     $rowValues[] = $val;
                 }
             }
-
-            if (!$headers) {
-                $headers = array_map(function ($h) {
-                    return trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', strtolower($h)));
-                }, $rowValues);
-                continue;
-            }
-
-            if (empty(array_filter($rowValues, fn ($v) => trim($v) !== ''))) {
-                continue;
-            }
-
-            $row = [];
-            foreach ($headers as $index => $header) {
-                $row[$header] = isset($rowValues[$index]) ? trim($rowValues[$index]) : null;
-            }
-            $rows[] = $row;
+            $allRowValues[] = $rowValues;
         }
+
+        $rows = $this->buildRowsFromHeads($allRowValues);
+
+        // Normalisasi nilai khusus (NIP, tanggal) agar sesuai format DB
+        foreach ($rows as &$row) {
+            if (isset($row['nip']) && $row['nip'] !== null) {
+                $row['nip'] = $this->normalizeNip($row['nip']);
+            }
+            if (isset($row['tmt_jabatan']) && $row['tmt_jabatan'] !== null) {
+                $row['tmt_jabatan'] = $this->normalizeTanggal($row['tmt_jabatan']);
+            }
+        }
+        unset($row);
 
         return $rows;
     }
@@ -203,8 +415,6 @@ class ImportKonversiService
             throw new \InvalidArgumentException('File tidak dapat dibaca.');
         }
 
-        $rows = [];
-        $headers = null;
         $delimiter = ',';
 
         // Deteksi delimiter (koma atau titik koma)
@@ -216,28 +426,29 @@ class ImportKonversiService
             rewind($handle);
         }
 
+        $allRows = [];
         while (($data = fgetcsv($handle, 4096, $delimiter)) !== false) {
-            // Hapus BOM jika ada pada karakter pertama header
-            if (!$headers) {
-                $headers = array_map(function ($h) {
-                    return trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', strtolower($h)));
-                }, $data);
+            if (empty(array_filter($data, fn ($val) => trim((string) $val) !== ''))) {
                 continue;
             }
-
-            // Lewati baris kosong
-            if (empty(array_filter($data, fn ($val) => trim($val) !== ''))) {
-                continue;
-            }
-
-            $row = [];
-            foreach ($headers as $index => $header) {
-                $row[$header] = isset($data[$index]) ? trim($data[$index]) : null;
-            }
-            $rows[] = $row;
+            $allRows[] = $data;
         }
 
         fclose($handle);
+
+        $rows = $this->buildRowsFromHeads($allRows);
+
+        // Normalisasi nilai khusus (NIP, tanggal) agar sesuai format DB
+        foreach ($rows as &$row) {
+            if (isset($row['nip']) && $row['nip'] !== null) {
+                $row['nip'] = $this->normalizeNip($row['nip']);
+            }
+            if (isset($row['tmt_jabatan']) && $row['tmt_jabatan'] !== null) {
+                $row['tmt_jabatan'] = $this->normalizeTanggal($row['tmt_jabatan']);
+            }
+        }
+        unset($row);
+
         return $rows;
     }
 
@@ -252,6 +463,25 @@ class ImportKonversiService
         $rawRows = $this->parseFile($file);
         $pangkatMap = MasterPangkatGolongan::with('jenjangJabatan')->get()->keyBy(fn ($item) => strtolower($item->golongan));
         $predikatMap = MasterPredikatKinerja::all()->keyBy(fn ($item) => strtolower($item->nama));
+        $jenjangMap = MasterJenjangJabatan::all()->keyBy(fn ($item) => strtolower($item->nama));
+
+        // Pastikan kolom wajib ada di header sebelum diolah lebih lanjut.
+        if (empty($rawRows)) {
+            throw new \InvalidArgumentException('Tidak ada baris data yang terbaca dari file. Pastikan header berada di baris pertama (atau di baris awal) dan mengikuti template.');
+        }
+        $first = $rawRows[0];
+        $missingRequired = [];
+        foreach (['nip', 'golongan'] as $req) {
+            if (!array_key_exists($req, $first)) {
+                $missingRequired[] = $req;
+            }
+        }
+        if ($missingRequired) {
+            throw new \InvalidArgumentException(
+                'Kolom wajib ' . implode(', ', $missingRequired) .
+                ' tidak ditemukan di header. Pastikan header file mengikuti template (nip, nama_lengkap, golongan, dst) dan berada di baris awal.'
+            );
+        }
 
         $previewData = [];
         $totalValid = 0;
@@ -275,7 +505,7 @@ class ImportKonversiService
             $golonganKey = strtolower($row['golongan'] ?? '');
             $pangkat = $pangkatMap->get($golonganKey);
             if (!$pangkat) {
-                $errors[] = "Golongan '{$row['golongan']}' tidak valid.";
+                $errors[] = "Golongan '" . ($row['golongan'] ?? '') . "' tidak valid.";
             }
 
             $tahun = (int) ($row['tahun'] ?? date('Y'));
@@ -294,18 +524,58 @@ class ImportKonversiService
                 continue;
             }
 
-            // 2. Kalkulasi Komponen
-            $jenjang = $pangkat->jenjangJabatan;
+            // 2. Resolusi Asal Jabatan & Jenjang Tujuan (Jalur Jabatan — PerBKN No. 3/2023)
+            $asalJabatan = strtoupper(trim($row['asal_jabatan'] ?? '') ?: 'PELAKSANA');
+
+            $jenjangTujuanNama = trim($row['jenjang_jabatan'] ?? '');
+            $targetJenjang = null;
+            if ($jenjangTujuanNama !== '') {
+                $targetJenjang = $jenjangMap->get(strtolower($jenjangTujuanNama));
+                if (!$targetJenjang) {
+                    $errors[] = "Jenjang jabatan '{$jenjangTujuanNama}' tidak valid.";
+                }
+            }
+
+            if (!empty($errors)) {
+                $totalError++;
+                $previewData[] = [
+                    'baris'     => $rowNumber,
+                    'is_valid'  => false,
+                    'errors'    => $errors,
+                    'raw_data'  => $row,
+                ];
+                continue;
+            }
+
+            // Jenjang efektif = jenjang tujuan bila diisi, selain itu jenjang golongan.
+            $jenjang = $targetJenjang ?: $pangkat->jenjangJabatan;
             $koefisienTahunan = (float) $jenjang->koefisien_tahunan;
+
+            // Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran II Angka 3)
+            $penyesuaian = $this->hitungKonversi->resolveMismatchPenyesuaian($asalJabatan, $pangkat->golongan, $jenjang);
+
+            // Kasus A: lompatan terlarang (Pelaksana -> selain Ahli Pertama) => baris ditolak.
+            if ($penyesuaian['blocked']) {
+                $totalError++;
+                $previewData[] = [
+                    'baris'     => $rowNumber,
+                    'is_valid'  => false,
+                    'errors'    => [$penyesuaian['block_message']],
+                    'raw_data'  => $row,
+                ];
+                continue;
+            }
 
             // Modal Awal: AK Dasar
             $akDasar = (float) $pangkat->ak_dasar;
 
-            // PAK Pelantikan
+            // PAK Pelantikan — Kasus B (mismatch) => 100 AK flat, masa kerja diabaikan.
             $mkTahun = (int) ($row['masa_kerja_tahun'] ?? 0);
             $mkBulan = (int) ($row['masa_kerja_bulan'] ?? 0);
             $akPakPelantikan = 0.0;
-            if ($mkTahun > 0 || $mkBulan > 0) {
+            if ($penyesuaian['flat']) {
+                $akPakPelantikan = 100.00;
+            } elseif ($mkTahun > 0 || $mkBulan > 0) {
                 $calcPak = $this->hitungKonversi->hitungPakPelantikan($mkTahun, $mkBulan, 1.0, $koefisienTahunan);
                 $akPakPelantikan = $calcPak['total_ak_pak'];
             }
@@ -382,7 +652,10 @@ class ImportKonversiService
                 'nip'               => $row['nip'],
                 'nama_lengkap'      => $row['nama_lengkap'],
                 'golongan'          => $pangkat->golongan,
+                'asal_jabatan'      => $asalJabatan,
                 'jenjang'           => $jenjang->nama,
+                'jenjang_jabatan_target_id' => $targetJenjang?->id ?? null,
+                'penyesuaian_khusus'=> $penyesuaian['flat'] ? $penyesuaian['note'] : null,
                 'tahun'             => $tahun,
                 'ak_dasar'          => $akDasar,
                 'ak_pak_pelantikan' => $akPakPelantikan,
@@ -463,6 +736,8 @@ class ImportKonversiService
                         'user_id'             => $user->id,
                         'nama_lengkap'        => $item['nama_lengkap'],
                         'pangkat_golongan_id' => $pangkat->id,
+                        'asal_jabatan'        => $item['asal_jabatan'] ?? 'PELAKSANA',
+                        'jenjang_jabatan_id'  => $item['jenjang_jabatan_target_id'] ?? null,
                         'pendidikan_terakhir' => $item['raw_data']['pendidikan_terakhir'] ?? 'S1',
                         'tmt_jabatan'         => !empty($item['raw_data']['tmt_jabatan']) ? $item['raw_data']['tmt_jabatan'] : null,
                     ]

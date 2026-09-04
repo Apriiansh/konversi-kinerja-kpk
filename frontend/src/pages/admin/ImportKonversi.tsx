@@ -166,10 +166,10 @@ export const ImportKonversi: React.FC = () => {
     <div className="space-y-6">
       {/* 1. Header Banner */}
       <CardHeader
-        tag="Administrasi Kepegawaian"
+        tag="Konversi Kinerja"
         regulation="PerBKN No. 3/2023"
         title="Import & Auto-Konversi Kinerja Massal"
-        subtitle="Unggah berkas spreadsheet (.xlsx / .csv) untuk mengonversi Angka Kredit (AK) pegawai KPK, mengevaluasi Formula B (TW4 Anchor), dan menentukan badge kelayakan secara instan."
+        subtitle="Unggah berkas spreadsheet (.xlsx / .csv) untuk mengonversi Angka Kredit (AK) pegawai KPK, dan menentukan badge kelayakan secara instan."
         actions={
           <Button variant="secondary" icon={<Download className="h-4 w-4 text-gray-500" />} onClick={handleDownloadTemplate}>
             Unduh Template XLSX
@@ -401,8 +401,18 @@ export const ImportKonversi: React.FC = () => {
                           </span>
                           <p className="text-[11px] font-medium text-gray-500">{item.jenjang ?? '-'}</p>
                         </td>
-                        <td className="py-3 px-3.5 font-mono font-bold text-gray-700">
-                          {item.ak_pak_pelantikan ? `${item.ak_pak_pelantikan.toFixed(2)} AK` : '-'}
+                        <td className="py-3 px-3.5">
+                          {item.penyesuaian_khusus && (
+                            <span
+                              title={item.penyesuaian_khusus}
+                              className="inline-flex items-center gap-1 rounded bg-purple-50 border border-purple-200 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 mb-1"
+                            >
+                              <ShieldCheck className="h-3 w-3" /> 100 AK Flat
+                            </span>
+                          )}
+                          <div className="font-mono font-bold text-gray-700">
+                            {item.ak_pak_pelantikan ? `${item.ak_pak_pelantikan.toFixed(2)} AK` : '-'}
+                          </div>
                         </td>
                         <td className="py-3 px-3.5 font-mono font-bold text-gray-700">
                           {item.ak_historis ? `${item.ak_historis.toFixed(2)} AK` : '-'}

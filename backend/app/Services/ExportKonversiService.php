@@ -24,6 +24,7 @@ class ExportKonversiService
     {
         $query = PenetapanAK::with([
             'pegawai.pangkatGolongan.jenjangJabatan',
+            'pegawai.jenjangJabatan',
         ]);
 
         if ($tahun) {
@@ -59,7 +60,7 @@ class ExportKonversiService
         foreach ($records as $item) {
             $pegawai = $item->pegawai;
             $pangkat = $pegawai?->pangkatGolongan;
-            $jenjang = $pangkat?->jenjangJabatan;
+            $jenjang = $pegawai?->effectiveJenjang();
 
             $kelayakan = $this->carryOverService->evaluasiKelayakan(
                 $pegawai,

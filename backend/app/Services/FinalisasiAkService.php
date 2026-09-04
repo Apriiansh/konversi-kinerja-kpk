@@ -42,7 +42,7 @@ class FinalisasiAkService
         ?User $admin = null,
         ?string $predikatTw4Id = null
     ): PenetapanAK {
-        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'user'])->findOrFail($pegawaiId);
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan', 'user'])->findOrFail($pegawaiId);
 
         return DB::transaction(function () use ($pegawai, $tahun, $admin, $predikatTw4Id) {
             // 1. Ambil atau inisialisasi record PenetapanAK tahun ini

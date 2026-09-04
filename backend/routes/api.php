@@ -23,7 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user', function (Request $request) {
-        return $request->user()->load('pegawai.pangkatGolongan.jenjangJabatan');
+        return $request->user()->load('pegawai.pangkatGolongan.jenjangJabatan', 'pegawai.jenjangJabatan');
     });
 
     // Evaluasi Kinerja (Penetapan Predikat & Kunci Kinerja)
