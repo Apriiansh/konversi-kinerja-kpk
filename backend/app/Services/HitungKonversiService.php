@@ -130,21 +130,45 @@ class HitungKonversiService
     }
 
     /**
-     * Hitung PAK Awal Pelantikan dari masa kerja jenjang sebelumnya.
-     * Rumus: (Tahun x Predikat x Koefisien) + ((Bulan/12) x Predikat x Koefisien)
+     * Hitung PAK Awal Pelantikan dari masa kerja jenjang sebelumnya (Formula C).
      *
-     * @param int $masaKerjaTahun
-     * @param int $masaKerjaBulan
+     * Rumus Normal: (Tahun × Predikat × Koefisien) + ((Bulan/12) × Predikat × Koefisien)
+     *
+     * Pengecualian Regulasi — PerBKN No. 3/2023 Lampiran II Angka 3:
+     * Apabila golongan Pelaksana tidak sesuai dengan jenjang tujuan JF (misalnya Pelaksana
+     * gol. III/c, III/d, atau IV/a yang masuk ke Ahli Pertama), maka SELURUH masa kerja
+     * sebelumnya DIABAIKAN dan PAK Pelantikan ditetapkan 100 AK secara FLAT (non-Formula C).
+     *
+     * @param int   $masaKerjaTahun
+     * @param int   $masaKerjaBulan
      * @param float $persentasePredikat
      * @param float $koefisienTahunan
+     * @param bool  $isMismatchFlat   Jika true, abaikan rumus & kembalikan 100 AK flat
      * @return array
      */
     public function hitungPakPelantikan(
         int $masaKerjaTahun,
         int $masaKerjaBulan,
         float $persentasePredikat = 1.0,
-        float $koefisienTahunan = 12.5
+        float $koefisienTahunan = 12.5,
+        bool $isMismatchFlat = false
     ): array {
+        // ── Guard Regulasi: Pelaksana golongan tidak sesuai jenjang tujuan ──────
+        // Dasar hukum: PerBKN No. 3/2023 Lampiran II Angka 3 (Tabel AK Khusus)
+        // Pelaksana III/c, III/d, IV/a → Ahli Pertama = 100 AK flat, masa kerja diabaikan.
+        if ($isMismatchFlat) {
+            return [
+                'masa_kerja_tahun'  => $masaKerjaTahun,
+                'masa_kerja_bulan'  => $masaKerjaBulan,
+                'ak_tahun'          => 100.00,
+                'ak_bulan'          => 0.00,
+                'total_ak_pak'      => 100.00,
+                'is_mismatch_flat'  => true,
+                'catatan_regulasi'  => 'Pelaksana (gol. tidak sesuai jenjang) → Ahli Pertama: PAK ditetapkan 100 AK flat per PerBKN No. 3/2023 Lampiran II Angka 3. Masa kerja sebelumnya tidak diperhitungkan.',
+            ];
+        }
+
+        // ── Formula C Normal ──────────────────────────────────────────────────
         $akTahun = $masaKerjaTahun * $persentasePredikat * $koefisienTahunan;
         $akBulan = ($masaKerjaBulan / 12) * $persentasePredikat * $koefisienTahunan;
 
@@ -153,11 +177,13 @@ class HitungKonversiService
         $totalPak = round($akTahunRounded + $akBulanRounded, 2);
 
         return [
-            'masa_kerja_tahun' => $masaKerjaTahun,
-            'masa_kerja_bulan' => $masaKerjaBulan,
-            'ak_tahun'         => $akTahunRounded,
-            'ak_bulan'         => $akBulanRounded,
-            'total_ak_pak'     => $totalPak,
+            'masa_kerja_tahun'  => $masaKerjaTahun,
+            'masa_kerja_bulan'  => $masaKerjaBulan,
+            'ak_tahun'          => $akTahunRounded,
+            'ak_bulan'          => $akBulanRounded,
+            'total_ak_pak'      => $totalPak,
+            'is_mismatch_flat'  => false,
+            'catatan_regulasi'  => null,
         ];
     }
 }
