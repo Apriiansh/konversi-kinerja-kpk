@@ -33,7 +33,7 @@ export const Rekapitulasi: React.FC = () => {
   const isAdmin = user?.role === 'ADMIN'
 
   const currentYear = new Date().getFullYear()
-  const [selectedTahun, setSelectedTahun] = useState<number>(currentYear)
+  const [selectedTahun, setSelectedTahun] = useState<number | null>(null)
   const [items, setItems] = useState<PenetapanAKItem[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -48,7 +48,7 @@ export const Rekapitulasi: React.FC = () => {
     setLoading(true)
     setErrorMessage(null)
     try {
-      const res = await getRekapitulasiList({ tahun: selectedTahun, per_page: 50 })
+      const res = await getRekapitulasiList({ tahun: selectedTahun ?? undefined, per_page: 50 })
       setItems(res.data)
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'Gagal memuat data rekapitulasi PAK.')
@@ -137,10 +137,13 @@ export const Rekapitulasi: React.FC = () => {
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
               <Calendar className="h-4 w-4 text-gray-500" />
               <select
-                value={selectedTahun}
-                onChange={(e) => setSelectedTahun(Number(e.target.value))}
+                value={selectedTahun ?? ''}
+                onChange={(e) =>
+                  setSelectedTahun(e.target.value ? Number(e.target.value) : null)
+                }
                 className="text-xs font-extrabold bg-transparent text-gray-800 focus:outline-none cursor-pointer"
               >
+                <option value="">Semua Tahun</option>
                 {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map((yr) => (
                   <option key={yr} value={yr}>
                     Tahun {yr}
@@ -179,6 +182,7 @@ export const Rekapitulasi: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-200/80 text-gray-500 font-extrabold text-[11px] uppercase tracking-wider">
+                <th className="py-3 px-3.5">Tahun</th>
                 <th className="py-3 px-3.5">Pegawai</th>
                 <th className="py-3 px-3.5">Pangkat / Gol</th>
                 <th className="py-3 px-3.5">Saldo Awal</th>
@@ -194,21 +198,30 @@ export const Rekapitulasi: React.FC = () => {
             <tbody className="divide-y divide-gray-100 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-gray-400">
+                  <td colSpan={11} className="py-12 text-center text-gray-400">
                     <RefreshCw className="h-6 w-6 mx-auto animate-spin text-[#ba191d] mb-2" />
                     <p className="font-bold text-gray-600">Memuat data rekapitulasi...</p>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-gray-400">
+                  <td colSpan={11} className="py-12 text-center text-gray-400">
                     <FileText className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                    <p className="font-bold text-gray-500">Tidak ada data rekapitulasi untuk tahun {selectedTahun}.</p>
+                    <p className="font-bold text-gray-500">
+                      {selectedTahun
+                        ? `Tidak ada data rekapitulasi untuk tahun ${selectedTahun}.`
+                        : 'Tidak ada data rekapitulasi.'}
+                    </p>
                   </td>
                 </tr>
               ) : (
                 filteredItems.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="py-3 px-3.5">
+                      <span className="inline-flex rounded-md bg-gray-100 px-2 py-0.5 font-mono font-extrabold text-gray-700">
+                        {item.tahun}
+                      </span>
+                    </td>
                     <td className="py-3 px-3.5">
                       <p className="font-extrabold text-gray-900 text-xs">
                         {item.pegawai?.nama_lengkap ?? '-'}

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react'
 import {
-  Calculator,
   GraduationCap,
   Clock,
   RotateCcw,
@@ -13,7 +12,6 @@ import {
   Button,
   Card,
   CardHeader,
-  Badge,
 } from '../../components/ui'
 
 // Master Jenjang Jabatan & Koefisien BKN
@@ -80,7 +78,6 @@ export const Kalkulator: React.FC = () => {
 
   // Booster Ijazah (+25%)
   const [hasBooster, setHasBooster] = useState<boolean>(false)
-  const [boosterJenjang, setBoosterJenjang] = useState<string>('S1')
 
   // Calculator Masa Kerja Pelaksana (PAK Pelantikan)
   const [pakTahun, setPakTahun] = useState<number>(0)

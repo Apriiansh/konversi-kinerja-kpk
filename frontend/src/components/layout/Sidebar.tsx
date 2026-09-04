@@ -70,11 +70,6 @@ const ADMIN_MENU: MenuItem[] = [
     icon: <i className="fa-solid fa-file-import text-xs w-4 text-center" />,
   },
   {
-    to: '/admin/master-data',
-    label: 'Master Data',
-    icon: <i className="fa-solid fa-database text-xs w-4 text-center" />,
-  },
-  {
     to: '/admin/rekapitulasi',
     label: 'Rekapitulasi & PAK',
     icon: <i className="fa-solid fa-file-contract text-xs w-4 text-center" />,
@@ -84,6 +79,12 @@ const ADMIN_MENU: MenuItem[] = [
     label: 'Verifikasi Pendidikan',
     icon: <i className="fa-solid fa-user-check text-xs w-4 text-center" />,
   },
+  {
+    to: '/admin/master-data',
+    label: 'Master Data',
+    icon: <i className="fa-solid fa-database text-xs w-4 text-center" />,
+  },
+
   {
     to: '/admin/kalkulator',
     label: 'Kalkulator',
