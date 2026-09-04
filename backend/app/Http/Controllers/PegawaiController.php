@@ -66,7 +66,7 @@ class PegawaiController extends Controller
             'nip'                 => 'required|string|unique:pegawai,nip',
             'nama_lengkap'        => 'required|string|max:255',
             'pangkat_golongan_id' => 'required|uuid|exists:master_pangkat_golongan,id',
-            'asal_jabatan'        => 'nullable|in:PELAKSANA,PENGAWAS,ADMINISTRATOR,PENGANGKATAN_PERTAMA',
+            'asal_jabatan'        => 'nullable|in:JABATAN_FUNGSIONAL,PELAKSANA,PENGAWAS,ADMINISTRATOR,PENGANGKATAN_PERTAMA',
             'jenjang_jabatan_id'  => 'nullable|uuid|exists:master_jenjang_jabatan,id',
             'atasan_id'           => 'nullable|uuid|exists:pegawai,id',
             'pendidikan_terakhir' => 'nullable|string|max:100',
@@ -141,7 +141,7 @@ class PegawaiController extends Controller
         $validated = $request->validate([
             'nama_lengkap'        => 'sometimes|string|max:255',
             'pangkat_golongan_id' => 'sometimes|uuid|exists:master_pangkat_golongan,id',
-            'asal_jabatan'        => 'nullable|in:PELAKSANA,PENGAWAS,ADMINISTRATOR,PENGANGKATAN_PERTAMA',
+            'asal_jabatan'        => 'nullable|in:JABATAN_FUNGSIONAL,PELAKSANA,PENGAWAS,ADMINISTRATOR,PENGANGKATAN_PERTAMA',
             'jenjang_jabatan_id'  => 'nullable|uuid|exists:master_jenjang_jabatan,id',
             'atasan_id'           => 'nullable|uuid|exists:pegawai,id',
             'pendidikan_terakhir' => 'nullable|string|max:100',

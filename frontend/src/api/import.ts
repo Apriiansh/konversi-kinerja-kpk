@@ -23,9 +23,10 @@ export async function downloadImportTemplate(): Promise<void> {
 }
 
 // 2. Dry-Run / Preview (Instantly count without saving to database)
-export async function previewImportFile(file: File): Promise<ImportPreviewResponse> {
+export async function previewImportFile(file: File, buatAkun: boolean = true): Promise<ImportPreviewResponse> {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('buat_akun', buatAkun ? '1' : '0')
 
   const response = await api.post('/import/preview', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -34,9 +35,10 @@ export async function previewImportFile(file: File): Promise<ImportPreviewRespon
 }
 
 // 3. Execute mass import (saved to databae)
-export async function processImportFile(file: File): Promise<{ message: string; total_diproses: number }> {
+export async function processImportFile(file: File, buatAkun: boolean = true): Promise<{ message: string; total_diproses: number }> {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('buat_akun', buatAkun ? '1' : '0')
 
   const response = await api.post('/import/proses', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

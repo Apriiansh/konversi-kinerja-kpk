@@ -14,7 +14,7 @@ return new class extends Migration
         // Jalur Jabatan (PerBKN No. 3/2023): asal jabatan & jenjang efektif
         // memungkinkan kalkulasi/penyimpanan mismatch golongan vs jenjang tujuan.
         Schema::table('pegawai', function (Blueprint $table) {
-            $table->string('asal_jabatan')->nullable()->after('pangkat_golongan_id'); // PELAKSANA, PENGAWAS, ADMINISTRATOR, PENGANGKATAN_PERTAMA
+            $table->string('asal_jabatan')->nullable()->after('pangkat_golongan_id'); // JABATAN_FUNGSIONAL, PELAKSANA, PENGAWAS, ADMINISTRATOR, PENGANGKATAN_PERTAMA
             $table->foreignUuid('jenjang_jabatan_id')->nullable()->after('asal_jabatan')
                 ->constrained('master_jenjang_jabatan')->nullOnDelete();
         });

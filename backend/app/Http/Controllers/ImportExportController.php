@@ -47,8 +47,10 @@ class ImportExportController extends Controller
             'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240', // Maks 10MB
         ]);
 
+        $buatAkun = (bool) $request->input('buat_akun', true);
+
         try {
-            $hasil = $this->importService->previewImport($request->file('file'));
+            $hasil = $this->importService->previewImport($request->file('file'), $buatAkun);
 
             return response()->json([
                 'message' => 'Preview hasil konversi import berhasil diproses.',
@@ -74,8 +76,10 @@ class ImportExportController extends Controller
             'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
         ]);
 
+        $buatAkun = (bool) $request->input('buat_akun', true);
+
         try {
-            $hasil = $this->importService->executeImport($request->file('file'), $request->user());
+            $hasil = $this->importService->executeImport($request->file('file'), $request->user(), $buatAkun);
 
             return response()->json([
                 'message' => $hasil['message'],

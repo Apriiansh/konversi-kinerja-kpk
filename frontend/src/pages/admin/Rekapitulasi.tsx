@@ -353,12 +353,13 @@ export const Rekapitulasi: React.FC = () => {
                   </span>
                 </div>
                 <span className="font-mono text-xs font-black text-gray-900">
-                  {selectedDetail.ak_kumulatif.toFixed(2)} / {selectedDetail.kelayakan.target_kp.toFixed(2)} AK
+                  {selectedDetail.ak_kumulatif.toFixed(2)} / {(selectedDetail.kelayakan.target_kp ?? 0).toFixed(2)} AK
                 </span>
               </div>
 
               {(() => {
-                const pct = Math.min(100, Math.round((selectedDetail.ak_kumulatif / selectedDetail.kelayakan.target_kp) * 100))
+                const targetKp = selectedDetail.kelayakan.target_kp ?? 0
+                const pct = targetKp > 0 ? Math.min(100, Math.round((selectedDetail.ak_kumulatif / targetKp) * 100)) : 0
                 return (
                   <div className="space-y-1">
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
@@ -370,7 +371,7 @@ export const Rekapitulasi: React.FC = () => {
                     <div className="flex justify-between text-[11px] font-medium text-gray-400">
                       <span>{pct}% Tercapai</span>
                       <span>
-                        {selectedDetail.ak_kumulatif >= selectedDetail.kelayakan.target_kp
+                        {selectedDetail.ak_kumulatif >= targetKp
                           ? 'Target Terpenuhi'
                           : `Kurang ${selectedDetail.kelayakan.kurang_ak.toFixed(2)} AK lagi`}
                       </span>

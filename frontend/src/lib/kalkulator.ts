@@ -89,14 +89,14 @@ export const MASTER_JENJANG: JenjangOption[] = [
         akDasar: 0,
         isNormal: false,
         isMismatch: true,
-        catatanMismatch: 'Mismatch Pangkat: Pelaksana Golongan III/c masuk Ahli Pertama diberikan 100.00 AK Flat (BKN Bab II)',
+        catatanMismatch: 'Penyesuaian Perpindahan: Pelaksana Golongan III/c diangkat ke Ahli Pertama diberikan 100.00 AK sesuai PerBKN No. 3/2023 Lampiran II',
       },
       {
         golongan: 'III/d',
         akDasar: 0,
         isNormal: false,
         isMismatch: true,
-        catatanMismatch: 'Mismatch Pangkat: Pelaksana Golongan III/d masuk Ahli Pertama diberikan 100.00 AK Flat (BKN Bab II)',
+        catatanMismatch: 'Penyesuaian Perpindahan: Pelaksana Golongan III/d diangkat ke Ahli Pertama diberikan 100.00 AK sesuai PerBKN No. 3/2023 Lampiran II',
       },
     ],
   },
@@ -189,7 +189,7 @@ export function hitungKalkulator(input: KalkulatorInput): HasilKalkulasi {
   // PROTEKSI REGULASI PERBKN NO. 3 TAHUN 2023 BAB II:
   // 1. Pelaksana TIDAK BOLEH langsung melompat ke Ahli Muda (harus via Pengawas/Eselon IV)
   // 2. Pelaksana III/c atau III/d yang masuk Ahli Pertama TIDAK memakai Formula C masa kerja,
-  //    melainkan diberikan 100.00 AK FLAT (Tabel Perpindahan Khusus BKN)
+  //    melainkan diberikan 100.00 AK Penyesuaian Perpindahan (Tabel Perpindahan Khusus BKN)
   // =========================================================================
   let regulatoryWarning: string | null = null
   let isMismatchFlat100 = false
@@ -200,7 +200,7 @@ export function hitungKalkulator(input: KalkulatorInput): HasilKalkulasi {
       'Pelanggaran Regulasi: Berdasarkan PerBKN No. 3/2023 Bab II, Staf Pelaksana DILARANG melompat langsung ke Ahli Muda. Perpindahan langsung ke Ahli Muda hanya diizinkan untuk pemegang Jabatan Pengawas (Eselon IV).'
   }
 
-  // Cek apakah kondisi Mismatch Golongan Ruang (III/c atau III/d di Ahli Pertama)
+  // Cek apakah kondisi Golongan Melampaui Jenjang (III/c atau III/d di Ahli Pertama)
   if (
     input.asalJabatan === 'PELAKSANA' &&
     input.jenjangNama === 'Ahli Pertama' &&
@@ -208,10 +208,10 @@ export function hitungKalkulator(input: KalkulatorInput): HasilKalkulasi {
   ) {
     isMismatchFlat100 = true
     mismatchNote =
-      'Berdasarkan Tabel Angka Kredit Penyesuaian Khusus PerBKN No. 3/2023: Pelaksana Golongan III/c atau III/d yang diangkat ke JF Ahli Pertama tidak menggunakan konversi masa kerja (Formula C), melainkan langsung ditetapkan 100.00 AK Flat (maksimal jenjang Ahli Pertama) untuk syarat Uji Kompetensi Kenaikan Jenjang ke Ahli Muda.'
+      'Berdasarkan Tabel Angka Kredit Penyesuaian Perpindahan PerBKN No. 3/2023 Lampiran II: Pelaksana Golongan III/c atau III/d yang diangkat ke JF Ahli Pertama tidak menggunakan konversi masa kerja (Formula C), melainkan langsung ditetapkan 100.00 AK Penyesuaian Perpindahan (batas maksimal jenjang Ahli Pertama) sebagai syarat Uji Kompetensi Kenaikan Jenjang ke Ahli Muda.'
   }
 
-  // Hitung PAK Pelantikan: Jika Mismatch -> 100.00 Flat, jika normal -> Formula C
+  // Hitung PAK Pelantikan: Jika Penyesuaian Perpindahan -> 100.00 AK, jika normal -> Formula C
   let pak = { akTahun: 0, akBulan: 0, total: 0 }
   if (isMismatchFlat100) {
     pak = { akTahun: 100, akBulan: 0, total: 100 }

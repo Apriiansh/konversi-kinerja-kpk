@@ -314,7 +314,7 @@ class ImportKonversiTest extends TestCase
         $this->assertEquals(100.00, (float) $budi['ak_pak_pelantikan']);
         $this->assertEquals('Ahli Pertama', $budi['jenjang']);
         $this->assertNotNull($budi['penyesuaian_khusus']);
-        $this->assertStringContainsString('Mismatch Golongan', $budi['penyesuaian_khusus']);
+        $this->assertStringContainsString('Penyesuaian Perpindahan', $budi['penyesuaian_khusus']);
     }
 
     public function test_eksekusi_import_persist_jalur_jabatan_kasus_b(): void

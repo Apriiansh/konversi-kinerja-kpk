@@ -41,6 +41,7 @@ export const ImportKonversi: React.FC = () => {
   const [previewResult, setPreviewResult] = useState<ImportPreviewResponse | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [buatAkun, setBuatAkun] = useState<boolean>(true)
 
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL')
@@ -54,7 +55,7 @@ export const ImportKonversi: React.FC = () => {
     setLoadingPreview(true)
 
     try {
-      const result = await previewImportFile(file)
+      const result = await previewImportFile(file, buatAkun)
       setPreviewResult(result)
     } catch (err: any) {
       setErrorMessage(
@@ -103,7 +104,7 @@ export const ImportKonversi: React.FC = () => {
     setErrorMessage(null)
 
     try {
-      const res = await processImportFile(selectedFile)
+      const res = await processImportFile(selectedFile, buatAkun)
       setSuccessMessage(
         res.message || `Berhasil mengimpor dan mengonversi ${res.total_diproses} data pegawai ke dalam sistem.`
       )
@@ -247,6 +248,23 @@ export const ImportKonversi: React.FC = () => {
             <span>Sedang memverifikasi data dan mengeksekusi simulasi kalkulasi di memori...</span>
           </div>
         )}
+
+        {/* Opsi Buat Akun */}
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3">
+          <input
+            id="buat-akun-toggle"
+            type="checkbox"
+            checked={buatAkun}
+            onChange={(e) => setBuatAkun(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-[#ba191d] focus:ring-[#ba191d] cursor-pointer"
+          />
+          <label htmlFor="buat-akun-toggle" className="cursor-pointer select-none">
+            <span className="text-xs font-extrabold text-gray-900">Buat akun login otomatis</span>
+            <span className="ml-2 text-[11px] font-medium text-gray-500">
+              Email dari nama pegawai (tanpa gelar) · Password = NIP + 5 huruf depan nama
+            </span>
+          </label>
+        </div>
       </Card>
 
       {/* 4. Preview Results */}
@@ -407,7 +425,7 @@ export const ImportKonversi: React.FC = () => {
                               title={item.penyesuaian_khusus}
                               className="inline-flex items-center gap-1 rounded bg-purple-50 border border-purple-200 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 mb-1"
                             >
-                              <ShieldCheck className="h-3 w-3" /> 100 AK Flat
+                              <ShieldCheck className="h-3 w-3" /> 100 AK Penyesuaian Perpindahan
                             </span>
                           )}
                           <div className="font-mono font-bold text-gray-700">
@@ -464,19 +482,34 @@ export const ImportKonversi: React.FC = () => {
                         </td>
                         <td className="py-3 px-3.5 text-xs">
                           {item.kelayakan?.status === 'LAYAK_PANGKAT' && (
-                            <span className="font-mono font-bold text-emerald-800">
-                              Carry-Over: +{item.kelayakan.carry_over.toFixed(2)} AK
-                            </span>
+                            <div className="space-y-0.5">
+                              <p className="font-extrabold text-emerald-800">
+                                Naik Pangkat dari {item.golongan}
+                              </p>
+                              <p className="font-mono font-bold text-emerald-700">
+                                Carry-Over: +{item.kelayakan.carry_over.toFixed(2)} AK
+                              </p>
+                            </div>
                           )}
                           {item.kelayakan?.status === 'LAYAK_JENJANG' && (
-                            <span className="text-[11px] font-medium text-gray-400 italic">
-                              Sisa Reset (0 AK)
-                            </span>
+                            <div className="space-y-0.5">
+                              <p className="font-extrabold text-blue-800">
+                                Naik Jenjang ke {item.kelayakan.next_jenjang || 'jenjang berikutnya'}
+                              </p>
+                              <p className="font-mono font-bold text-blue-600">
+                                Reset: 0 AK (Sisa hangus)
+                              </p>
+                            </div>
                           )}
                           {item.kelayakan?.status === 'BELUM_CUKUP' && (
-                            <span className="font-mono font-medium text-amber-800">
-                              Kurang: {item.kelayakan.kurang_ak.toFixed(2)} AK
-                            </span>
+                            <div className="space-y-0.5">
+                              <p className="font-extrabold text-amber-800">
+                                Perlu {item.kelayakan.kurang_ak.toFixed(2)} AK lagi
+                              </p>
+                              <p className="text-[10px] font-medium text-gray-400">
+                                untuk Naik Pangkat
+                              </p>
+                            </div>
                           )}
                         </td>
                       </tr>

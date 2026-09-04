@@ -69,11 +69,11 @@ class Pegawai extends Model
     }
 
     /**
-     * Asal jabatan default: PELAKSANA.
+     * Asal jabatan default: JABATAN_FUNGSIONAL.
      */
     public function getAsalJabatanOrDefault(): string
     {
-        return strtoupper((string) ($this->asal_jabatan ?: 'PELAKSANA'));
+        return strtoupper((string) ($this->asal_jabatan ?: 'JABATAN_FUNGSIONAL'));
     }
 
     public function evaluasiKinerja(): HasMany

@@ -147,7 +147,7 @@ class HitungKonversiService
         if ($asal === 'PELAKSANA' && $namaJenjang !== '' && $namaJenjang !== 'ahli pertama') {
             return [
                 'blocked'        => true,
-                'block_message'  => 'Pelaksana hanya dapat diangkat ke jenjang Ahli Pertama. Target "' . ($targetJenjang?->nama ?? '-') . '" tidak diperbolehkan (PerBKN No. 3/2023 Lampiran II).',
+                'block_message'  => 'Pelaksana hanya dapat diangkat ke jenjang Ahli Pertama. Target "' . ($targetJenjang?->nama ?? '-'),
                 'flat'           => false,
                 'note'           => null,
             ];
@@ -161,7 +161,7 @@ class HitungKonversiService
                 'blocked'       => false,
                 'block_message' => null,
                 'flat'          => true,
-                'note'          => 'Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran)',
+                'note'          => 'Penyesuaian Perpindahan Jabatan (PerBKN No. 3/2023 Lampiran II)',
             ];
         }
 
@@ -208,7 +208,7 @@ class HitungKonversiService
                 'ak_bulan'          => 0.00,
                 'total_ak_pak'      => 100.00,
                 'is_mismatch_flat'  => true,
-                'catatan_regulasi'  => 'Pelaksana (gol. tidak sesuai jenjang) → Ahli Pertama: PAK ditetapkan 100 AK flat per PerBKN No. 3/2023 Lampiran II Angka 3. Masa kerja sebelumnya tidak diperhitungkan.',
+                'catatan_regulasi'  => 'Penyesuaian Perpindahan Jabatan: Pelaksana (gol. tidak sesuai jenjang) → Ahli Pertama dalam rangka penyesuaian angka kredit kumulatif perpindahan khusus, ditetapkan 100 AK sesuai PerBKN No. 3/2023 Lampiran II Angka 3. Masa kerja sebelumnya tidak diperhitungkan.',
             ];
         }
 

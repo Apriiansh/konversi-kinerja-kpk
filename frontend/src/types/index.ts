@@ -2,15 +2,46 @@ export type StatusKelayakan = 'LAYAK_PANGKAT' | 'LAYAK_JENJANG' | 'BELUM_CUKUP'
 
 export type FilterStatus = 'ALL' | StatusKelayakan | 'ERROR'
 
+// ─── Master Data Types ────────────────────────────────────────────────
+export interface JenjangJabatan {
+  id: string
+  nama: string
+  koefisien_tahunan: number
+  kebutuhan_ak_kp: number
+  kebutuhan_ak_jenjang: number
+}
+
+export interface PredikatKinerja {
+  id: string
+  nama: string
+  persentase_konversi: number
+  keterangan?: string
+}
+
+export interface AkDasar {
+  id: string
+  kunci_pencarian: string
+  jenjang_jabatan: string
+  golongan_ruang: string
+  ak_dasar: number
+}
+
+export interface MasterDataResponse {
+  jenjang_jabatan: JenjangJabatan[]
+  predikat_kinerja: PredikatKinerja[]
+  ak_dasar: AkDasar[]
+}
+
 export interface KelayakanInfo {
   status: StatusKelayakan
   badge_label: string
   badge_color: string
-  target_kp: number
-  target_jenjang: number
+  target_kp?: number
+  target_jenjang?: number
   carry_over: number
   kurang_ak: number
   catatan: string
+  next_jenjang?: string
 }
 
 export interface PangkatGolongan {
@@ -155,6 +186,7 @@ export interface PengajuanPendidikanItem {
   file_ijazah: string
   file_bukti_bkn: string
   status: StatusPengajuan
+  ak_bonus?: number
   catatan_verifikasi?: string | null
   diverifikasi_oleh?: string | null
   diverifikasi_pada?: string | null

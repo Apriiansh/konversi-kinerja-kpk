@@ -257,8 +257,8 @@ class RekapitulasiController extends Controller
             $akPak = (float) $validated['ak_pak_manual'];
             $detail = ['total_ak_pak' => $akPak, 'masa_kerja_tahun' => $validated['masa_kerja_tahun'], 'masa_kerja_bulan' => $validated['masa_kerja_bulan']];
         } else {
-            // Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran II Angka 3)
-            $penyesuaian = $this->hitungKonversi->resolveMismatchPenyesuaian(
+            // Penyesuaian Perpindahan Jabatan (PerBKN No. 3/2023 Lampiran II Angka 3)
+                $penyesuaian = $this->hitungKonversi->resolveMismatchPenyesuaian(
                 $pegawai->getAsalJabatanOrDefault(),
                 $pegawai->pangkatGolongan?->golongan,
                 $effectiveJenjang

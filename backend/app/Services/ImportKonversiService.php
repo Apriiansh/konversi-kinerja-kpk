@@ -310,6 +310,90 @@ class ImportKonversiService
     }
 
     /**
+     * Generate email dari nama lengkap dengan menghapus gelar.
+     * Contoh: "Budi Antono, S.Kom., M.Kom." → "budi.antono@kpk.go.id"
+     *
+     * @param string $namaLengkap
+     * @param string $domain
+     * @return string
+     */
+    protected function generateEmailDariNama(string $namaLengkap, string $domain = 'kpk.go.id'): string
+    {
+        $nama = trim($namaLengkap);
+
+        // Hapus gelar setelah koma
+        $nama = trim(explode(',', $nama, 2)[0]);
+
+        // Hapus suffix seperti S.T., M.Kom., S.Pd. dll
+        $nama = preg_replace('/\s+[A-Z]\.[A-Za-z]+\.?\s*$/', '', $nama);
+
+        $words = array_filter(explode(' ', trim($nama)));
+
+        // Ambil maksimal 2 kata pertama (nama depan + nama belakang)
+        $words = array_slice($words, 0, 2);
+
+        $slug = Str::lower(implode('.', $words));
+
+        // Bersihkan karakter non-alfanumerik kecuali titik
+        $slug = preg_replace('/[^a-z0-9.]/', '', $slug);
+
+        // Handle duplikat dengan suffix numerik
+        $baseEmail = "{$slug}@{$domain}";
+        $email = $baseEmail;
+
+        if ($this->emailExists($email)) {
+            $counter = 2;
+            while ($this->emailExists("{$slug}{$counter}@{$domain}")) {
+                $counter++;
+            }
+            $email = "{$slug}{$counter}@{$domain}";
+        }
+
+        return $email;
+    }
+
+    /**
+     * Check apakah email sudah ada di tabel users.
+     */
+    protected function emailExists(string $email): bool
+    {
+        return \App\Models\User::where('email', $email)->exists();
+    }
+
+    /**
+     * Generate password default: NIP + 5 huruf pertama nama depan (lowercase).
+     * Contoh: NIP "199503012025031001", nama "Budi Antono" → "199503012025031001budi"
+     *
+     * @param string      $nip
+     * @param string      $namaLengkap
+     * @return string
+     */
+    protected function generatePasswordDefault(string $nip, string $namaLengkap): string
+    {
+        $words = array_filter(explode(' ', trim($namaLengkap)));
+        $namaDepan = strtolower($words[0] ?? 'user');
+        $limaHurufDepan = substr($namaDepan, 0, 5);
+
+        return $nip . $limaHurufDepan;
+    }
+
+    /**
+     * Tentukan nama jenjang berikutnya berdasarkan progresi BKN.
+     *
+     * @param string $currentJenjang
+     * @return string|null
+     */
+    protected function getNextJenjangName(string $currentJenjang): ?string
+    {
+        return match ($currentJenjang) {
+            'Ahli Pertama' => 'Ahli Muda',
+            'Ahli Muda'    => 'Ahli Madya',
+            'Ahli Madya'   => 'Ahli Utama',
+            default        => null,
+        };
+    }
+
+    /**
      * Parse file OpenXML .xlsx secara native tanpa dependensi pihak ketiga.
      *
      * @param string $filePath
@@ -458,7 +542,7 @@ class ImportKonversiService
      * @param UploadedFile|string $file
      * @return array
      */
-    public function previewImport($file): array
+    public function previewImport($file, bool $buatAkun = true): array
     {
         $rawRows = $this->parseFile($file);
         $pangkatMap = MasterPangkatGolongan::with('jenjangJabatan')->get()->keyBy(fn ($item) => strtolower($item->golongan));
@@ -525,7 +609,7 @@ class ImportKonversiService
             }
 
             // 2. Resolusi Asal Jabatan & Jenjang Tujuan (Jalur Jabatan — PerBKN No. 3/2023)
-            $asalJabatan = strtoupper(trim($row['asal_jabatan'] ?? '') ?: 'PELAKSANA');
+            $asalJabatan = strtoupper(trim($row['asal_jabatan'] ?? '') ?: 'JABATAN_FUNGSIONAL');
 
             $jenjangTujuanNama = trim($row['jenjang_jabatan'] ?? '');
             $targetJenjang = null;
@@ -551,7 +635,7 @@ class ImportKonversiService
             $jenjang = $targetJenjang ?: $pangkat->jenjangJabatan;
             $koefisienTahunan = (float) $jenjang->koefisien_tahunan;
 
-            // Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran II Angka 3)
+            // Penyesuaian Perpindahan Jabatan (PerBKN No. 3/2023 Lampiran II Angka 3)
             $penyesuaian = $this->hitungKonversi->resolveMismatchPenyesuaian($asalJabatan, $pangkat->golongan, $jenjang);
 
             // Kasus A: lompatan terlarang (Pelaksana -> selain Ahli Pertama) => baris ditolak.
@@ -569,7 +653,7 @@ class ImportKonversiService
             // Modal Awal: AK Dasar
             $akDasar = (float) $pangkat->ak_dasar;
 
-            // PAK Pelantikan — Kasus B (mismatch) => 100 AK flat, masa kerja diabaikan.
+            // PAK Pelantikan — Kasus B (penyesuaian perpindahan) => 100 AK, masa kerja diabaikan.
             $mkTahun = (int) ($row['masa_kerja_tahun'] ?? 0);
             $mkBulan = (int) ($row['masa_kerja_bulan'] ?? 0);
             $akPakPelantikan = 0.0;
@@ -666,12 +750,15 @@ class ImportKonversiService
                 'ak_booster'        => $akBooster,
                 'ak_kumulatif'      => $akKumulatif,
                 'kelayakan'         => [
-                    'status'      => $kelayakan['status'],
-                    'badge_label' => $kelayakan['badge_label'],
-                    'badge_color' => $kelayakan['badge_color'],
-                    'carry_over'  => $kelayakan['carry_over'],
-                    'kurang_ak'   => $kelayakan['kurang_ak'],
-                    'catatan'     => $kelayakan['catatan'],
+                    'status'         => $kelayakan['status'],
+                    'badge_label'    => $kelayakan['badge_label'],
+                    'badge_color'    => $kelayakan['badge_color'],
+                    'carry_over'     => $kelayakan['carry_over'],
+                    'kurang_ak'      => $kelayakan['kurang_ak'],
+                    'catatan'        => $kelayakan['catatan'],
+                    'target_kp'      => $kelayakan['target_kp'],
+                    'target_jenjang' => $kelayakan['target_jenjang'],
+                    'next_jenjang'   => $this->getNextJenjangName($jenjang->nama),
                 ],
                 'triwulan'          => $triwulanData,
             ];
@@ -697,7 +784,7 @@ class ImportKonversiService
      * @param User $admin
      * @return array
      */
-    public function executeImport($file, User $admin): array
+    public function executeImport($file, User $admin, bool $buatAkun = true): array
     {
         $preview = $this->previewImport($file);
         if ($preview['total_error'] > 0 && $preview['total_valid'] === 0) {
@@ -709,7 +796,7 @@ class ImportKonversiService
 
         $importedPegawai = [];
 
-        DB::transaction(function () use ($preview, $pangkatMap, $predikatMap, $admin, &$importedPegawai) {
+        DB::transaction(function () use ($preview, $pangkatMap, $predikatMap, $admin, $buatAkun, &$importedPegawai) {
             foreach ($preview['data'] as $item) {
                 if (!$item['is_valid']) {
                     continue;
@@ -719,12 +806,21 @@ class ImportKonversiService
                 $pangkat = $pangkatMap->get($golonganKey);
 
                 // 1. Buat / Update User Login
-                $email = $item['raw_data']['email'] ?? (Str::slug($item['nama_lengkap'], '.') . '@kpk.go.id');
+                if ($buatAkun) {
+                    // Prioritaskan email dari file; fallback generate dari nama
+                    $email = $item['raw_data']['email'] ?? $this->generateEmailDariNama($item['nama_lengkap']);
+                    $password = $this->generatePasswordDefault($item['nip'], $item['nama_lengkap']);
+                } else {
+                    // Mode manual: pakai email dari file (wajib), password default
+                    $email = $item['raw_data']['email'] ?? (Str::slug($item['nama_lengkap'], '.') . '@kpk.go.id');
+                    $password = 'password123';
+                }
+
                 $user = User::firstOrCreate(
                     ['email' => $email],
                     [
                         'name'     => $item['nama_lengkap'],
-                        'password' => Hash::make('password123'), // Default password
+                        'password' => Hash::make($password),
                         'role'     => 'PEGAWAI',
                     ]
                 );
@@ -736,7 +832,7 @@ class ImportKonversiService
                         'user_id'             => $user->id,
                         'nama_lengkap'        => $item['nama_lengkap'],
                         'pangkat_golongan_id' => $pangkat->id,
-                        'asal_jabatan'        => $item['asal_jabatan'] ?? 'PELAKSANA',
+                        'asal_jabatan'        => $item['asal_jabatan'] ?? 'JABATAN_FUNGSIONAL',
                         'jenjang_jabatan_id'  => $item['jenjang_jabatan_target_id'] ?? null,
                         'pendidikan_terakhir' => $item['raw_data']['pendidikan_terakhir'] ?? 'S1',
                         'tmt_jabatan'         => !empty($item['raw_data']['tmt_jabatan']) ? $item['raw_data']['tmt_jabatan'] : null,
