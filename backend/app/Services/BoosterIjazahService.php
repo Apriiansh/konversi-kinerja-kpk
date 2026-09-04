@@ -97,7 +97,8 @@ class BoosterIjazahService
      */
     public function hitungAkBonus(Pegawai $pegawai): float
     {
-        $kebutuhanKp = $pegawai->pangkatGolongan->jenjangJabatan->kebutuhan_ak_kp ?? 0;
+        $pegawai->loadMissing(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan']);
+        $kebutuhanKp = $pegawai->effectiveJenjang()?->kebutuhan_ak_kp ?? 0;
         $bonus = 0.25 * $kebutuhanKp;
 
         return round($bonus, 2);

@@ -19,6 +19,8 @@ class Pegawai extends Model
         'nama_lengkap',
         'atasan_id',
         'pangkat_golongan_id',
+        'asal_jabatan',
+        'jenjang_jabatan_id',
         'pendidikan_terakhir',
         'tmt_jabatan',
     ];
@@ -48,6 +50,30 @@ class Pegawai extends Model
     public function pangkatGolongan(): BelongsTo
     {
         return $this->belongsTo(MasterPangkatGolongan::class, 'pangkat_golongan_id');
+    }
+
+    public function jenjangJabatan(): BelongsTo
+    {
+        return $this->belongsTo(MasterJenjangJabatan::class, 'jenjang_jabatan_id');
+    }
+
+    /**
+     * Jenjang efektif untuk kalkulasi (koefisien, kebutuhan AK KP, kebutuhan AK jenjang).
+     * Mengutamakan jenjang jabatan tujuan bila diisi; jika tidak, jatuh ke jenjang golongan.
+     */
+    public function effectiveJenjang(): ?MasterJenjangJabatan
+    {
+        return $this->jenjang_jabatan_id
+            ? $this->jenjangJabatan
+            : $this->pangkatGolongan?->jenjangJabatan;
+    }
+
+    /**
+     * Asal jabatan default: PELAKSANA.
+     */
+    public function getAsalJabatanOrDefault(): string
+    {
+        return strtoupper((string) ($this->asal_jabatan ?: 'PELAKSANA'));
     }
 
     public function evaluasiKinerja(): HasMany

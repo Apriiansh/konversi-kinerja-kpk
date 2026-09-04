@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EvaluasiKinerja;
+use App\Models\MasterJenjangJabatan;
 use App\Models\MasterPredikatKinerja;
 use App\Models\Pegawai;
 
@@ -19,10 +20,10 @@ class HitungKonversiService
      */
     public function hitungAk(string $pegawaiId, string $predikatId, int $periodeBulan): float
     {
-        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($pegawaiId);
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])->findOrFail($pegawaiId);
         $predikat = MasterPredikatKinerja::findOrFail($predikatId);
 
-        $koefisienTahunan = (float) $pegawai->pangkatGolongan->jenjangJabatan->koefisien_tahunan;
+        $koefisienTahunan = (float) $pegawai->effectiveJenjang()->koefisien_tahunan;
         $persentaseKonversi = (float) $predikat->persentase_konversi;
 
         // Hitung berdasarkan rumus
@@ -69,8 +70,8 @@ class HitungKonversiService
      */
     public function hitungAkTahunan(string $pegawaiId, int $tahun, ?string $predikatTw4Id = null): array
     {
-        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($pegawaiId);
-        $koefisienTahunan = (float) $pegawai->pangkatGolongan->jenjangJabatan->koefisien_tahunan;
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])->findOrFail($pegawaiId);
+        $koefisienTahunan = (float) $pegawai->effectiveJenjang()->koefisien_tahunan;
 
         // Cari evaluasi TW4 jika predikatTw4Id tidak disediakan langsung
         if (!$predikatTw4Id) {
@@ -130,21 +131,88 @@ class HitungKonversiService
     }
 
     /**
-     * Hitung PAK Awal Pelantikan dari masa kerja jenjang sebelumnya.
-     * Rumus: (Tahun x Predikat x Koefisien) + ((Bulan/12) x Predikat x Koefisien)
+     * Resolusi Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran II Angka 3).
      *
-     * @param int $masaKerjaTahun
-     * @param int $masaKerjaBulan
+     * @param string                 $asalJabatan      PELAKSANA / PENGAWAS / ADMINISTRATOR / PENGANGKATAN_PERTAMA
+     * @param string|null            $golongan         Golongan pegawai (mis. III/c)
+     * @param MasterJenjangJabatan|null $targetJenjang Jenjang tujuan JF (Ahli Pertama / Ahli Muda / dll)
+     * @return array{blocked:bool, block_message:?string, flat:bool, note:?string}
+     */
+    public function resolveMismatchPenyesuaian(string $asalJabatan, ?string $golongan, $targetJenjang): array
+    {
+        $asal = strtoupper($asalJabatan);
+        $namaJenjang = strtolower((string) ($targetJenjang->nama ?? ''));
+
+        // Kasus A: Pelaksana dilarang melompat ke jenjang selain Ahli Pertama.
+        if ($asal === 'PELAKSANA' && $namaJenjang !== '' && $namaJenjang !== 'ahli pertama') {
+            return [
+                'blocked'        => true,
+                'block_message'  => 'Pelaksana hanya dapat diangkat ke jenjang Ahli Pertama. Target "' . ($targetJenjang?->nama ?? '-') . '" tidak diperbolehkan (PerBKN No. 3/2023 Lampiran II).',
+                'flat'           => false,
+                'note'           => null,
+            ];
+        }
+
+        // Kasus B: Pelaksana gol. III/c, III/d, IV/a -> Ahli Pertama => 100 AK flat.
+        $golonganFlat = ['iii/c', 'iii/d', 'iv/a'];
+        if ($asal === 'PELAKSANA' && $namaJenjang === 'ahli pertama'
+            && in_array(strtolower((string) $golongan), $golonganFlat, true)) {
+            return [
+                'blocked'       => false,
+                'block_message' => null,
+                'flat'          => true,
+                'note'          => 'Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran)',
+            ];
+        }
+
+        return [
+            'blocked'       => false,
+            'block_message' => null,
+            'flat'          => false,
+            'note'          => null,
+        ];
+    }
+
+    /**
+     * Hitung PAK Awal Pelantikan dari masa kerja jenjang sebelumnya (Formula C).
+     *
+     * Rumus Normal: (Tahun × Predikat × Koefisien) + ((Bulan/12) × Predikat × Koefisien)
+     *
+     * Pengecualian Regulasi — PerBKN No. 3/2023 Lampiran II Angka 3:
+     * Apabila golongan Pelaksana tidak sesuai dengan jenjang tujuan JF (misalnya Pelaksana
+     * gol. III/c, III/d, atau IV/a yang masuk ke Ahli Pertama), maka SELURUH masa kerja
+     * sebelumnya DIABAIKAN dan PAK Pelantikan ditetapkan 100 AK secara FLAT (non-Formula C).
+     *
+     * @param int   $masaKerjaTahun
+     * @param int   $masaKerjaBulan
      * @param float $persentasePredikat
      * @param float $koefisienTahunan
+     * @param bool  $isMismatchFlat   Jika true, abaikan rumus & kembalikan 100 AK flat
      * @return array
      */
     public function hitungPakPelantikan(
         int $masaKerjaTahun,
         int $masaKerjaBulan,
         float $persentasePredikat = 1.0,
-        float $koefisienTahunan = 12.5
+        float $koefisienTahunan = 12.5,
+        bool $isMismatchFlat = false
     ): array {
+        // ── Guard Regulasi: Pelaksana golongan tidak sesuai jenjang tujuan ──────
+        // Dasar hukum: PerBKN No. 3/2023 Lampiran II Angka 3 (Tabel AK Khusus)
+        // Pelaksana III/c, III/d, IV/a → Ahli Pertama = 100 AK flat, masa kerja diabaikan.
+        if ($isMismatchFlat) {
+            return [
+                'masa_kerja_tahun'  => $masaKerjaTahun,
+                'masa_kerja_bulan'  => $masaKerjaBulan,
+                'ak_tahun'          => 100.00,
+                'ak_bulan'          => 0.00,
+                'total_ak_pak'      => 100.00,
+                'is_mismatch_flat'  => true,
+                'catatan_regulasi'  => 'Pelaksana (gol. tidak sesuai jenjang) → Ahli Pertama: PAK ditetapkan 100 AK flat per PerBKN No. 3/2023 Lampiran II Angka 3. Masa kerja sebelumnya tidak diperhitungkan.',
+            ];
+        }
+
+        // ── Formula C Normal ──────────────────────────────────────────────────
         $akTahun = $masaKerjaTahun * $persentasePredikat * $koefisienTahunan;
         $akBulan = ($masaKerjaBulan / 12) * $persentasePredikat * $koefisienTahunan;
 
@@ -153,11 +221,13 @@ class HitungKonversiService
         $totalPak = round($akTahunRounded + $akBulanRounded, 2);
 
         return [
-            'masa_kerja_tahun' => $masaKerjaTahun,
-            'masa_kerja_bulan' => $masaKerjaBulan,
-            'ak_tahun'         => $akTahunRounded,
-            'ak_bulan'         => $akBulanRounded,
-            'total_ak_pak'     => $totalPak,
+            'masa_kerja_tahun'  => $masaKerjaTahun,
+            'masa_kerja_bulan'  => $masaKerjaBulan,
+            'ak_tahun'          => $akTahunRounded,
+            'ak_bulan'          => $akBulanRounded,
+            'total_ak_pak'      => $totalPak,
+            'is_mismatch_flat'  => false,
+            'catatan_regulasi'  => null,
         ];
     }
 }

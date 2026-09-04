@@ -30,6 +30,7 @@ class PegawaiController extends Controller
         $query = Pegawai::query()
             ->with([
                 'pangkatGolongan.jenjangJabatan',
+                'jenjangJabatan',
                 'atasan:id,nama_lengkap,nip',
                 'user:id,name,email,role',
             ])
@@ -65,6 +66,8 @@ class PegawaiController extends Controller
             'nip'                 => 'required|string|unique:pegawai,nip',
             'nama_lengkap'        => 'required|string|max:255',
             'pangkat_golongan_id' => 'required|uuid|exists:master_pangkat_golongan,id',
+            'asal_jabatan'        => 'nullable|in:PELAKSANA,PENGAWAS,ADMINISTRATOR,PENGANGKATAN_PERTAMA',
+            'jenjang_jabatan_id'  => 'nullable|uuid|exists:master_jenjang_jabatan,id',
             'atasan_id'           => 'nullable|uuid|exists:pegawai,id',
             'pendidikan_terakhir' => 'nullable|string|max:100',
             'tmt_jabatan'         => 'nullable|date',
@@ -86,6 +89,8 @@ class PegawaiController extends Controller
                 'nama_lengkap'        => $validated['nama_lengkap'],
                 'atasan_id'           => $validated['atasan_id'] ?? null,
                 'pangkat_golongan_id' => $validated['pangkat_golongan_id'],
+                'asal_jabatan'        => $validated['asal_jabatan'] ?? 'PELAKSANA',
+                'jenjang_jabatan_id'  => $validated['jenjang_jabatan_id'] ?? null,
                 'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
                 'tmt_jabatan'         => $validated['tmt_jabatan'] ?? null,
             ]);
@@ -103,7 +108,7 @@ class PegawaiController extends Controller
 
         return response()->json([
             'message' => 'Pegawai berhasil ditambahkan.',
-            'data' => $pegawai->load('pangkatGolongan.jenjangJabatan', 'user:id,name,email,role'),
+            'data' => $pegawai->load('pangkatGolongan.jenjangJabatan', 'jenjangJabatan', 'user:id,name,email,role'),
         ], 201);
     }
 
@@ -114,6 +119,7 @@ class PegawaiController extends Controller
     {
         $pegawai = Pegawai::with([
             'pangkatGolongan.jenjangJabatan',
+            'jenjangJabatan',
             'atasan:id,nama_lengkap,nip',
             'bawahan:id,nama_lengkap,nip',
             'user:id,name,email,role',
@@ -135,6 +141,8 @@ class PegawaiController extends Controller
         $validated = $request->validate([
             'nama_lengkap'        => 'sometimes|string|max:255',
             'pangkat_golongan_id' => 'sometimes|uuid|exists:master_pangkat_golongan,id',
+            'asal_jabatan'        => 'nullable|in:PELAKSANA,PENGAWAS,ADMINISTRATOR,PENGANGKATAN_PERTAMA',
+            'jenjang_jabatan_id'  => 'nullable|uuid|exists:master_jenjang_jabatan,id',
             'atasan_id'           => 'nullable|uuid|exists:pegawai,id',
             'pendidikan_terakhir' => 'nullable|string|max:100',
             'tmt_jabatan'         => 'nullable|date',
@@ -153,7 +161,7 @@ class PegawaiController extends Controller
 
         return response()->json([
             'message' => 'Data pegawai berhasil diperbarui.',
-            'data' => $pegawai->load('pangkatGolongan.jenjangJabatan', 'user:id,name,email,role'),
+            'data' => $pegawai->load('pangkatGolongan.jenjangJabatan', 'jenjangJabatan', 'user:id,name,email,role'),
         ]);
     }
 

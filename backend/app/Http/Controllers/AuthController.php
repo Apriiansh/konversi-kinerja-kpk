@@ -33,7 +33,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login berhasil.',
             'token'   => $token,
-            'user'    => $user->load('pegawai.pangkatGolongan.jenjangJabatan'),
+            'user'    => $user->load('pegawai.pangkatGolongan.jenjangJabatan', 'pegawai.jenjangJabatan'),
         ]);
     }
 
@@ -55,7 +55,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => $request->user()->load('pegawai.pangkatGolongan.jenjangJabatan'),
+            'user' => $request->user()->load('pegawai.pangkatGolongan.jenjangJabatan', 'pegawai.jenjangJabatan'),
         ]);
     }
 }

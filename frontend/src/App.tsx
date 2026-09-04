@@ -1,6 +1,14 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import AppLayout from './components/layout/AppLayout'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import { ImportKonversi } from './pages/admin/ImportKonversi'
+import { Rekapitulasi } from './pages/admin/Rekapitulasi'
+import { VerifikasiPendidikan } from './pages/admin/VerifikasiPendidikan'
+import { Kalkulator } from './pages/admin/Kalkulator'
+import MasterData from './pages/admin/MasterData'
 
 // Import Modul Dedicated UI Pegawai
 import PegawaiLayout from './pegawai/components/PegawaiLayout'
@@ -20,6 +28,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         
         {/* Rute Modul Pegawai */}
+
+        {/* Route Utama */}
         <Route
           path="/"
           element={
@@ -50,13 +60,66 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Route Khusus Admin */}
         <Route
-          path="/rekapitulasi"
+          path="/admin"
+          element={<Navigate to="/admin/import" replace />}
+        />
+        <Route
+          path="/admin/import"
           element={
             <ProtectedRoute>
               <PegawaiLayout>
                 <RekapitulasiPAK />
               </PegawaiLayout>
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <ImportKonversi />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/pegawai"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <ComingSoon title="Kelola Data Pegawai" />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Modul Rekapitulasi & Kalkulator */}
+        <Route
+          path="/admin/master-data"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <MasterData />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/rekapitulasi"
+          element={
+            <ProtectedRoute role='ADMIN'>
+              <InLayout>
+                <Rekapitulasi />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/pengajuan"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <VerifikasiPendidikan />
+              </InLayout>
             </ProtectedRoute>
           }
         />
@@ -77,6 +140,9 @@ export default function App() {
               <PegawaiLayout>
                 <PengajuanPendidikan />
               </PegawaiLayout>
+              <InLayout>
+                <Kalkulator />
+              </InLayout>
             </ProtectedRoute>
           }
         />
@@ -88,9 +154,16 @@ export default function App() {
               <PegawaiLayout>
                 <PengajuanPendidikan />
               </PegawaiLayout>
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <VerifikasiPendidikan />
+              </InLayout>
             </ProtectedRoute>
           }
         />
+
+        {/* Fallback unknown routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   )

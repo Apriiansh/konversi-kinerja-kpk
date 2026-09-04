@@ -153,9 +153,9 @@ class EvaluasiKinerjaController extends Controller
         ]);
 
         $jumlahBulan = $validated['jumlah_bulan'] ?? ($validated['periode_bulan'] ?? 3);
-        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($validated['pegawai_id']);
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])->findOrFail($validated['pegawai_id']);
 
-        $jenjang  = $pegawai->pangkatGolongan->jenjangJabatan;
+        $jenjang  = $pegawai->effectiveJenjang();
         $pangkat  = $pegawai->pangkatGolongan;
 
         if (($validated['tipe'] ?? 'periodik') === 'tahunan') {

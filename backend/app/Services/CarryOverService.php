@@ -21,8 +21,8 @@ class CarryOverService
      */
     public function evaluasiKelayakan(Pegawai $pegawai, float $akKumulatif): array
     {
-        $pegawai->loadMissing('pangkatGolongan.jenjangJabatan');
-        $jenjang = $pegawai->pangkatGolongan?->jenjangJabatan;
+        $pegawai->loadMissing(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan']);
+        $jenjang = $pegawai->effectiveJenjang();
 
         $targetKp = (float) ($jenjang->kebutuhan_ak_kp ?? 50.0);
         $targetJenjang = (float) ($jenjang->kebutuhan_ak_jenjang ?? 100.0);

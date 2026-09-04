@@ -248,21 +248,38 @@ class RekapitulasiController extends Controller
             'ak_pak_manual'       => 'nullable|numeric|min:0', // jika diinput angka langsung
         ]);
 
-        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($pegawaiId);
-        $koefisien = $validated['koefisien_tahunan'] ?? (float) ($pegawai->pangkatGolongan?->jenjangJabatan?->koefisien_tahunan ?? 12.5);
+        $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])->findOrFail($pegawaiId);
+        $effectiveJenjang = $pegawai->effectiveJenjang();
+        $koefisien = $validated['koefisien_tahunan'] ?? (float) ($effectiveJenjang?->koefisien_tahunan ?? 12.5);
         $persentase = $validated['persentase_predikat'] ?? 1.0;
 
         if (isset($validated['ak_pak_manual'])) {
             $akPak = (float) $validated['ak_pak_manual'];
             $detail = ['total_ak_pak' => $akPak, 'masa_kerja_tahun' => $validated['masa_kerja_tahun'], 'masa_kerja_bulan' => $validated['masa_kerja_bulan']];
         } else {
-            $detail = $this->hitungKonversi->hitungPakPelantikan(
-                $validated['masa_kerja_tahun'],
-                $validated['masa_kerja_bulan'],
-                $persentase,
-                $koefisien
+            // Penyesuaian Khusus Mismatch Golongan (PerBKN No. 3/2023 Lampiran II Angka 3)
+            $penyesuaian = $this->hitungKonversi->resolveMismatchPenyesuaian(
+                $pegawai->getAsalJabatanOrDefault(),
+                $pegawai->pangkatGolongan?->golongan,
+                $effectiveJenjang
             );
-            $akPak = $detail['total_ak_pak'];
+
+            if ($penyesuaian['blocked']) {
+                return response()->json(['message' => $penyesuaian['block_message']], 422);
+            }
+
+            if ($penyesuaian['flat']) {
+                $akPak = 100.00;
+                $detail = ['total_ak_pak' => $akPak, 'is_mismatch_flat' => true, 'catatan_regulasi' => $penyesuaian['note']];
+            } else {
+                $detail = $this->hitungKonversi->hitungPakPelantikan(
+                    $validated['masa_kerja_tahun'],
+                    $validated['masa_kerja_bulan'],
+                    $persentase,
+                    $koefisien
+                );
+                $akPak = $detail['total_ak_pak'];
+            }
         }
 
         $penetapan = PenetapanAK::firstOrCreate(
@@ -370,9 +387,9 @@ class RekapitulasiController extends Controller
         $totalPegawai = Pegawai::count();
 
         $perJenjang = Pegawai::query()
-            ->with('pangkatGolongan.jenjangJabatan')
+            ->with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan'])
             ->get()
-            ->groupBy(fn ($p) => $p->pangkatGolongan?->jenjangJabatan?->nama ?? 'Tanpa Jenjang')
+            ->groupBy(fn ($p) => $p->effectiveJenjang()?->nama ?? 'Tanpa Jenjang')
             ->map(fn ($group) => $group->count());
 
         return response()->json([
