@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom'
-import { useAuth } from '../../context/useAuth'
 
 const NAV = [
   { to: '/', label: 'Dashboard' },
@@ -20,21 +19,17 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
-  const { user } = useAuth()
-
   return (
-    <div className="flex h-full w-60 flex-col border-r border-gray-200 bg-white">
-      <div className="flex items-center gap-3 border-b border-gray-100 p-4">
-        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-red-50 text-sm font-extrabold text-[#ba191d]">
-          {(user?.name ?? 'U').charAt(0).toUpperCase()}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-extrabold text-gray-900">{user?.name ?? 'User'}</p>
-          <p className="truncate text-[11px] font-medium text-gray-500">{user?.role}</p>
-        </div>
+    <div className="flex h-full w-60 flex-col bg-white">
+      {/* Header Sidebar: Logo KPK & Nama Sistem */}
+      <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-4 sm:px-6">
+        <img src="/logo-kpk.png" alt="KPK" className="h-8 w-8" />
+        <span className="text-sm font-extrabold text-gray-900 leading-tight">
+          Sistem Konversi<br />Kinerja
+        </span>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3 mt-2">
         {NAV.map((item) => (
           <NavLink
             key={item.to}

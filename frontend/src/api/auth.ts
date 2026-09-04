@@ -14,6 +14,11 @@ export interface UserPayload {
     id: string
     nip: string
     nama_lengkap: string
+    pendidikan_terakhir?: string
+    program_studi?: string
+    nama_kampus?: string
+    pendidikan_usulan?: string
+    tmt_jabatan?: string
     pangkat_golongan?: {
       golongan: string
       jenjang_jabatan?: { nama: string }
