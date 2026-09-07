@@ -510,6 +510,28 @@ class ImportKonversiTest extends TestCase
         $this->assertEquals('199609000000000000', $data['data'][0]['nip']);
     }
 
+    public function test_parse_tmt_menerima_serial_date_excel_dan_iso_8601(): void
+    {
+        $service = app(\App\Services\ImportKonversiService::class);
+
+        // Excel menyimpan tanggal sebagai serial number (mulai 1899-12-30) saat sel
+        // diformat Date, bukan teks "01/01/2026". 46023 = 2026-01-01.
+        // Baris kedua memakai notasi ISO 8601 (t="d" dari tool OpenXML lain).
+        $content = implode("\n", [
+            'nip,nama_lengkap,email,golongan,asal_jabatan,jenjang_jabatan,pendidikan_terakhir,tmt_jabatan',
+            '199503012025031001,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,46023',
+            '199503012025031002,Andi Wijaya S.Kom,andi@kpk.go.id,III/b,PELAKSANA,Ahli Pertama,S1,2026-06-01T00:00:00',
+        ]);
+
+        $path = $this->writeTempCsv($content);
+        $parsed = $service->parseCsvFile($path);
+        @unlink($path);
+
+        $this->assertCount(2, $parsed);
+        $this->assertEquals('2026-01-01', $parsed[0]['tmt_jabatan']);
+        $this->assertEquals('2026-06-01', $parsed[1]['tmt_jabatan']);
+    }
+
     public function test_preview_import_error_jelas_saat_kolom_golongan_hilang(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);

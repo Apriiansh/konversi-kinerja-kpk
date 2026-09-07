@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useAuth } from '../../context/useAuth'
-import { getDetailPak, getPengajuanPendidikan } from '../../api/rekapitulasi'
+import { getDetailPakLive, getPengajuanPendidikan } from '../../api/rekapitulasi'
 import type { DetailPakResponse, PengajuanPendidikanItem } from '../../api/rekapitulasi'
 import { getAktivitasTerbaru, type AktivitasItem } from '../../api/aktivitas'
 
@@ -33,6 +33,8 @@ export default function PegawaiDashboard() {
         return
       }
       getDetailPak(pegawaiId, currentYear)
+    if (pegawaiId) {
+      getDetailPakLive(pegawaiId, currentYear)
         .then((data) => {
           if (isMounted) setPakData(data)
         })
@@ -128,6 +130,11 @@ export default function PegawaiDashboard() {
 
   // Live akumulasi selalu responsif terhadap perolehan TW saat ini
   const akKumulatif = Number((akLama + akBaru + akBooster).toFixed(2))
+  // Hitung AK
+  const akLama = pakData?.ak_lama ?? 0
+  const akBaru = pakData?.ak_baru ?? 0
+  const akBooster = pakData?.ak_booster ?? 0
+  const akKumulatif = pakData?.ak_kumulatif ?? (akLama + akBaru + akBooster)
   const targetKp = pakData?.kelayakan?.target_kp ?? 50.0
   const persentaseStatus = targetKp > 0 ? Math.min(100, Math.round((akKumulatif / targetKp) * 1000) / 10) : 0
   const kurangAk = Math.max(0, Math.round((targetKp - akKumulatif) * 100) / 100)
@@ -315,8 +322,8 @@ export default function PegawaiDashboard() {
         </div>
       </motion.section>
 
-      {/* 4 Card Angka Kredit with Subtle Wave Accents */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 5 Card Angka Kredit with Subtle Wave Accents */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Saldo AK */}
         <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
           <svg className="absolute bottom-0 right-0 w-28 h-10 text-gray-100/90 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
@@ -345,6 +352,21 @@ export default function PegawaiDashboard() {
             +{loadingPak ? '...' : akBaru.toLocaleString('id-ID', { minimumFractionDigits: 3 })}
           </p>
           <p className="relative z-10 text-[10px] text-green-600 mt-0.5">Tahun berjalan</p>
+        </div>
+
+        {/* Peningkatan Pendidikan (Booster) */}
+        <div className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+          <svg className="absolute bottom-0 right-0 w-28 h-10 text-emerald-200/50 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
+            <path d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z" fill="currentColor" />
+          </svg>
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <p className="text-[10px] font-semibold text-emerald-700 uppercase">Peningkatan Pendidikan</p>
+            <i className="fa-solid fa-graduation-cap text-[10px] text-emerald-400" />
+          </div>
+          <p className="relative z-10 text-xl font-bold text-emerald-700 font-mono">
+            {loadingPak ? '...' : `+${akBooster.toLocaleString('id-ID', { minimumFractionDigits: 3 })}`}
+          </p>
+          <p className="relative z-10 text-[10px] text-emerald-600 mt-0.5">Booster ijasah disetujui</p>
         </div>
 
         {/* Target */}

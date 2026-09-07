@@ -254,6 +254,18 @@ export default function PengajuanPendidikan() {
       </motion.div>
 
       {/* Alerts */}
+      {!user?.pegawai && (
+        <motion.div variants={itemVariants} className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 flex items-start gap-3">
+          <i className="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-xs font-bold text-amber-900">Perhatian: Akun Tidak Terhubung ke Profil Pegawai</p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Akun Anda saat ini (<strong>{user?.email}</strong> · Role: {user?.role}) belum terhubung dengan data pegawai. 
+              Formulir pengajuan kenaikan pendidikan hanya dapat dikirim oleh akun Pegawai (misal: login sebagai <code className="font-mono bg-amber-100 px-1 py-0.5 rounded font-bold text-amber-900">gita.savitri@kpk.go.id</code> atau <code className="font-mono bg-amber-100 px-1 py-0.5 rounded font-bold text-amber-900">pegawai@kpk.go.id</code>).
+            </p>
+          </div>
+        </motion.div>
+      )}
       {successMsg && (
         <motion.div variants={itemVariants} className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start gap-3">
           <i className="fa-solid fa-circle-check text-emerald-600 mt-0.5" />
@@ -530,7 +542,7 @@ export default function PengajuanPendidikan() {
             <div className="pt-2 flex items-center gap-3">
               <button
                 type="submit"
-                disabled={submitting || hasPending}
+                disabled={submitting || hasPending || !user?.pegawai}
                 className="inline-flex items-center gap-2 rounded-full bg-[#ba191d] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {submitting ? (

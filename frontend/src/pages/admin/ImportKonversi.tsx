@@ -437,7 +437,7 @@ export const ImportKonversi: React.FC = () => {
                                 <ShieldCheck className="h-3 w-3" /> Penyesuaian
                               </span>
                             )}
-                            <div>{saldoAwalTotal.toFixed(2)} AK</div>
+                            <div>{saldoAwalTotal.toFixed(3)} AK</div>
                           </td>
                           <td className="py-3 px-3.5">
                             <div className="flex items-center gap-1">
@@ -448,14 +448,14 @@ export const ImportKonversi: React.FC = () => {
                                 return (
                                   <span
                                     key={qKey}
-                                    title={`TW${qNum}: ${q?.predikat ?? '-'} (${q?.jumlah_bulan ?? 0} bln = ${q?.angka_kredit ?? 0} AK)`}
+                                    title={`TW${qNum}: ${q?.predikat ?? '-'} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
                                     className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                                       isAnchor
                                         ? 'bg-red-50 text-[#ba191d] border-red-200 font-black'
                                         : 'bg-gray-100 text-gray-600 border-gray-200'
                                     }`}
                                   >
-                                    TW{qNum}: {q?.angka_kredit ?? 0}
+                                    TW{qNum}: {Number(q?.angka_kredit ?? 0).toFixed(3)}
                                   </span>
                                 )
                               })}
@@ -463,7 +463,7 @@ export const ImportKonversi: React.FC = () => {
                           </td>
                         <td className="py-3 px-3.5">
                           <span className="font-mono font-extrabold text-blue-700 text-xs">
-                            {item.ak_baru_tahunan ? `${item.ak_baru_tahunan.toFixed(2)} AK` : '0.00 AK'}
+                            {item.ak_baru_tahunan ? `${item.ak_baru_tahunan.toFixed(3)} AK` : '0.000 AK'}
                           </span>
                           {item.metode_kalkulasi === 'FORMULA_A_PERIODIK' ? (
                             <span className="block mt-0.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
@@ -476,7 +476,7 @@ export const ImportKonversi: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3 px-3.5 font-mono font-black text-gray-900 text-sm">
-                          {item.ak_kumulatif ? `${item.ak_kumulatif.toFixed(2)} AK` : '0.00 AK'}
+                          {item.ak_kumulatif ? `${item.ak_kumulatif.toFixed(3)} AK` : '0.000 AK'}
                         </td>
                         <td className="py-3 px-3.5 text-center">
                           {item.kelayakan?.status && <StatusBadge status={item.kelayakan.status} />}
@@ -540,41 +540,41 @@ export const ImportKonversi: React.FC = () => {
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
                   <span className="text-[10px] uppercase font-bold text-gray-400 block">AK Dasar</span>
                   <span className="font-mono font-extrabold text-gray-800 text-sm mt-0.5 block">
-                    {(inspectItem.ak_dasar ?? 0).toFixed(2)}
+                    {(inspectItem.ak_dasar ?? 0).toFixed(3)}
                   </span>
                 </div>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
                   <span className="text-[10px] uppercase font-bold text-gray-400 block">Konversi Masa Kerja</span>
                   <span className="font-mono font-extrabold text-gray-800 text-sm mt-0.5 block">
-                    {(inspectItem.ak_pak_pelantikan ?? 0).toFixed(2)}
+                    {(inspectItem.ak_pak_pelantikan ?? 0).toFixed(3)}
                   </span>
                   <span className="text-[9px] text-gray-400 block">Masa kerja lama</span>
                 </div>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
                   <span className="text-[10px] uppercase font-bold text-gray-400 block">Saldo Historis</span>
                   <span className="font-mono font-extrabold text-gray-800 text-sm mt-0.5 block">
-                    {(inspectItem.ak_historis ?? 0).toFixed(2)}
+                    {(inspectItem.ak_historis ?? 0).toFixed(3)}
                   </span>
                   <span className="text-[9px] text-gray-400 block">Tabungan lampau</span>
                 </div>
                 <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-center">
                   <span className="text-[10px] uppercase font-bold text-blue-700 block">Kinerja Tahunan</span>
                   <span className="font-mono font-black text-blue-800 text-sm mt-0.5 block">
-                    {(inspectItem.ak_baru_tahunan ?? 0).toFixed(2)}
+                    {(inspectItem.ak_baru_tahunan ?? 0).toFixed(3)}
                   </span>
                   <span className="text-[9px] text-blue-600 block">Tahun berjalan</span>
                 </div>
                 <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-center">
                   <span className="text-[10px] uppercase font-bold text-emerald-700 block">Pendidikan (+25%)</span>
                   <span className="font-mono font-black text-emerald-800 text-sm mt-0.5 block">
-                    +{(inspectItem.ak_booster ?? 0).toFixed(2)}
+                    +{(inspectItem.ak_booster ?? 0).toFixed(3)}
                   </span>
                   <span className="text-[9px] text-emerald-600 block">Klaim Ijazah Sah</span>
                 </div>
                 <div className="p-3 bg-linear-to-br from-red-900 to-[#ba191d] text-white rounded-xl text-center shadow-xs">
                   <span className="text-[10px] uppercase font-bold text-red-100 block">Total AK Kumulatif</span>
                   <span className="font-mono font-black text-white text-base mt-0.5 block">
-                    {(inspectItem.ak_kumulatif ?? 0).toFixed(2)}
+                    {(inspectItem.ak_kumulatif ?? 0).toFixed(3)}
                   </span>
                   <span className="text-[9px] text-red-200 block">Total Modal Sah</span>
                 </div>
@@ -586,17 +586,28 @@ export const ImportKonversi: React.FC = () => {
               <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
                 2. Evaluasi Ambang Batas Kenaikan Pangkat / Jenjang:
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
                   <span className="text-gray-500 font-bold block text-[11px]">Kebutuhan Target Kenaikan Pangkat:</span>
                   <span className="font-mono font-extrabold text-gray-900 text-sm">
-                    {(inspectItem.kelayakan?.target_kp ?? 0).toFixed(2)} AK
+                    {(inspectItem.kelayakan?.target_kp ?? 0).toFixed(3)} AK
                   </span>
+                </div>
+                <div className="p-2.5 bg-blue-50/60 rounded-lg border border-blue-200/80">
+                  <span className="text-blue-600 font-bold block text-[11px]">Kebutuhan Kenaikan Jenjang:</span>
+                  <span className="font-mono font-extrabold text-blue-800 text-sm">
+                    {(inspectItem.kelayakan?.target_jenjang ?? 0).toFixed(3)} AK
+                  </span>
+                  {inspectItem.kelayakan?.next_jenjang && (
+                    <span className="text-[9px] text-blue-500 block font-semibold">
+                      Target: {inspectItem.kelayakan.next_jenjang}
+                    </span>
+                  )}
                 </div>
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
                   <span className="text-gray-500 font-bold block text-[11px]">Deposit Carry-Over Tahun Depan:</span>
                   <span className="font-mono font-extrabold text-emerald-700 text-sm">
-                    +{(inspectItem.kelayakan?.carry_over ?? 0).toFixed(2)} AK
+                    +{(inspectItem.kelayakan?.carry_over ?? 0).toFixed(3)} AK
                   </span>
                 </div>
               </div>
@@ -615,7 +626,7 @@ export const ImportKonversi: React.FC = () => {
                     <div key={qKey} className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg">
                       <span className="font-sans text-[10px] font-bold text-gray-500 block">TW{qNum}</span>
                       <span className="font-extrabold text-gray-900 text-xs block mt-0.5">{q?.predikat ?? '-'}</span>
-                      <span className="text-[10px] font-bold text-blue-700 block">{q?.angka_kredit ?? 0} AK</span>
+                      <span className="text-[10px] font-bold text-blue-700 block">{Number(q?.angka_kredit ?? 0).toFixed(3)} AK</span>
                       <span className="font-sans text-[9px] text-gray-400 block">{q?.jumlah_bulan ?? 0} bln</span>
                     </div>
                   )

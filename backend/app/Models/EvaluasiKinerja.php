@@ -30,7 +30,7 @@ class EvaluasiKinerja extends Model
             'triwulan' => 'integer',
             'periode_bulan' => 'integer',
             'jumlah_bulan' => 'integer',
-            'angka_kredit' => 'decimal:2',
+            'angka_kredit' => 'decimal:3',
             'is_locked' => 'boolean',
         ];
     }

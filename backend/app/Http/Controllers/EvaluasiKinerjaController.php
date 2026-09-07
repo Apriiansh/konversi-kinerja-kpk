@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EvaluasiKinerja;
+use App\Models\MasterPredikatKinerja;
 use App\Models\Pegawai;
 use App\Models\PenetapanAK;
 use App\Services\AuditTrailService;
@@ -189,6 +190,9 @@ class EvaluasiKinerjaController extends Controller
             $jumlahBulan
         );
 
+        $predikat = MasterPredikatKinerja::findOrFail($validated['predikat_id']);
+        $persentaseKonversi = (float) $predikat->persentase_konversi;
+
         return response()->json([
             'message' => 'Hasil simulasi konversi Angka Kredit Periodik (Formula A).',
             'data'    => [
@@ -198,7 +202,7 @@ class EvaluasiKinerjaController extends Controller
                 'koefisien_tahunan'         => $jenjang->koefisien_tahunan,
                 'jumlah_bulan'              => $jumlahBulan,
                 'angka_kredit'              => $akHasil,
-                'rumus'                     => "({$jumlahBulan}/12) × Predikat × {$jenjang->koefisien_tahunan} = {$akHasil} AK",
+                'rumus'                     => "({$jumlahBulan}/12) × {$persentaseKonversi} × {$jenjang->koefisien_tahunan} = {$akHasil} AK",
                 'kebutuhan_ak_kp'           => $jenjang->kebutuhan_ak_kp,
                 'kebutuhan_ak_naik_jenjang' => $jenjang->kebutuhan_ak_jenjang,
             ],
@@ -372,7 +376,7 @@ class EvaluasiKinerjaController extends Controller
                     'kebutuhan_ak_jenjang'=> $targetJenjang,
                 ],
                 'saldo_awal'               => $saldoAwal,
-                'ak_kumulatif_draft'       => round($akKumulatifDraft, 2),
+                'ak_kumulatif_draft'       => round($akKumulatifDraft, 3),
                 'sudah_layak_sebelum_tw4'  => $sudahLayakSebelumTw4,
                 'tw_aktif'                 => $twAktif,
                 'tahun'                    => $tahun,

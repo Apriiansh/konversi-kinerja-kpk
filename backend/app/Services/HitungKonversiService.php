@@ -29,7 +29,7 @@ class HitungKonversiService
         // Hitung berdasarkan rumus
         $ak = ($periodeBulan / 12) * $persentaseKonversi * $koefisienTahunan;
 
-        return round($ak, 2);
+        return round($ak, 3);
     }
 
     /**
@@ -120,7 +120,7 @@ class HitungKonversiService
 
         $persentaseKonversi = (float) $predikat->persentase_konversi;
         $akRaw = ($totalBulanAktif / 12) * $persentaseKonversi * $koefisienTahunan;
-        $akBaru = round($akRaw, 2);
+        $akBaru = round($akRaw, 3);
 
         return [
             'total_bulan_aktif'   => $totalBulanAktif,
@@ -218,9 +218,9 @@ class HitungKonversiService
         $akTahun = $masaKerjaTahun * $persentasePredikat * $koefisienTahunan;
         $akBulan = ($masaKerjaBulan / 12) * $persentasePredikat * $koefisienTahunan;
 
-        $akTahunRounded = round($akTahun, 2);
-        $akBulanRounded = round($akBulan, 2);
-        $totalPak = round($akTahunRounded + $akBulanRounded, 2);
+        $akTahunRounded = round($akTahun, 3);
+        $akBulanRounded = round($akBulan, 3);
+        $totalPak = round($akTahunRounded + $akBulanRounded, 3);
 
         return [
             'masa_kerja_tahun'  => $masaKerjaTahun,

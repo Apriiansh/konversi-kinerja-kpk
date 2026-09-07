@@ -247,9 +247,9 @@ class ImportKonversiService
             return null;
         }
 
-        // Sudah Y-m-d
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-            return $value;
+        // Sudah Y-m-d (sebagian tool OpenXML menyimpan t="d" dengan ISO 8601 ber-waktu)
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+            return substr($value, 0, 10);
         }
 
         // d/m/Y atau d-m-Y (juga menangani 1 angka d/m)
@@ -257,6 +257,15 @@ class ImportKonversiService
             $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
             $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
             return "{$m[3]}-{$mo}-{$d}";
+        }
+
+        // Serial date Excel: sel berformat Date menyimpan angka (mis. 46052 = 2026-01-01),
+        // bukan teks tanggal. Rentang 10000..80000 ≈ tahun 1927..2119.
+        if (is_numeric($value)) {
+            $serial = (float) $value;
+            if ($serial >= 10000 && $serial <= 80000) {
+                return date('Y-m-d', (int) round(($serial - 25569) * 86400));
+            }
         }
 
         return $value;
@@ -275,13 +284,13 @@ class ImportKonversiService
      */
     protected function normalizeNip(?string $value): ?string
     {
-        $value = trim((string) $value);
+        $value = trim((string) $value, " \t\n\r\0\x0B'\"");
         if ($value === '') {
             return null;
         }
 
         // Bersihkan pemisah ribuan dan koma ribuan
-        $clean = str_replace(',', '', $value);
+        $clean = str_replace([',', "'", '"'], '', $value);
 
         // Scientific notation: "1.99609E+17" / "1,99609E+17"
         if (preg_match('/^(-?[\d.]+)[eE]\+?(\d+)$/', $clean, $m)) {
@@ -316,7 +325,7 @@ class ImportKonversiService
      * @param string $domain
      * @return string
      */
-    protected function generateEmailDariNama(string $namaLengkap, string $domain = 'kpk.go.id'): string
+    protected function generateEmailDariNama(string $namaLengkap, ?string $currentNip = null, string $domain = 'kpk.go.id'): string
     {
         $nama = trim($namaLengkap);
 
@@ -336,16 +345,26 @@ class ImportKonversiService
         // Bersihkan karakter non-alfanumerik kecuali titik
         $slug = preg_replace('/[^a-z0-9.]/', '', $slug);
 
-        // Handle duplikat dengan suffix numerik
         $baseEmail = "{$slug}@{$domain}";
         $email = $baseEmail;
 
-        if ($this->emailExists($email)) {
+        $existingUser = \App\Models\User::with('pegawai')->where('email', $email)->first();
+        if ($existingUser) {
+            // Jika email ini milik pegawai ini sendiri atau user orphan tanpa pegawai, pakai saja
+            if (($currentNip && $existingUser->pegawai?->nip === $currentNip) || !$existingUser->pegawai) {
+                return $email;
+            }
+
+            // Jika memang milik pegawai lain, cari suffix numerik yang bebas
             $counter = 2;
-            while ($this->emailExists("{$slug}{$counter}@{$domain}")) {
+            while (true) {
+                $candidate = "{$slug}{$counter}@{$domain}";
+                $u = \App\Models\User::with('pegawai')->where('email', $candidate)->first();
+                if (!$u || ($currentNip && $u->pegawai?->nip === $currentNip) || !$u->pegawai) {
+                    return $candidate;
+                }
                 $counter++;
             }
-            $email = "{$slug}{$counter}@{$domain}";
         }
 
         return $email;
@@ -736,7 +755,7 @@ class ImportKonversiService
                 $predikatObj = $pName ? $predikatMap->get(strtolower($pName)) : null;
                 if ($predikatObj && $pBulan > 0) {
                     $persen = (float) $predikatObj->persentase_konversi;
-                    $akQ = round(($pBulan / 12) * $persen * $koefisienTahunan, 2);
+                    $akQ = round(($pBulan / 12) * $persen * $koefisienTahunan, 3);
                     $totalBulanAktif += $pBulan;
 
                     if ($q === 4) {
@@ -757,7 +776,7 @@ class ImportKonversiService
             $rawKlaim = strtoupper(trim((string) ($row['klaim_ijazah_baru'] ?? '')));
             $isKlaimIjazah = in_array($rawKlaim, ['YA', 'Y', 'TRUE', '1', 'D3', 'D-3', 'D4', 'D-IV', 'S1', 'S-1', 'S2', 'S-2', 'S3', 'S-3']);
             if ($isKlaimIjazah) {
-                $akBooster = round(0.25 * (float) $jenjang->kebutuhan_ak_kp, 2);
+                $akBooster = round(0.25 * (float) $jenjang->kebutuhan_ak_kp, 3);
             }
 
             // Jika tanpa TMT dan tw4 tidak diisi, ambil default 12 bulan
@@ -771,7 +790,7 @@ class ImportKonversiService
                                   (float) $triwulanData['tw3']['angka_kredit'];
             $sumAkPeriodikFull  = $sumAkPeriodikTw1_3 + (float) $triwulanData['tw4']['angka_kredit'];
 
-            $akKumulatifTw3 = round($akDasar + $akPakPelantikan + $akHistoris + $sumAkPeriodikTw1_3 + $akBooster, 2);
+            $akKumulatifTw3 = round($akDasar + $akPakPelantikan + $akHistoris + $sumAkPeriodikTw1_3 + $akBooster, 3);
             $kelayakanTw3 = $this->carryOverService->evaluasiKelayakan(
                 new Pegawai(['pangkat_golongan_id' => $pangkat->id]),
                 $akKumulatifTw3
@@ -785,15 +804,15 @@ class ImportKonversiService
             // 2. Jika BELUM LAYAK pada TW3, gunakan Formula B (Penyetahunan / Acuan Tahunan via TW4).
             $metodeKalkulasi = 'FORMULA_B_TAHUNAN';
             if ($kelayakanTw3['status'] === 'LAYAK_PANGKAT' || $kelayakanTw3['status'] === 'LAYAK_JENJANG') {
-                $akBaru = round($sumAkPeriodikFull, 2);
+                $akBaru = round($sumAkPeriodikFull, 3);
                 $metodeKalkulasi = 'FORMULA_A_PERIODIK';
             } else {
                 // Formula B (TW4 Anchor Tahunan)
-                $akBaru = round(($totalBulanAktif / 12) * $predikatTw4Persen * $koefisienTahunan, 2);
+                $akBaru = round(($totalBulanAktif / 12) * $predikatTw4Persen * $koefisienTahunan, 3);
             }
 
             // Total AK Kumulatif Akhir
-            $akKumulatif = round($akDasar + $akPakPelantikan + $akHistoris + $akBaru + $akBooster, 2);
+            $akKumulatif = round($akDasar + $akPakPelantikan + $akHistoris + $akBaru + $akBooster, 3);
 
             // Evaluasi Badge Kelayakan
             $kelayakan = $this->carryOverService->evaluasiKelayakan(
@@ -887,24 +906,29 @@ class ImportKonversiService
                 $pangkat = $pangkatMap->get($golonganKey);
 
                 // 1. Buat / Update User Login
-                if ($buatAkun) {
-                    // Prioritaskan email dari file; fallback generate dari nama
-                    $email = $item['raw_data']['email'] ?? $this->generateEmailDariNama($item['nama_lengkap']);
-                    $password = $this->generatePasswordDefault($item['nip'], $item['nama_lengkap']);
+                $existingPegawai = Pegawai::with('user')->where('nip', $item['nip'])->first();
+                if ($existingPegawai && $existingPegawai->user) {
+                    $user = $existingPegawai->user;
                 } else {
-                    // Mode manual: pakai email dari file (wajib), password default
-                    $email = $item['raw_data']['email'] ?? (Str::slug($item['nama_lengkap'], '.') . '@kpk.go.id');
-                    $password = 'password123';
-                }
+                    if ($buatAkun) {
+                        // Prioritaskan email dari file; fallback generate dari nama
+                        $email = $item['raw_data']['email'] ?? $this->generateEmailDariNama($item['nama_lengkap'], $item['nip']);
+                        $password = $this->generatePasswordDefault($item['nip'], $item['nama_lengkap']);
+                    } else {
+                        // Mode manual: pakai email dari file (wajib), password default
+                        $email = $item['raw_data']['email'] ?? (Str::slug($item['nama_lengkap'], '.') . '@kpk.go.id');
+                        $password = 'password123';
+                    }
 
-                $user = User::firstOrCreate(
-                    ['email' => $email],
-                    [
-                        'name'     => $item['nama_lengkap'],
-                        'password' => Hash::make($password),
-                        'role'     => 'PEGAWAI',
-                    ]
-                );
+                    $user = User::firstOrCreate(
+                        ['email' => $email],
+                        [
+                            'name'     => $item['nama_lengkap'],
+                            'password' => Hash::make($password),
+                            'role'     => 'PEGAWAI',
+                        ]
+                    );
+                }
 
                 // 2. Buat / Update Data Pegawai
                 $pegawai = Pegawai::updateOrCreate(
