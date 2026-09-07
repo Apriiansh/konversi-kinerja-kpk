@@ -164,7 +164,7 @@ export const Kalkulator: React.FC = () => {
     return {
       status: 'BELUM_CUKUP',
       label: 'BELUM CUKUP AK',
-      desc: `Masih membutuhkan ${kurang.toFixed(2)} AK lagi untuk kenaikan pangkat berikutnya. Seluruh saldo saat ini disimpan utuh.`,
+      desc: `Masih membutuhkan ${kurang.toFixed(2)} AK lagi untuk kenaikan pangkat berikutnya. Seluruh saldo saat ini tersimpan.`,
       carryOver: totalAkKumulatif,
       kurangAk: kurang,
     }
@@ -249,7 +249,7 @@ export const Kalkulator: React.FC = () => {
                     onChange={(e) => setSaldoAwal(Number(e.target.value) || 0)}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-[#ba191d]"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">AK</span>
+                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 font-bold">AK</span>
                 </div>
               </div>
 
@@ -265,7 +265,7 @@ export const Kalkulator: React.FC = () => {
                     onChange={(e) => setBulanAktif(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-[#ba191d]"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Bulan</span>
+                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Bulan</span>
                 </div>
               </div>
             </div>
@@ -331,7 +331,7 @@ export const Kalkulator: React.FC = () => {
               {/* TW1 */}
               <div className="p-3 rounded-xl border border-gray-200 bg-white space-y-1.5">
                 <div className="flex items-center justify-between font-bold">
-                  <span>Triwulan 1</span>
+                  <span>TW 1</span>
                   <span className="font-mono text-gray-500">{periodikTw1.toFixed(2)} AK</span>
                 </div>
                 <select
@@ -350,7 +350,7 @@ export const Kalkulator: React.FC = () => {
               {/* TW2 */}
               <div className="p-3 rounded-xl border border-gray-200 bg-white space-y-1.5">
                 <div className="flex items-center justify-between font-bold">
-                  <span>Triwulan 2</span>
+                  <span>TW 2</span>
                   <span className="font-mono text-gray-500">{periodikTw2.toFixed(2)} AK</span>
                 </div>
                 <select
@@ -369,7 +369,7 @@ export const Kalkulator: React.FC = () => {
               {/* TW3 */}
               <div className="p-3 rounded-xl border border-gray-200 bg-white space-y-1.5">
                 <div className="flex items-center justify-between font-bold">
-                  <span>Triwulan 3</span>
+                  <span>TW 3</span>
                   <span className="font-mono text-gray-500">{periodikTw3.toFixed(2)} AK</span>
                 </div>
                 <select
@@ -389,7 +389,7 @@ export const Kalkulator: React.FC = () => {
               <div className="p-3 rounded-xl border-2 border-[#ba191d] bg-red-50/20 space-y-1.5">
                 <div className="flex items-center justify-between font-extrabold text-[#ba191d]">
                   <div className="flex items-center gap-1.5">
-                    <span>Triwulan 4</span>
+                    <span>TW 4</span>
                     <span className="text-[9px] bg-[#ba191d] text-white px-1.5 py-0.5 rounded font-black tracking-wider">ACUAN TAHUNAN</span>
                   </div>
                   <span className="font-mono">{akBaruTahunan.toFixed(2)} AK</span>

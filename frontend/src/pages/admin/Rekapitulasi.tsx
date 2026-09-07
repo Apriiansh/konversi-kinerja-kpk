@@ -267,12 +267,12 @@ export const Rekapitulasi: React.FC = () => {
                         )}
                         {item.status_kelayakan === 'LAYAK_JENJANG' && (
                           <span className="text-[11px] font-medium text-gray-400 italic">
-                            Sisa Reset (0 AK)
+                            Reset Kenaikan Jenjang (0 AK)
                           </span>
                         )}
                         {(!item.status_kelayakan || item.status_kelayakan === 'BELUM_CUKUP') && (
                           <span className="text-[11px] font-medium text-amber-800">
-                            Disimpan utuh
+                            Tersimpan
                           </span>
                         )}
                       </td>
