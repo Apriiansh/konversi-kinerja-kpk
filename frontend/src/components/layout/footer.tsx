@@ -26,16 +26,6 @@ export default function PegawaiFooter() {
         </a>
       </div>
 
-      {/* Floating Helper Avatar Badge 'N' */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105 focus:outline-none cursor-pointer"
-          title="Bantuan / Asisten"
-        >
-          N
-        </button>
-      </div>
     </footer>
   )
 }
