@@ -46,15 +46,14 @@ class ImportKonversiService
             [
                 'nip', 'nama_lengkap', 'email', 'golongan', 'asal_jabatan', 'jenjang_jabatan',
                 'pendidikan_terakhir', 'tmt_jabatan', 'masa_kerja_tahun', 'masa_kerja_bulan',
-                'saldo_historis', 'tahun', 'tw1_predikat', 'tw1_bulan', 'tw2_predikat',
-                'tw2_bulan', 'tw3_predikat', 'tw3_bulan', 'tw4_predikat', 'tw4_bulan',
-                'klaim_ijazah_baru',
+                'saldo_historis', 'tahun', 'tw1_predikat', 'tw2_predikat', 'tw3_predikat',
+                'tw4_predikat', 'klaim_ijazah_baru',
             ],
             [
                 '199503012025031001', 'Budi Santoso, S.T', 'budi.santoso@kpk.go.id',
                 'III/a', 'PELAKSANA', 'Ahli Pertama', 'S1', '2025-03-01', '3', '5',
-                '10.00', '2025', 'Sangat Baik', '1', 'Sangat Baik', '3', 'Sangat Baik', '3',
-                'Baik', '3', 'S1',
+                '10.00', '2025', 'Sangat Baik', 'Sangat Baik', 'Sangat Baik',
+                'Baik', 'S1',
             ],
         ];
 
@@ -537,6 +536,55 @@ class ImportKonversiService
     }
 
     /**
+     * Hitung distribusi bulan aktif per triwulan berdasarkan TMT jabatan.
+     *
+     * Auto-cut hanya dalam tahun evaluasi: TMT tahun < tahun evaluasi => full 12
+     * bulan (3 per triwulan); TMT tahun == tahun evaluasi => cut dari bulan TMT;
+     * TMT tahun masa depan => tidak valid (null).
+     *
+     * @param string|null $tmt  tanggal TMT (Y-m-d).
+     * @param int         $tahun tahun evaluasi.
+     * @return array{0:int,1:int,2:int,3:int}|null [tw1, tw2, tw3, tw4] atau null bila TMT absen/tidak valid.
+     */
+    protected function hitungBulanAktifDariTmt(?string $tmt, int $tahun): ?array
+    {
+        if (empty($tmt)) {
+            return null;
+        }
+
+        try {
+            $date = \Carbon\Carbon::parse($tmt);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $tmtTahun = (int) $date->year;
+
+        if ($tmtTahun < $tahun) {
+            return [3, 3, 3, 3];
+        }
+        if ($tmtTahun > $tahun) {
+            return null;
+        }
+
+        $startMonth = (int) $date->month;
+        $bulan = [];
+        foreach (range(1, 4) as $q) {
+            $from = (($q - 1) * 3) + 1; // 1, 4, 7, 10
+            $to = $q * 3;               // 3, 6, 9, 12
+            if ($startMonth > $to) {
+                $bulan[] = 0;
+            } elseif ($startMonth <= $from) {
+                $bulan[] = 3;
+            } else {
+                $bulan[] = $to - $startMonth + 1;
+            }
+        }
+
+        return $bulan;
+    }
+
+    /**
      * Lakukan simulasi / preview hasil kalkulasi tanpa menyimpan ke database (Dry Run).
      *
      * @param UploadedFile|string $file
@@ -673,9 +721,16 @@ class ImportKonversiService
             $predikatTw4Persen = 1.0;
             $predikatTw4Nama = 'Baik';
 
+            // Auto-cut bulan aktif dari TMT jabatan (menang atas kolom tw{n}_bulan bila TMT valid)
+            $bulanAuto = $this->hitungBulanAktifDariTmt($row['tmt_jabatan'] ?? null, $tahun);
+
             foreach (range(1, 4) as $q) {
                 $pName = $row["tw{$q}_predikat"] ?? null;
-                $pBulan = (int) ($row["tw{$q}_bulan"] ?? ($pName ? 3 : 0));
+                if ($bulanAuto !== null) {
+                    $pBulan = $bulanAuto[$q - 1];
+                } else {
+                    $pBulan = (int) ($row["tw{$q}_bulan"] ?? ($pName ? 3 : 0));
+                }
 
                 $akQ = 0.0;
                 $predikatObj = $pName ? $predikatMap->get(strtolower($pName)) : null;
@@ -697,22 +752,47 @@ class ImportKonversiService
                 ];
             }
 
-            // Jika tw4 tidak diisi, ambil predikat terakhir yang ada
-            if ($totalBulanAktif === 0) {
-                $totalBulanAktif = 12; // default full year
-            }
-
-            // Formula B (TW4 Anchor)
-            $akBaru = round(($totalBulanAktif / 12) * $predikatTw4Persen * $koefisienTahunan, 2);
-
-            // Booster Ijazah
+            // Booster Ijazah (+25% dari Kebutuhan AK KP Jenjang)
             $akBooster = 0.0;
-            $klaimIjazah = strtoupper(trim($row['klaim_ijazah_baru'] ?? ''));
-            if (!empty($klaimIjazah) && in_array($klaimIjazah, ['D3', 'S1', 'S2', 'S3'])) {
+            $rawKlaim = strtoupper(trim((string) ($row['klaim_ijazah_baru'] ?? '')));
+            $isKlaimIjazah = in_array($rawKlaim, ['YA', 'Y', 'TRUE', '1', 'D3', 'D-3', 'D4', 'D-IV', 'S1', 'S-1', 'S2', 'S-2', 'S3', 'S-3']);
+            if ($isKlaimIjazah) {
                 $akBooster = round(0.25 * (float) $jenjang->kebutuhan_ak_kp, 2);
             }
 
-            // Total AK Kumulatif
+            // Jika tanpa TMT dan tw4 tidak diisi, ambil default 12 bulan
+            if ($bulanAuto === null && $totalBulanAktif === 0) {
+                $totalBulanAktif = 12;
+            }
+
+            // ── Evaluasi Kelayakan TW1 s.d. TW3 (Sebelum Tutup Tahun) ────────
+            $sumAkPeriodikTw1_3 = (float) $triwulanData['tw1']['angka_kredit'] +
+                                  (float) $triwulanData['tw2']['angka_kredit'] +
+                                  (float) $triwulanData['tw3']['angka_kredit'];
+            $sumAkPeriodikFull  = $sumAkPeriodikTw1_3 + (float) $triwulanData['tw4']['angka_kredit'];
+
+            $akKumulatifTw3 = round($akDasar + $akPakPelantikan + $akHistoris + $sumAkPeriodikTw1_3 + $akBooster, 2);
+            $kelayakanTw3 = $this->carryOverService->evaluasiKelayakan(
+                new Pegawai(['pangkat_golongan_id' => $pangkat->id]),
+                $akKumulatifTw3
+            );
+
+            // ── Penentuan Metode Kalkulasi AK Baru Akhir Tahun ────────────────
+            // Aturan Regulasi (PerBKN No. 3/2023):
+            // 1. Jika pada TW1-TW3 pegawai SUDAH MENCAPAI STATUS LAYAK (KP / KJ),
+            //    maka AK Baru dihitung murni Akumulasi Periodik Riil (Formula A) agar
+            //    tidak meratakan mundur / mendegradasi capaian kenaikan pangkat TW3.
+            // 2. Jika BELUM LAYAK pada TW3, gunakan Formula B (Penyetahunan / Acuan Tahunan via TW4).
+            $metodeKalkulasi = 'FORMULA_B_TAHUNAN';
+            if ($kelayakanTw3['status'] === 'LAYAK_PANGKAT' || $kelayakanTw3['status'] === 'LAYAK_JENJANG') {
+                $akBaru = round($sumAkPeriodikFull, 2);
+                $metodeKalkulasi = 'FORMULA_A_PERIODIK';
+            } else {
+                // Formula B (TW4 Anchor Tahunan)
+                $akBaru = round(($totalBulanAktif / 12) * $predikatTw4Persen * $koefisienTahunan, 2);
+            }
+
+            // Total AK Kumulatif Akhir
             $akKumulatif = round($akDasar + $akPakPelantikan + $akHistoris + $akBaru + $akBooster, 2);
 
             // Evaluasi Badge Kelayakan
@@ -746,6 +826,7 @@ class ImportKonversiService
                 'ak_historis'       => $akHistoris,
                 'total_bulan_aktif' => $totalBulanAktif,
                 'predikat_tw4'      => $predikatTw4Nama,
+                'metode_kalkulasi'  => $metodeKalkulasi,
                 'ak_baru_tahunan'   => $akBaru,
                 'ak_booster'        => $akBooster,
                 'ak_kumulatif'      => $akKumulatif,

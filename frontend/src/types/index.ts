@@ -50,6 +50,29 @@ export interface PangkatGolongan {
   koefisien?: number
 }
 
+export interface Pegawai {
+  id: string
+  nip: string
+  nama_lengkap: string
+  email?: string
+  golongan?: string          // dari pangkat_golongan.golongan (di-flatten oleh API context)
+  jenjang?: string           // dari effectiveJenjang().nama (di-flatten)
+  asal_jabatan?: string
+  pendidikan_terakhir?: string
+  tmt_jabatan?: string
+  pangkat_golongan_id?: string
+  jenjang_jabatan_id?: string
+  koefisien_tahunan?: number
+  kebutuhan_ak_kp?: number
+  kebutuhan_ak_jenjang?: number
+  // Relasi (untuk endpoint /pegawai biasa)
+  pangkat_golongan?: {
+    golongan: string
+    jenjang_jabatan?: JenjangJabatan
+  }
+  user?: { id: string; name: string; email: string; role: string }
+}
+
 export interface PenetapanAKItem {
   id: string
   pegawai_id: string
@@ -147,6 +170,7 @@ export interface PreviewPegawaiItem {
   ak_historis?: number
   total_bulan_aktif?: number
   predikat_tw4?: string
+  metode_kalkulasi?: string
   ak_baru_tahunan?: number
   ak_booster?: number
   ak_kumulatif?: number

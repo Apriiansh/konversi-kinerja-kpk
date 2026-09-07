@@ -65,9 +65,9 @@ const ADMIN_MENU: MenuItem[] = [
     icon: <i className="fa-solid fa-file-import text-xs w-4 text-center" />,
   },
   {
-    to: '/admin/master-data',
-    label: 'Master Data',
-    icon: <i className="fa-solid fa-database text-xs w-4 text-center" />,
+    to: '/admin/input-kinerja',
+    label: 'Input Kinerja',
+    icon: <i className="fa-solid fa-clipboard-list text-xs w-4 text-center" />,
   },
   {
     to: '/admin/rekapitulasi',
@@ -79,6 +79,12 @@ const ADMIN_MENU: MenuItem[] = [
     label: 'Verifikasi Pendidikan',
     icon: <i className="fa-solid fa-user-check text-xs w-4 text-center" />,
   },
+  {
+    to: '/admin/master-data',
+    label: 'Master Data',
+    icon: <i className="fa-solid fa-database text-xs w-4 text-center" />,
+  },
+
   {
     to: '/admin/kalkulator',
     label: 'Kalkulator',
@@ -126,9 +132,9 @@ export default function Sidebar({
   return (
     <aside className="flex h-full w-full flex-col bg-white select-none border-r border-gray-200/80 shadow-xs overflow-hidden">
       {/* Top Banner Header with Red KPK Gradient & Wave Ornament */}
-      <div className="relative bg-gradient-to-br from-[#800f13] via-[#ba191d] to-[#9c1317] pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
+      <div className="relative bg-linear-to-br from-[#800f13] via-[#ba191d] to-[#9c1317] pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
         {/* Subtle Background Pattern */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size:12px_12px" />
 
         {/* Close Button for Mobile View */}
         {onCloseMobile && (
@@ -158,7 +164,7 @@ export default function Sidebar({
         </div>
 
         {/* SVG Wave Ornament attached to the bottom edge of the banner */}
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none translate-y-[1px]">
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none translate-y-px">
           <svg
             className="w-full h-5 text-white fill-current"
             viewBox="0 0 500 150"
@@ -214,7 +220,7 @@ export default function Sidebar({
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
               `group relative flex items-center gap-3 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 ${collapsed ? 'justify-center px-2' : 'px-3.5'} ${isActive
-                ? 'bg-gradient-to-r from-[#ba191d] to-[#9c1317] text-white shadow-md shadow-red-900/15'
+                ? 'bg-linear-to-r from-[#ba191d] to-[#9c1317] text-white shadow-md shadow-red-900/15'
                 : 'text-gray-600 hover:bg-red-50/60 hover:text-[#ba191d]'
               }`
             }
@@ -303,7 +309,7 @@ export default function Sidebar({
 
             {/* Version */}
             <div className="text-center text-[10px] font-semibold text-gray-400 mt-2">
-              Konversi Kinerja v2.0 • KPK RI
+              Konversi Kinerja • KPK
             </div>
           </>
         ) : (

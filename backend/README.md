@@ -36,31 +36,29 @@ Sistem ini mengimplementasikan aturan kepegawaian ASN/KPK:
 
 ---
 
-## 🧮 Algoritma & Formula Perhitungan
+## 🧮 Algoritma & Metode Perhitungan Kinerja
 
-### 1. Formula A: Konversi Periodik Triwulanan (Monitoring)
-Digunakan untuk mencatat progres kinerja di TW1, TW2, dan TW3:
+### 1. Konversi Kinerja Periodik Triwulanan (Monitoring Progres)
+Digunakan untuk mencatat progres kinerja berjalan di TW1, TW2, dan TW3, serta untuk evaluasi usulan kenaikan pangkat/jenjang berjalan:
 $$\text{AK}_{\text{Periodik}} = \left( \frac{\text{Bulan Aktif}}{12} \right) \times \text{Persentase Predikat} \times \text{Koefisien Tahunan}$$
 
-### 2. Formula B: Normalisasi Retrospektif Akhir Tahun (TW4 Anchor)
-Digunakan pada penutupan buku tahun berjalan. Predikat TW4 bertindak sebagai jangkar (*anchor*) retrospektif untuk menyetahunkan perolehan AK:
+### 2. Penetapan Kinerja Tahunan (Acuan Evaluasi Akhir Tahun TW4)
+Digunakan pada penutupan buku tahun berjalan bagi pegawai yang belum naik jabatan. Predikat TW4 bertindak sebagai acuan penetapan tahunan untuk menyetahunkan perolehan AK:
 $$\text{AK}_{\text{Tahun Berjalan}} = \left( \frac{\text{Total Bulan Aktif}}{12} \right) \times \text{Persentase Predikat TW4} \times \text{Koefisien Tahunan}$$
+*(Catatan: Jika pegawai telah mencapai status Layak Naik Pangkat/Jenjang pada TW1–TW3, sistem otomatis menggunakan Akumulasi Periodik Riil murni demi menjaga integritas hak kenaikan pegawai).*
 
-### 3. Formula C: PAK Pelantikan dari Masa Kerja Jabatan Lama
-Mengonversi masa kerja staf pelaksana sebelum diangkat ke Jabatan Fungsional:
-$$\text{AK}_{\text{Pelantikan}} = (\text{Tahun} \times \% \times \text{Koef}) + \left( \frac{\text{Bulan}}{12} \times \% \times \text{Koef} \right)$$
-*Contoh:* Masa kerja 3 tahun 5 bulan di golongan III/a (Baik 100%, koef 12.5):
-$$3 \times 1.0 \times 12.5 = 37.50\text{ AK}$$
-$$\frac{5}{12} \times 1.0 \times 12.5 = 5.21\text{ AK}$$
-$$\text{Total PAK Pelantikan} = 37.50 + 5.21 = \mathbf{42.71\text{ AK}}$$
+### 3. Konversi Masa Kerja Jabatan Lama (PAK Penyesuaian Awal)
+Mengonversi masa kerja dari jabatan sebelumnya (misal Pelaksana / Pengawas) sebelum diangkat ke Jabatan Fungsional:
+$$\text{AK}_{\text{Penyesuaian}} = (\text{Tahun} \times \% \times \text{Koef}) + \left( \frac{\text{Bulan}}{12} \times \% \times \text{Koef} \right)$$
+*Pengecualian Khusus (Lampiran II Angka 3 PerBKN 3/2023):* Pelaksana III/c, III/d, IV/a yang berpindah ke Ahli Pertama diberikan **100 AK Flat**.
 
-### 4. Formula D: Booster Ijazah Baru (+25%)
-Tambahan Angka Kredit pengakuan pendidikan baru yang lebih tinggi:
-$$\text{AK}_{\text{Booster}} = 25\% \times \text{Kebutuhan AK Kenaikan Pangkat Jenjang Saat Ini}$$
-*(Contoh Jenjang Ahli Pertama target KP 50 $\rightarrow$ Bonus Booster = $25\% \times 50 = \mathbf{12.50\text{ AK}}$).*
+### 4. Pengakuan Kualifikasi Pendidikan Baru (+25%)
+Tambahan Angka Kredit bonus atas peningkatan pendidikan formal yang diakui sah oleh BKN:
+$$\text{AK}_{\text{Pendidikan}} = 25\% \times \text{Kebutuhan AK Kenaikan Pangkat Jenjang Saat Ini}$$
+*(Contoh Jenjang Ahli Pertama target KP 50 $\rightarrow$ Bonus Pendidikan = $25\% \times 50 = \mathbf{12.50\text{ AK}}$).*
 
 ### 5. Akumulasi Total Saldo AK Akhir Tahun
-$$\text{Total AK} = \text{AK Dasar} + \text{PAK Pelantikan} + \text{Saldo Historis} + \text{AK Lama} + \text{AK Baru} + \text{AK Booster}$$
+$$\text{Total AK} = \text{AK Dasar} + \text{Konversi Masa Kerja} + \text{Saldo Historis} + \text{AK Lama} + \text{Kinerja Tahunan} + \text{Pendidikan (+25\%)}$$
 
 ---
 

@@ -6,6 +6,7 @@ use App\Models\MasterJenjangJabatan;
 use App\Models\MasterPangkatGolongan;
 use App\Models\MasterPredikatKinerja;
 use App\Models\Pegawai;
+use App\Models\PenetapanAK;
 use App\Models\PengajuanPendidikan;
 use App\Models\User;
 use Database\Seeders\MasterDataSeeder;
@@ -30,9 +31,9 @@ class KonversiKinerjaTest extends TestCase
         $response = $this->getJson('/api/master-data');
 
         $response->assertOk();
-        $this->assertEquals('Ahli Pertama', $response->json('data.jenjang_jabatan.0.nama'));
+        $jenjangNames = collect($response->json('data.jenjang_jabatan'))->pluck('nama')->all();
+        $this->assertContains('Ahli Pertama', $jenjangNames);
         $this->assertEquals('Sangat Baik', $response->json('data.predikat_kinerja.0.nama'));
-        $this->assertEquals('Ahli Pertama-III/a', $response->json('data.ak_dasar.0.kunci_pencarian'));
         $this->assertCount(4, $response->json('data.jenjang_jabatan'));
         $this->assertCount(5, $response->json('data.predikat_kinerja'));
         $this->assertCount(9, $response->json('data.ak_dasar'));

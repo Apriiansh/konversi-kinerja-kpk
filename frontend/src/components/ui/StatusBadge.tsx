@@ -43,7 +43,7 @@ export function StatusKelayakanText({ status }: { status: StatusKelayakan | unde
   if (!status || status === 'BELUM_CUKUP') {
     return (
       <span className="text-[11px] font-medium text-amber-800">
-        Disimpan utuh
+        Tersimpan
       </span>
     )
   }

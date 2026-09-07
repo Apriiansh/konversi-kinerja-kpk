@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Main from './components/layout/main'
 import Login from './pages/Login'
 import { ImportKonversi } from './pages/admin/ImportKonversi'
+import { InputKinerja } from './pages/admin/InputKinerja'
 import { Rekapitulasi } from './pages/admin/Rekapitulasi'
 import { VerifikasiPendidikan } from './pages/admin/VerifikasiPendidikan'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
@@ -112,6 +113,16 @@ export default function App() {
             <ProtectedRoute role="ADMIN">
               <InLayout>
                 <ImportKonversi />
+              </InLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/input-kinerja"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <InLayout>
+                <InputKinerja />
               </InLayout>
             </ProtectedRoute>
           }
