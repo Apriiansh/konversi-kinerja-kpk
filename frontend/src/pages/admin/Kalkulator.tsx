@@ -454,7 +454,7 @@ export const Kalkulator: React.FC = () => {
         {/* Kolom Kanan: Hasil Simulasi Real-Time (5 cols) */}
         <div className="lg:col-span-5 space-y-5 sticky top-20">
           {/* Card Highlight Utama: Total AK Kumulatif */}
-          <div className="bg-gradient-to-br from-red-900 to-[#ba191d] text-white p-6 rounded-2xl shadow-md space-y-4">
+          <div className="bg-linear-to-br from-red-900 to-[#ba191d] text-white p-6 rounded-2xl shadow-md space-y-4">
             <div className="flex items-center justify-between text-xs font-bold text-red-100 uppercase tracking-wider">
               <span>Hasil Simulasi AK Akhir</span>
               <Sparkles className="h-4 w-4" />

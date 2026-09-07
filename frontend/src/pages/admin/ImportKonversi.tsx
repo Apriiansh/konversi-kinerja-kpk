@@ -571,7 +571,7 @@ export const ImportKonversi: React.FC = () => {
                   </span>
                   <span className="text-[9px] text-emerald-600 block">Klaim Ijazah Sah</span>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-red-900 to-[#ba191d] text-white rounded-xl text-center shadow-xs">
+                <div className="p-3 bg-linear-to-br from-red-900 to-[#ba191d] text-white rounded-xl text-center shadow-xs">
                   <span className="text-[10px] uppercase font-bold text-red-100 block">Total AK Kumulatif</span>
                   <span className="font-mono font-black text-white text-base mt-0.5 block">
                     {(inspectItem.ak_kumulatif ?? 0).toFixed(2)}
