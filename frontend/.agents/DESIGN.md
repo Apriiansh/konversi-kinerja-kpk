@@ -254,7 +254,7 @@ Max-width: Tidak dibatasi (memanfaatkan seluruh area)
   - Logo KPK di tengah atas
   - Heading: "Sistem Konversi Kinerja" — `text-xl font-black text-gray-900`
   - Sub: "PerBKN No. 3 Tahun 2023" — badge merah kecil
-  - Input Email + Password dengan label "Email Kedinasan" / "Kata Sandi"
+  - Input Email + Password dengan label "Email" / "Kata Sandi"
   - Tombol Submit merah penuh lebar dengan efek `shimmer-sweep` saat loading
   - Footer: versi sistem, hak cipta
 

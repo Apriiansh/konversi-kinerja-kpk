@@ -41,6 +41,8 @@ export async function verifikasiPengajuan(
 // Helper untuk URL berkas fisik (storage Laravel)
 export function getStorageFileUrl(filePath: string): string {
   if (!filePath) return '#'
-  if (filePath.startsWith('http')) return filePath
-  return `/storage/${filePath.replace(/^\/?storage\//, '')}`
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath
+  // Sanitasi path lokal atau protocol file:///
+  const cleaned = filePath.replace(/^(file:\/\/\/|[a-zA-Z]:[\\\/])/i, '').replace(/\\/g, '/')
+  return `/storage/${cleaned.replace(/^\/?storage\//, '')}`
 }

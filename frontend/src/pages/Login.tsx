@@ -43,12 +43,12 @@ export default function Login() {
       <form className="login-card" onSubmit={handleSubmit} noValidate>
         <img src="/logo-kpk.png" alt="KPK" className="login-logo" />
         <h1 className="login-title">Sistem Konversi Kinerja</h1>
-        <span className="login-badge">PerBKN No. 3 Tahun 2023</span>
+        {/*<span className="login-badge">PerBKN No. 3 Tahun 2023</span>*/}
 
         {error && <div className="login-error">{error}</div>}
 
         <label className="login-label" htmlFor="email">
-          Email Kedinasan
+          Email
         </label>
         <input
           id="email"
@@ -79,7 +79,7 @@ export default function Login() {
           {submitting ? 'Memproses...' : 'Masuk'}
         </button>
 
-        <p className="login-footer">Konversi Kinerja v2 · © 2026 KPK</p>
+        <p className="login-footer">Konversi Kinerja · ©2026 KPK</p>
       </form>
     </main>
   )

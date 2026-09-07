@@ -147,6 +147,7 @@ export interface PreviewPegawaiItem {
   ak_historis?: number
   total_bulan_aktif?: number
   predikat_tw4?: string
+  metode_kalkulasi?: string
   ak_baru_tahunan?: number
   ak_booster?: number
   ak_kumulatif?: number

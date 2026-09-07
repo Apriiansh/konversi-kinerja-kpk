@@ -104,16 +104,18 @@ class HitungKonversiService
             $predikat = MasterPredikatKinerja::findOrFail($predikatTw4Id);
         }
 
-        // Tentukan total bulan aktif dalam tahun berjalan
+        // Tentukan total bulan aktif dalam tahun berjalan berdasarkan TMT Jabatan
         $totalBulanAktif = $this->hitungBulanAktif($pegawai, $tahun);
 
-        // Jika ada input evaluasi kinerja spesifik yang tercatat
-        $sumBulanEvaluasi = EvaluasiKinerja::where('pegawai_id', $pegawaiId)
-            ->where('tahun', $tahun)
-            ->sum('jumlah_bulan');
+        // Jika pegawai tidak memiliki TMT Jabatan yang terdefinisi, fallback ke akumulasi bulan evaluasi tercatat
+        if (!$pegawai->tmt_jabatan) {
+            $sumBulanEvaluasi = EvaluasiKinerja::where('pegawai_id', $pegawaiId)
+                ->where('tahun', $tahun)
+                ->sum('jumlah_bulan');
 
-        if ($sumBulanEvaluasi > 0 && $sumBulanEvaluasi <= 12) {
-            $totalBulanAktif = $sumBulanEvaluasi;
+            if ($sumBulanEvaluasi > 0 && $sumBulanEvaluasi <= 12) {
+                $totalBulanAktif = (int) $sumBulanEvaluasi;
+            }
         }
 
         $persentaseKonversi = (float) $predikat->persentase_konversi;

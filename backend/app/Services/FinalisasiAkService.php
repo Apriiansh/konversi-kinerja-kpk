@@ -65,11 +65,7 @@ class FinalisasiAkService
                 ]
             );
 
-            // 2. Hitung AK Baru menggunakan Formula B (TW4 Anchor)
-            $hasilTahunan = $this->hitungKonversi->hitungAkTahunan($pegawai->id, $tahun, $predikatTw4Id);
-            $akBaru = $hasilTahunan['ak_baru'];
-
-            // 3. Ambil total Booster Ijazah yang disetujui di tahun ini
+            // 2. Ambil total Booster Ijazah yang disetujui di tahun ini
             $akBooster = (float) PengajuanPendidikan::where('pegawai_id', $pegawai->id)
                 ->where('status', 'DISETUJUI')
                 ->whereYear('diverifikasi_pada', $tahun)
@@ -78,12 +74,33 @@ class FinalisasiAkService
             // Jika ak_booster sebelumnya sudah diinput manual di record, gunakan yang lebih besar
             $akBooster = max($akBooster, (float) $penetapan->ak_booster);
 
-            // 4. Hitung Total AK Kumulatif Akhir Tahun
-            // ak_lama (saldo awal / bawaan tahun sebelumnya) + ak_pak_pelantikan + ak_historis + ak_baru + ak_booster
             $akLama = (float) $penetapan->ak_lama;
             $akPakPelantikan = (float) $penetapan->ak_pak_pelantikan;
             $akHistoris = (float) $penetapan->ak_historis;
 
+            // 3. Evaluasi capaian kinerja triwulan berjalan (TW1 s.d. TW3)
+            $akTw1_3 = (float) \App\Models\EvaluasiKinerja::where('pegawai_id', $pegawai->id)
+                ->where('tahun', $tahun)
+                ->whereIn('triwulan', [1, 2, 3])
+                ->sum('angka_kredit');
+
+            $akKumulatifTw3 = round($akLama + $akPakPelantikan + $akHistoris + $akTw1_3 + $akBooster, 2);
+            $kelayakanTw3 = $this->carryOverService->evaluasiKelayakan($pegawai, $akKumulatifTw3);
+
+            // 4. Hitung AK Baru Akhir Tahun:
+            // Jika sudah LAYAK pada TW3 -> gunakan Formula A (Periodik Riil TW1..TW4)
+            // Jika belum -> gunakan Formula B (Penyetahunan retrospektif via predikat TW4)
+            if ($kelayakanTw3['status'] === 'LAYAK_PANGKAT' || $kelayakanTw3['status'] === 'LAYAK_JENJANG') {
+                $sumPeriodik = (float) \App\Models\EvaluasiKinerja::where('pegawai_id', $pegawai->id)
+                    ->where('tahun', $tahun)
+                    ->sum('angka_kredit');
+                $akBaru = round($sumPeriodik, 2);
+            } else {
+                $hasilTahunan = $this->hitungKonversi->hitungAkTahunan($pegawai->id, $tahun, $predikatTw4Id);
+                $akBaru = $hasilTahunan['ak_baru'];
+            }
+
+            // 5. Hitung Total AK Kumulatif Akhir Tahun
             $akKumulatif = round($akLama + $akPakPelantikan + $akHistoris + $akBaru + $akBooster, 2);
 
             // 5. Evaluasi Status Kelayakan & Hitung Carry-Over

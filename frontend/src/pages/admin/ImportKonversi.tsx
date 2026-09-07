@@ -30,6 +30,7 @@ import {
   SearchInput,
   StatusBadge,
   StatCard,
+  Modal,
 } from '../../components/ui'
 import type { FilterStatus } from '../../types'
 
@@ -45,6 +46,9 @@ export const ImportKonversi: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL')
+
+  // Modal Bedah Perhitungan (Inspection Modal)
+  const [inspectItem, setInspectItem] = useState<PreviewPegawaiItem | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -127,6 +131,7 @@ export const ImportKonversi: React.FC = () => {
     setSuccessMessage(null)
     setSearchQuery('')
     setFilterStatus('ALL')
+    setInspectItem(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -169,11 +174,11 @@ export const ImportKonversi: React.FC = () => {
       <CardHeader
         tag="Konversi Kinerja"
         regulation="PerBKN No. 3/2023"
-        title="Import & Auto-Konversi Kinerja Massal"
-        subtitle="Unggah berkas spreadsheet (.xlsx / .csv) untuk mengonversi Angka Kredit (AK) pegawai KPK, dan menentukan badge kelayakan secara instan."
+        title="Import & Konversi Kinerja Massal"
+        subtitle="Unggah berkas spreadsheet (.xlsx / .csv) untuk mengonversi Angka Kredit (AK) pegawai KPK, memproyeksikan perolehan kinerja tahunan, serta mengevaluasi kelayakan kenaikan pangkat dan jenjang secara otomatis."
         actions={
           <Button variant="secondary" icon={<Download className="h-4 w-4 text-gray-500" />} onClick={handleDownloadTemplate}>
-            Unduh Template XLSX
+            Unduh Template Spreadsheet
           </Button>
         }
       />
@@ -231,13 +236,13 @@ export const ImportKonversi: React.FC = () => {
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold text-gray-500">
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
-              <FileSpreadsheet className="h-3 w-3 text-emerald-600" /> Auto-Sync NIP
+              <FileSpreadsheet className="h-3 w-3 text-emerald-600" /> Sinkronisasi Otomatis NIP
             </span>
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
-              <ShieldCheck className="h-3 w-3 text-[#ba191d]" /> Formula B (TW4 Anchor)
+              <ShieldCheck className="h-3 w-3 text-[#ba191d]" /> Penetapan Kinerja Tahunan
             </span>
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
-              <Award className="h-3 w-3 text-blue-600" /> Evaluasi Badge Otomatis
+              <Award className="h-3 w-3 text-blue-600" /> Evaluasi Kelayakan Otomatis
             </span>
           </div>
         </label>
@@ -309,7 +314,7 @@ export const ImportKonversi: React.FC = () => {
                   Pratinjau Hasil Konversi Siap Diterapkan
                 </p>
                 <p className="text-[11px] font-medium text-gray-500">
-                  Pastikan hasil perhitungan instan di bawah telah sesuai sebelum disimpan permanen.
+                  Periksa hasil perhitungan di bawah. Klik tombol "Bedah Nilai" pada baris untuk melihat transparansi asal angka kredit.
                 </p>
               </div>
             </div>
@@ -345,7 +350,7 @@ export const ImportKonversi: React.FC = () => {
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-extrabold text-gray-900">
-                  Rincian Kalkulasi Per Pegawai
+                  Rincian Hasil Konversi Per Pegawai
                 </h2>
                 <p className="text-[11px] font-medium text-gray-400">
                   Menampilkan {filteredData.length} dari total {previewResult.data.length} baris data
@@ -353,7 +358,7 @@ export const ImportKonversi: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500">
                 <Info className="h-3.5 w-3.5 text-[#ba191d]" />
-                <span>AK Baru dihitung retrospektif via predikat TW4</span>
+                <span>Klik baris / Bedah Nilai untuk melihat breakdown rumus lengkap</span>
               </div>
             </div>
 
@@ -364,114 +369,110 @@ export const ImportKonversi: React.FC = () => {
                     <th className="py-3 px-3.5">Baris</th>
                     <th className="py-3 px-3.5">Pegawai (NIP & Nama)</th>
                     <th className="py-3 px-3.5">Pangkat / Golongan</th>
-                    <th className="py-3 px-3.5">PAK Pelantikan</th>
-                    <th className="py-3 px-3.5">Saldo Historis</th>
-                    <th className="py-3 px-3.5">Kinerja TW1–TW4</th>
-                    <th className="py-3 px-3.5">AK Baru (Tahunan)</th>
-                    <th className="py-3 px-3.5">Booster (+25%)</th>
-                    <th className="py-3 px-3.5 font-black text-gray-900">Total AK Akhir</th>
+                    <th className="py-3 px-3.5">Saldo Awal (Modal)</th>
+                    <th className="py-3 px-3.5">Kinerja Triwulanan</th>
+                    <th className="py-3 px-3.5">Kinerja Tahunan</th>
+                    <th className="py-3 px-3.5 font-black text-gray-900">Total AK Kumulatif</th>
                     <th className="py-3 px-3.5 text-center">Status Kelayakan</th>
-                    <th className="py-3 px-3.5">Tindak Lanjut / Sisa</th>
+                    <th className="py-3 px-3.5 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {filteredData.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="py-12 text-center text-gray-400 text-xs">
+                      <td colSpan={9} className="py-12 text-center text-gray-400 text-xs">
                         <FileSpreadsheet className="h-8 w-8 mx-auto text-gray-300 mb-2" />
                         <p className="font-bold text-gray-500">Tidak ada baris data yang sesuai dengan filter.</p>
                         <p className="text-[11px] mt-0.5">Coba sesuaikan kata kunci pencarian atau ganti filter status.</p>
                       </td>
                     </tr>
                   ) : (
-                    filteredData.map((item) => (
-                      <tr
-                        key={item.baris}
-                        className={`transition-colors ${
-                          item.is_valid ? 'hover:bg-gray-50/80' : 'bg-red-50/60'
-                        }`}
-                      >
-                        <td className="py-3 px-3.5 font-mono font-bold text-gray-400">
-                          #{item.baris}
-                        </td>
-                        <td className="py-3 px-3.5">
-                          {item.is_valid ? (
-                            <div>
-                              <p className="font-extrabold text-gray-900 text-xs">{item.nama_lengkap}</p>
-                              <p className="font-mono text-[11px] font-bold text-gray-500 tracking-tight">
-                                {item.nip}
-                              </p>
-                            </div>
-                          ) : (
-                            <div>
-                              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-red-700">
-                                <XCircle className="h-3.5 w-3.5" /> Baris Tidak Valid
-                              </span>
-                              <p className="text-[10px] text-red-600 font-medium">
-                                {item.errors?.join(', ')}
-                              </p>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-3.5">
-                          <span className="font-mono font-extrabold text-gray-900 text-xs">
-                            {item.golongan ?? '-'}
-                          </span>
-                          <p className="text-[11px] font-medium text-gray-500">{item.jenjang ?? '-'}</p>
-                        </td>
-                        <td className="py-3 px-3.5">
-                          {item.penyesuaian_khusus && (
-                            <span
-                              title={item.penyesuaian_khusus}
-                              className="inline-flex items-center gap-1 rounded bg-purple-50 border border-purple-200 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 mb-1"
-                            >
-                              <ShieldCheck className="h-3 w-3" /> 100 AK Penyesuaian Perpindahan
-                            </span>
-                          )}
-                          <div className="font-mono font-bold text-gray-700">
-                            {item.ak_pak_pelantikan ? `${item.ak_pak_pelantikan.toFixed(2)} AK` : '-'}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3.5 font-mono font-bold text-gray-700">
-                          {item.ak_historis ? `${item.ak_historis.toFixed(2)} AK` : '-'}
-                        </td>
-                        <td className="py-3 px-3.5">
-                          <div className="flex items-center gap-1">
-                            {['tw1', 'tw2', 'tw3', 'tw4'].map((qKey, idx) => {
-                              const q = (item.triwulan as any)?.[qKey]
-                              const qNum = idx + 1
-                              const isAnchor = qNum === 4
-                              return (
-                                <span
-                                  key={qKey}
-                                  title={`TW${qNum}: ${q?.predikat ?? '-'} (${q?.jumlah_bulan ?? 0} bln = ${q?.angka_kredit ?? 0} AK)`}
-                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                                    isAnchor
-                                      ? 'bg-red-50 text-[#ba191d] border-red-200 font-black'
-                                      : 'bg-gray-100 text-gray-600 border-gray-200'
-                                  }`}
-                                >
-                                  TW{qNum}: {q?.angka_kredit ?? 0}
+                    filteredData.map((item) => {
+                      const saldoAwalTotal =
+                        Number(item.ak_pak_pelantikan || 0) +
+                        Number(item.ak_historis || 0) +
+                        Number(item.ak_dasar || 0)
+
+                      return (
+                        <tr
+                          key={item.baris}
+                          className={`transition-colors ${
+                            item.is_valid ? 'hover:bg-gray-50/80' : 'bg-red-50/60'
+                          }`}
+                        >
+                          <td className="py-3 px-3.5 font-mono font-bold text-gray-400">
+                            #{item.baris}
+                          </td>
+                          <td className="py-3 px-3.5">
+                            {item.is_valid ? (
+                              <div>
+                                <p className="font-extrabold text-gray-900 text-xs">{item.nama_lengkap}</p>
+                                <p className="font-mono text-[11px] font-bold text-gray-500 tracking-tight">
+                                  {item.nip}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-red-700">
+                                  <XCircle className="h-3.5 w-3.5" /> Baris Ditolak (Regulasi)
                                 </span>
-                              )
-                            })}
-                          </div>
-                        </td>
+                                <p className="text-[10px] text-red-600 font-medium">
+                                  {item.errors?.join(', ')}
+                                </p>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5">
+                            <span className="font-mono font-extrabold text-gray-900 text-xs">
+                              {item.golongan ?? '-'}
+                            </span>
+                            <p className="text-[11px] font-medium text-gray-500">{item.jenjang ?? '-'}</p>
+                          </td>
+                          <td className="py-3 px-3.5 font-mono font-bold text-gray-700">
+                            {item.penyesuaian_khusus && (
+                              <span
+                                title={item.penyesuaian_khusus}
+                                className="inline-flex items-center gap-1 rounded bg-purple-50 border border-purple-200 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 mb-1"
+                              >
+                                <ShieldCheck className="h-3 w-3" /> Penyesuaian
+                              </span>
+                            )}
+                            <div>{saldoAwalTotal.toFixed(2)} AK</div>
+                          </td>
+                          <td className="py-3 px-3.5">
+                            <div className="flex items-center gap-1">
+                              {['tw1', 'tw2', 'tw3', 'tw4'].map((qKey, idx) => {
+                                const q = (item.triwulan as any)?.[qKey]
+                                const qNum = idx + 1
+                                const isAnchor = qNum === 4
+                                return (
+                                  <span
+                                    key={qKey}
+                                    title={`TW${qNum}: ${q?.predikat ?? '-'} (${q?.jumlah_bulan ?? 0} bln = ${q?.angka_kredit ?? 0} AK)`}
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                      isAnchor
+                                        ? 'bg-red-50 text-[#ba191d] border-red-200 font-black'
+                                        : 'bg-gray-100 text-gray-600 border-gray-200'
+                                    }`}
+                                  >
+                                    TW{qNum}: {q?.angka_kredit ?? 0}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          </td>
                         <td className="py-3 px-3.5">
                           <span className="font-mono font-extrabold text-blue-700 text-xs">
                             {item.ak_baru_tahunan ? `${item.ak_baru_tahunan.toFixed(2)} AK` : '0.00 AK'}
                           </span>
-                          <p className="text-[10px] font-medium text-gray-400">
-                            TW4: {item.predikat_tw4} ({item.total_bulan_aktif} bln)
-                          </p>
-                        </td>
-                        <td className="py-3 px-3.5">
-                          {item.ak_booster && item.ak_booster > 0 ? (
-                            <span className="font-mono font-extrabold text-emerald-700 text-xs">
-                              +{item.ak_booster.toFixed(2)} AK
+                          {item.metode_kalkulasi === 'FORMULA_A_PERIODIK' ? (
+                            <span className="block mt-0.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              Periodik (Layak TW3)
                             </span>
                           ) : (
-                            <span className="text-gray-300 font-mono">-</span>
+                            <p className="text-[10px] font-medium text-gray-400">
+                              TW4: {item.predikat_tw4} ({item.total_bulan_aktif} bln)
+                            </p>
                           )}
                         </td>
                         <td className="py-3 px-3.5 font-mono font-black text-gray-900 text-sm">
@@ -480,40 +481,21 @@ export const ImportKonversi: React.FC = () => {
                         <td className="py-3 px-3.5 text-center">
                           {item.kelayakan?.status && <StatusBadge status={item.kelayakan.status} />}
                         </td>
-                        <td className="py-3 px-3.5 text-xs">
-                          {item.kelayakan?.status === 'LAYAK_PANGKAT' && (
-                            <div className="space-y-0.5">
-                              <p className="font-extrabold text-emerald-800">
-                                Naik Pangkat dari {item.golongan}
-                              </p>
-                              <p className="font-mono font-bold text-emerald-700">
-                                Carry-Over: +{item.kelayakan.carry_over.toFixed(2)} AK
-                              </p>
-                            </div>
-                          )}
-                          {item.kelayakan?.status === 'LAYAK_JENJANG' && (
-                            <div className="space-y-0.5">
-                              <p className="font-extrabold text-blue-800">
-                                Naik Jenjang ke {item.kelayakan.next_jenjang || 'jenjang berikutnya'}
-                              </p>
-                              <p className="font-mono font-bold text-blue-600">
-                                Reset: 0 AK (Sisa hangus)
-                              </p>
-                            </div>
-                          )}
-                          {item.kelayakan?.status === 'BELUM_CUKUP' && (
-                            <div className="space-y-0.5">
-                              <p className="font-extrabold text-amber-800">
-                                Perlu {item.kelayakan.kurang_ak.toFixed(2)} AK lagi
-                              </p>
-                              <p className="text-[10px] font-medium text-gray-400">
-                                untuk Naik Pangkat
-                              </p>
-                            </div>
+                        <td className="py-3 px-3.5 text-center">
+                          {item.is_valid && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="text-[11px] font-bold"
+                              onClick={() => setInspectItem(item)}
+                            >
+                              Bedah Nilai
+                            </Button>
                           )}
                         </td>
                       </tr>
-                    ))
+                      )
+                    })
                   )}
                 </tbody>
               </table>
@@ -521,6 +503,128 @@ export const ImportKonversi: React.FC = () => {
           </Card>
         </div>
       )}
+
+      {/* 5. Modal Bedah Nilai & Rincian Perhitungan (UX Inspection Modal) */}
+      <Modal
+        open={!!inspectItem}
+        onClose={() => setInspectItem(null)}
+        title={inspectItem ? `Bedah Perhitungan Angka Kredit: ${inspectItem.nama_lengkap}` : ''}
+        subtitle={inspectItem ? `NIP: ${inspectItem.nip} · Golongan: ${inspectItem.golongan} (${inspectItem.jenjang})` : undefined}
+        icon={<FileText className="h-5 w-5 text-[#ba191d]" />}
+        footer={
+          <Button variant="secondary" onClick={() => setInspectItem(null)}>
+            Tutup
+          </Button>
+        }
+      >
+        {inspectItem && (
+          <div className="space-y-4 text-xs">
+            {/* Kartu Status Kelayakan */}
+            <div className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-xl">
+              <div>
+                <span className="text-gray-400 uppercase font-bold text-[10px] block">Status Keputusan Sistem:</span>
+                <p className="font-extrabold text-gray-900 text-sm mt-0.5">
+                  {inspectItem.kelayakan?.badge_label}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{inspectItem.kelayakan?.catatan}</p>
+              </div>
+              {inspectItem.kelayakan?.status && <StatusBadge status={inspectItem.kelayakan.status} size="md" />}
+            </div>
+
+            {/* Kotak Komposisi Penjumlahan Angka Kredit */}
+            <div className="space-y-2">
+              <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
+                1. Komposisi Perolehan Total Angka Kredit (AK):
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block">AK Dasar</span>
+                  <span className="font-mono font-extrabold text-gray-800 text-sm mt-0.5 block">
+                    {(inspectItem.ak_dasar ?? 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block">Konversi Masa Kerja</span>
+                  <span className="font-mono font-extrabold text-gray-800 text-sm mt-0.5 block">
+                    {(inspectItem.ak_pak_pelantikan ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-gray-400 block">Masa kerja lama</span>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block">Saldo Historis</span>
+                  <span className="font-mono font-extrabold text-gray-800 text-sm mt-0.5 block">
+                    {(inspectItem.ak_historis ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-gray-400 block">Tabungan lampau</span>
+                </div>
+                <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-center">
+                  <span className="text-[10px] uppercase font-bold text-blue-700 block">Kinerja Tahunan</span>
+                  <span className="font-mono font-black text-blue-800 text-sm mt-0.5 block">
+                    {(inspectItem.ak_baru_tahunan ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-blue-600 block">Tahun berjalan</span>
+                </div>
+                <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-center">
+                  <span className="text-[10px] uppercase font-bold text-emerald-700 block">Pendidikan (+25%)</span>
+                  <span className="font-mono font-black text-emerald-800 text-sm mt-0.5 block">
+                    +{(inspectItem.ak_booster ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-emerald-600 block">Klaim Ijazah Sah</span>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-red-900 to-[#ba191d] text-white rounded-xl text-center shadow-xs">
+                  <span className="text-[10px] uppercase font-bold text-red-100 block">Total AK Kumulatif</span>
+                  <span className="font-mono font-black text-white text-base mt-0.5 block">
+                    {(inspectItem.ak_kumulatif ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-red-200 block">Total Modal Sah</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Kotak Target Kebutuhan & Carry-Over */}
+            <div className="p-3.5 bg-white border border-gray-200 rounded-xl space-y-2">
+              <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
+                2. Evaluasi Ambang Batas Kenaikan Pangkat / Jenjang:
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
+                  <span className="text-gray-500 font-bold block text-[11px]">Kebutuhan Target Kenaikan Pangkat:</span>
+                  <span className="font-mono font-extrabold text-gray-900 text-sm">
+                    {(inspectItem.kelayakan?.target_kp ?? 0).toFixed(2)} AK
+                  </span>
+                </div>
+                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
+                  <span className="text-gray-500 font-bold block text-[11px]">Deposit Carry-Over Tahun Depan:</span>
+                  <span className="font-mono font-extrabold text-emerald-700 text-sm">
+                    +{(inspectItem.kelayakan?.carry_over ?? 0).toFixed(2)} AK
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Kotak Rincian Evaluasi Triwulanan */}
+            <div className="space-y-2">
+              <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
+                3. Rincian Capaian Kinerja Triwulanan (TW1 – TW4):
+              </h4>
+              <div className="grid grid-cols-4 gap-2 text-center font-mono">
+                {['tw1', 'tw2', 'tw3', 'tw4'].map((qKey, idx) => {
+                  const q = (inspectItem.triwulan as any)?.[qKey]
+                  const qNum = idx + 1
+                  return (
+                    <div key={qKey} className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+                      <span className="font-sans text-[10px] font-bold text-gray-500 block">TW{qNum}</span>
+                      <span className="font-extrabold text-gray-900 text-xs block mt-0.5">{q?.predikat ?? '-'}</span>
+                      <span className="text-[10px] font-bold text-blue-700 block">{q?.angka_kredit ?? 0} AK</span>
+                      <span className="font-sans text-[9px] text-gray-400 block">{q?.jumlah_bulan ?? 0} bln</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

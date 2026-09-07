@@ -309,7 +309,7 @@ export default function Sidebar({
 
             {/* Version */}
             <div className="text-center text-[10px] font-semibold text-gray-400 mt-2">
-              Konversi Kinerja v2.0 • KPK RI
+              Konversi Kinerja • KPK
             </div>
           </>
         ) : (

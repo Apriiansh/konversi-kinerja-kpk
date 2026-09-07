@@ -179,9 +179,9 @@ export const Kalkulator: React.FC = () => {
       <CardHeader
         tag="Simulasi Regulasi"
         tagColor="#ba191d"
-        regulation="PerBKN No. 3/2023 · Formula B (TW4 Anchor)"
+        regulation="PerBKN No. 3/2023 · Penetapan Kinerja Tahunan"
         title="Kalkulator Simulasi Angka Kredit BKN"
-        subtitle="Simulasikan perolehan Angka Kredit berkala, dampak predikat kinerja triwulanan, booster ijazah, dan estimasi kelayakan kenaikan pangkat secara seketika."
+        subtitle="Simulasikan perolehan Angka Kredit berkala, dampak predikat kinerja triwulanan, pengakuan kualifikasi pendidikan baru, dan estimasi kelayakan kenaikan pangkat secara seketika."
         actions={
           <Button
             variant="secondary"
@@ -280,7 +280,7 @@ export const Kalkulator: React.FC = () => {
                   className="rounded border-gray-300 text-[#ba191d] focus:ring-[#ba191d] h-4 w-4"
                 />
                 <span className="text-xs font-bold text-gray-800">
-                  Hitung PAK Pelantikan (Konversi Masa Kerja Pelaksana)
+                  Konversi Masa Kerja Jabatan Lama (PAK Penyesuaian)
                 </span>
               </label>
 
@@ -308,7 +308,7 @@ export const Kalkulator: React.FC = () => {
                     />
                   </div>
                   <div className="col-span-2 text-[11px] text-gray-500 font-medium">
-                    Hasil PAK Pelantikan: <strong className="font-mono text-[#ba191d]">{akPakPelantikan.toFixed(2)} AK</strong>
+                    Hasil Konversi Masa Kerja: <strong className="font-mono text-[#ba191d]">{akPakPelantikan.toFixed(2)} AK</strong>
                   </div>
                 </div>
               )}
@@ -323,7 +323,7 @@ export const Kalkulator: React.FC = () => {
                 <h3 className="text-sm font-extrabold text-gray-900">2. Predikat Evaluasi Kinerja (TW1 – TW4)</h3>
               </div>
               <span className="text-[10px] font-bold text-[#ba191d] bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                Formula B Retrospektif
+                Penetapan Kinerja Tahunan
               </span>
             </div>
 
@@ -385,12 +385,12 @@ export const Kalkulator: React.FC = () => {
                 </select>
               </div>
 
-              {/* TW4 (JANGKAR) */}
+              {/* TW4 (ACUAN TAHUNAN) */}
               <div className="p-3 rounded-xl border-2 border-[#ba191d] bg-red-50/20 space-y-1.5">
                 <div className="flex items-center justify-between font-extrabold text-[#ba191d]">
                   <div className="flex items-center gap-1.5">
                     <span>Triwulan 4</span>
-                    <span className="text-[9px] bg-[#ba191d] text-white px-1.5 py-0.2 rounded">JANGKAR</span>
+                    <span className="text-[9px] bg-[#ba191d] text-white px-1.5 py-0.5 rounded font-black tracking-wider">ACUAN TAHUNAN</span>
                   </div>
                   <span className="font-mono">{akBaruTahunan.toFixed(2)} AK</span>
                 </div>
@@ -409,16 +409,16 @@ export const Kalkulator: React.FC = () => {
             </div>
 
             <p className="text-[11px] text-gray-400 leading-relaxed italic">
-              *Catatan: Sesuai Formula B PerBKN No. 3/2023, predikat <strong>TW4 mengunci nilai setahun penuh</strong> secara retrospektif (Bulan Aktif / 12 × Predikat TW4 × Koefisien).
+              *Catatan: Sesuai PerBKN No. 3/2023, evaluasi <strong>TW4 bertindak sebagai acuan tahunan</strong> untuk menyetahunkan perolehan kinerja secara proporsional: (Bulan Aktif / 12 × Predikat TW4 × Koefisien).
             </p>
           </Card>
 
-          {/* Card 3: Booster Ijazah Baru (+25%) */}
+          {/* Card 3: Pengakuan Kualifikasi Pendidikan (+25%) */}
           <Card className="p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-emerald-600" />
-                <h3 className="text-sm font-extrabold text-gray-900">3. Booster Ijazah Baru (+25%)</h3>
+                <h3 className="text-sm font-extrabold text-gray-900">3. Pengakuan Kualifikasi Pendidikan (+25%)</h3>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -434,7 +434,7 @@ export const Kalkulator: React.FC = () => {
             {hasBooster ? (
               <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
                 <div>
-                  <p className="font-extrabold text-emerald-900">Klaim Pengakuan Ijazah Baru</p>
+                  <p className="font-extrabold text-emerald-900">Pengakuan Ijazah Pendidikan Baru</p>
                   <p className="text-[11px] text-emerald-700">
                     25% × Target Kenaikan Pangkat ({config.targetKp} AK)
                   </p>
@@ -445,7 +445,7 @@ export const Kalkulator: React.FC = () => {
               </div>
             ) : (
               <p className="text-xs text-gray-400">
-                Aktifkan jika pegawai memperoleh ijazah baru yang telah diakui oleh BKN pada tahun berjalan.
+                Aktifkan jika pegawai memperoleh ijazah baru yang telah diakui sah oleh BKN pada tahun berjalan.
               </p>
             )}
           </Card>
@@ -518,17 +518,17 @@ export const Kalkulator: React.FC = () => {
               </div>
               {enablePakPelantikan && (
                 <div className="flex justify-between text-gray-500">
-                  <span>PAK Pelantikan:</span>
+                  <span>Konversi Masa Kerja (PAK):</span>
                   <span className="font-mono font-bold text-gray-900">+{akPakPelantikan.toFixed(2)} AK</span>
                 </div>
               )}
               <div className="flex justify-between text-gray-500">
-                <span>AK Baru Tahunan (Formula B):</span>
+                <span>Kinerja Tahunan:</span>
                 <span className="font-mono font-bold text-blue-700">+{akBaruTahunan.toFixed(2)} AK</span>
               </div>
               {hasBooster && (
                 <div className="flex justify-between text-gray-500">
-                  <span>Booster Ijazah (+25%):</span>
+                  <span>Pendidikan Baru (+25%):</span>
                   <span className="font-mono font-bold text-emerald-700">+{akBooster.toFixed(2)} AK</span>
                 </div>
               )}

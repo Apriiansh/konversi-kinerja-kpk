@@ -8,17 +8,12 @@ import Footer from './footer'
 export default function Main({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
-
-  const toggleCollapsed = () => setCollapsed((c) => !c)
+const toggleCollapsed = () => setCollapsed((c) => !c)
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#f8fafc] text-gray-800 font-sans antialiased">
-      {/* Desktop Fixed Left Sidebar - tidak ikut scroll */}
-      <div
-        className={`hidden lg:flex shrink-0 h-screen sticky top-0 z-30 flex-col overflow-hidden transition-[width] duration-300 ${
-          collapsed ? 'w-[76px]' : 'w-64'
-        }`}
-      >
+      {/* Desktop Fixed Left Sidebar - tidak ikut scroll, mengecil jadi 1 kolom icon saat minimize */}
+      <div className={`hidden lg:flex shrink-0 h-screen sticky top-0 z-30 flex-col overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </div>
 
