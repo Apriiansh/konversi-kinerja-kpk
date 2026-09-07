@@ -1,25 +1,26 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Header from './header'
-import Sidebar from './sidebar'
+import Header from './Header'
+import Sidebar from './Sidebar'
 import Footer from './footer'
+import FloatingKalkulator from '../FloatingKalkulator'
+import { useAuth } from '../../context/useAuth'
 
 export default function Main({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
-<<<<<<< Updated upstream
-const toggleCollapsed = () => setCollapsed((c) => !c)
-=======
-<<<<<<< HEAD
   const { user } = useAuth()
   const isPegawai = user?.role !== 'ADMIN'
 
   const toggleCollapsed = () => setCollapsed((c) => !c)
-=======
 const toggleCollapsed = () => setCollapsed((c) => !c)
->>>>>>> main
->>>>>>> Stashed changes
+  const { user } = useAuth()
+  const isPegawai = user?.role !== 'ADMIN'
+
+  const toggleCollapsed = () => setCollapsed((c) => !c)
+  const toggleCollapsed = () => setCollapsed((c) => !c)
+
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#f8fafc] text-gray-800 font-sans antialiased">
@@ -82,6 +83,8 @@ const toggleCollapsed = () => setCollapsed((c) => !c)
           <Footer />
         </div>
       </div>
+      {/* Floating Kalkulator BKN — hanya untuk pegawai, bulat N pojok kanan */}
+      {isPegawai && <FloatingKalkulator />}
     </div>
   )
 }

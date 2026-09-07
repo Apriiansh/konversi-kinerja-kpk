@@ -65,6 +65,16 @@ class PengajuanPendidikanController extends Controller
             return response()->json(['message' => 'Akun Anda belum terhubung dengan data pegawai.'], 403);
         }
 
+        // Guard: cegah double submit — satu pengajuan DIAJUKAN aktif cukup (no celah inspect)
+        $existingPending = PengajuanPendidikan::where('pegawai_id', $pegawai->id)
+            ->where('status', 'DIAJUKAN')
+            ->exists();
+        if ($existingPending) {
+            return response()->json([
+                'message' => 'Anda masih memiliki pengajuan dengan status Menunggu Verifikasi. Selesaikan verifikasi terlebih dahulu sebelum mengajukan kembali.',
+            ], 422);
+        }
+
         // Upload berkas fisik ke storage
         $fileIjazahPath = $request->file('file_ijazah')->store('pengajuan_pendidikan/ijazah', 'public');
         $fileBknPath = $request->file('file_bukti_bkn')->store('pengajuan_pendidikan/bukti_bkn', 'public');

@@ -204,6 +204,7 @@ export interface PengajuanPendidikanItem {
   id: string
   pegawai_id: string
   jenjang_pendidikan: 'D3' | 'S1' | 'S2' | 'S3' | string
+  program_studi?: string
   jurusan: string
   nama_institusi: string
   tahun_lulus: number

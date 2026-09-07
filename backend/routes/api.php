@@ -57,6 +57,38 @@ Route::middleware('auth:sanctum')->group(function () {
     // Riwayat Aktivitas
     Route::get('/aktivitas', [RiwayatAktivitasController::class, 'index']);
 
+    // Kampus — autocomplete dari mytable.name (searchable, manual fallback)
+    Route::get('/kampus', function (Illuminate\Http\Request $request) {
+        $search = trim((string) $request->query('search', ''));
+        $limit = min(20, max(5, (int) $request->query('limit', 10)));
+        $q = Illuminate\Support\Facades\DB::table('mytable')->select('id', 'name', 'country');
+        if ($search !== '') {
+            $q->where('name', 'ilike', "%{$search}%");
+        }
+        // prioritaskan Indonesia
+        $q->orderByRaw("CASE WHEN country = 'Indonesia' THEN 0 ELSE 1 END")->orderBy('name');
+        return response()->json(['data' => $q->limit($limit)->get()]);
+    });
+
+    // Prodi — autocomplete dari myprodi.nm_prodi (searchable, manual fallback)
+    Route::get('/prodi', function (Illuminate\Http\Request $request) {
+        $search = trim((string) $request->query('search', ''));
+        $jenjang = trim((string) $request->query('jenjang', ''));
+        $limit = min(20, max(5, (int) $request->query('limit', 10)));
+        $q = Illuminate\Support\Facades\DB::table('myprodi')->select('id', 'nm_prodi', 'kel_jenj', 'kode_prodi', 'nm_jenj_didik');
+        if ($search !== '') {
+            $q->where('nm_prodi', 'ilike', "%{$search}%");
+        }
+        // filter by jenjang if provided (map D3/S1/S2/S3 -> kel_jenj like S-2 etc)
+        if ($jenjang !== '') {
+            $map = ['D3' => 'D-III', 'S1' => 'S-1', 'S2' => 'S-2', 'S3' => 'S-3'];
+            $kel = $map[strtoupper($jenjang)] ?? null;
+            if ($kel) $q->where('kel_jenj', $kel);
+        }
+        $q->orderBy('nm_prodi');
+        return response()->json(['data' => $q->limit($limit)->get()]);
+    });
+
     // Pegawai (CRUD)
     Route::get('/pegawai', [PegawaiController::class, 'index']);
     Route::post('/pegawai', [PegawaiController::class, 'store']);

@@ -51,11 +51,6 @@ const PEGAWAI_MENU: MenuItem[] = [
     label: 'Pengajuan Pendidikan',
     icon: <i className="fa-solid fa-graduation-cap text-xs w-4 text-center" />,
   },
-  {
-    to: '/kalkulator',
-    label: 'Kalkulator BKN',
-    icon: <i className="fa-solid fa-calculator text-xs w-4 text-center" />,
-  },
 ]
 
 const ADMIN_MENU: MenuItem[] = [

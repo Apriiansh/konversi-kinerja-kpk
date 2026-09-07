@@ -17,7 +17,6 @@ import PegawaiDashboard from './pages/pegawai/PegawaiDashboard'
 import InisialisasiSaldoAwal from './pages/pegawai/InisialisasiSaldoAwal'
 import PenilaianTriwulan from './pages/pegawai/PenilaianTriwulan'
 import RekapitulasiPAK from './pages/pegawai/RekapitulasiPAK'
-import KalkulatorBKN from './pages/pegawai/KalkulatorBKN'
 import PengajuanPendidikan from './pages/pegawai/PengajuanPendidikan'
 
 function ComingSoon({ title }: { title: string }) {
@@ -90,16 +89,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/kalkulator"
-          element={
-            <ProtectedRoute>
-              <InLayout>
-                <KalkulatorBKN />
-              </InLayout>
-            </ProtectedRoute>
-          }
-        />
+        {/* Kalkulator kini floating N di pojok kanan — route lama dialihkan */}
+        <Route path="/kalkulator" element={<Navigate to="/" replace />} />
 
         {/* Alias rute lama */}
         <Route path="/pengajuan" element={<Navigate to="/pengajuan-pendidikan" replace />} />
