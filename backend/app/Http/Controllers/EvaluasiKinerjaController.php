@@ -200,4 +200,222 @@ class EvaluasiKinerjaController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Detail satu evaluasi kinerja.
+     */
+    public function show(string $id): JsonResponse
+    {
+        $evaluasi = EvaluasiKinerja::with([
+            'pegawai:id,nama_lengkap,nip',
+            'atasanPenilai:id,nama_lengkap',
+            'predikat:id,nama,persentase_konversi',
+        ])->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Detail evaluasi kinerja.',
+            'data'    => $evaluasi,
+        ]);
+    }
+
+    /**
+     * Update predikat evaluasi kinerja (hanya jika belum dikunci).
+     * AK akan dihitung ulang secara otomatis.
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $evaluasi = EvaluasiKinerja::findOrFail($id);
+
+        if ($evaluasi->is_locked) {
+            return response()->json(['message' => 'Evaluasi sudah dikunci dan tidak dapat diubah.'], 422);
+        }
+
+        $validated = $request->validate([
+            'predikat_id'  => 'required|uuid|exists:master_predikat_kinerja,id',
+            'jumlah_bulan' => 'nullable|integer|min:1|max:12',
+        ]);
+
+        $jumlahBulan = $validated['jumlah_bulan'] ?? $evaluasi->jumlah_bulan;
+
+        $angkaKredit = $this->konversiService->hitungAk(
+            $evaluasi->pegawai_id,
+            $validated['predikat_id'],
+            $jumlahBulan
+        );
+
+        $sebelumnya = $evaluasi->toArray();
+        $evaluasi->update([
+            'predikat_id'  => $validated['predikat_id'],
+            'jumlah_bulan' => $jumlahBulan,
+            'angka_kredit' => $angkaKredit,
+        ]);
+
+        $this->auditTrail->log(
+            'EVALUASI_KINERJA',
+            'UPDATE',
+            "Memperbarui evaluasi kinerja TW{$evaluasi->triwulan} ID: {$id} | AK baru: {$angkaKredit}",
+            $sebelumnya,
+            $evaluasi->fresh()->toArray()
+        );
+
+        return response()->json([
+            'message' => 'Evaluasi kinerja berhasil diperbarui.',
+            'data'    => $evaluasi->load('predikat'),
+        ]);
+    }
+
+    /**
+     * Hapus evaluasi kinerja (hanya jika belum dikunci).
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        $evaluasi = EvaluasiKinerja::findOrFail($id);
+
+        if ($evaluasi->is_locked) {
+            return response()->json(['message' => 'Evaluasi sudah dikunci dan tidak dapat dihapus.'], 422);
+        }
+
+        $this->auditTrail->log(
+            'EVALUASI_KINERJA',
+            'DELETE',
+            "Menghapus evaluasi kinerja TW{$evaluasi->triwulan} tahun {$evaluasi->tahun} untuk pegawai ID: {$evaluasi->pegawai_id}",
+            $evaluasi->toArray(),
+            null
+        );
+
+        $evaluasi->delete();
+
+        return response()->json(['message' => 'Evaluasi kinerja berhasil dihapus.']);
+    }
+
+    /**
+     * Konteks lengkap input kinerja satu pegawai untuk tahun tertentu.
+     * Mengembalikan: profil, distribusi bulan per TW, evaluasi existing, predikat master, TW aktif server.
+     */
+    public function context(Request $request, string $pegawaiId, int $tahun): JsonResponse
+    {
+        $pegawai = Pegawai::with([
+            'pangkatGolongan.jenjangJabatan',
+            'jenjangJabatan',
+            'user:id,name,email',
+        ])->findOrFail($pegawaiId);
+
+        $jenjang = $pegawai->effectiveJenjang();
+        $pangkat = $pegawai->pangkatGolongan;
+
+        // Distribusi bulan aktif per TW dari TMT Jabatan
+        $bulanPerTw = $this->hitungBulanAktifDariTmt($pegawai->tmt_jabatan?->format('Y-m-d'), $tahun);
+
+        // Evaluasi yang sudah ada (TW1–TW4) untuk tahun ini
+        $evaluasiExisting = EvaluasiKinerja::with('predikat:id,nama,persentase_konversi')
+            ->where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->orderBy('triwulan')
+            ->get()
+            ->keyBy('triwulan');
+
+        // Status kelayakan saat ini dari penetapan_ak draft
+        $penetapan = \App\Models\PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->first();
+
+        $saldoAwal = $penetapan
+            ? (float)$penetapan->ak_dasar + (float)$penetapan->ak_pak_pelantikan + (float)$penetapan->ak_historis + (float)$penetapan->ak_lama
+            : ((float)($pangkat?->ak_dasar ?? 0));
+
+        // TW aktif di server berdasarkan bulan saat ini
+        $bulanSekarang = (int) now()->month;
+        $twAktif = match (true) {
+            $bulanSekarang <= 3  => 1,
+            $bulanSekarang <= 6  => 2,
+            $bulanSekarang <= 9  => 3,
+            default              => 4,
+        };
+
+        // Cek eligibilitas TW3 (sudah layak naik sebelum TW4?)
+        $sumAkPeriodik = $evaluasiExisting->sum('angka_kredit');
+        $akKumulatifDraft = $saldoAwal + $sumAkPeriodik;
+        $targetKp = (float)($jenjang?->kebutuhan_ak_kp ?? 50.0);
+        $targetJenjang = (float)($jenjang?->kebutuhan_ak_jenjang ?? 100.0);
+        $sudahLayakSebelumTw4 = $akKumulatifDraft >= $targetKp || $akKumulatifDraft >= $targetJenjang;
+
+        return response()->json([
+            'message' => 'Konteks input kinerja pegawai.',
+            'data'    => [
+                'pegawai' => [
+                    'id'                  => $pegawai->id,
+                    'nip'                 => $pegawai->nip,
+                    'nama_lengkap'        => $pegawai->nama_lengkap,
+                    'email'               => $pegawai->user?->email,
+                    'golongan'            => $pangkat?->golongan,
+                    'jenjang'             => $jenjang?->nama,
+                    'asal_jabatan'        => $pegawai->asal_jabatan,
+                    'pendidikan_terakhir' => $pegawai->pendidikan_terakhir,
+                    'tmt_jabatan'         => $pegawai->tmt_jabatan?->format('Y-m-d'),
+                    'pangkat_golongan_id' => $pegawai->pangkat_golongan_id,
+                    'jenjang_jabatan_id'  => $pegawai->jenjang_jabatan_id,
+                    'koefisien_tahunan'   => $jenjang?->koefisien_tahunan,
+                    'kebutuhan_ak_kp'     => $targetKp,
+                    'kebutuhan_ak_jenjang'=> $targetJenjang,
+                ],
+                'saldo_awal'               => $saldoAwal,
+                'ak_kumulatif_draft'       => round($akKumulatifDraft, 2),
+                'sudah_layak_sebelum_tw4'  => $sudahLayakSebelumTw4,
+                'tw_aktif'                 => $twAktif,
+                'tahun'                    => $tahun,
+                'bulan_per_tw'             => $bulanPerTw ?? [1 => 3, 2 => 3, 3 => 3, 4 => 3],
+                'evaluasi'                 => $evaluasiExisting->map(fn($e) => [
+                    'id'           => $e->id,
+                    'triwulan'     => $e->triwulan,
+                    'jumlah_bulan' => $e->jumlah_bulan,
+                    'predikat_id'  => $e->predikat_id,
+                    'predikat'     => $e->predikat?->nama,
+                    'angka_kredit' => (float) $e->angka_kredit,
+                    'is_locked'    => $e->is_locked,
+                ]),
+                'penetapan_is_final' => (bool) $penetapan?->is_final,
+            ],
+        ]);
+    }
+
+    /**
+     * Hitung distribusi bulan aktif per triwulan dari TMT Jabatan.
+     */
+    protected function hitungBulanAktifDariTmt(?string $tmt, int $tahun): ?array
+    {
+        if (empty($tmt)) {
+            return null;
+        }
+
+        try {
+            $date = \Carbon\Carbon::parse($tmt);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $tmtTahun = (int) $date->year;
+
+        if ($tmtTahun < $tahun) {
+            return [1 => 3, 2 => 3, 3 => 3, 4 => 3];
+        }
+        if ($tmtTahun > $tahun) {
+            return null;
+        }
+
+        $startMonth = (int) $date->month;
+        $bulan = [];
+        foreach (range(1, 4) as $q) {
+            $from = (($q - 1) * 3) + 1;
+            $to   = $q * 3;
+            if ($startMonth > $to) {
+                $bulan[$q] = 0;
+            } elseif ($startMonth <= $from) {
+                $bulan[$q] = 3;
+            } else {
+                $bulan[$q] = $to - $startMonth + 1;
+            }
+        }
+
+        return $bulan;
+    }
 }

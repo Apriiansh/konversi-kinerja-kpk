@@ -37,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/evaluasi/simulasi', [EvaluasiKinerjaController::class, 'simulasi']); // Preview hitung AK tanpa simpan
     Route::post('/evaluasi/{id}/lock', [EvaluasiKinerjaController::class, 'lock']);
 
+    // CRUD Evaluasi
+    Route::get('evaluasi/context/{pegawaiId}/{tahun}', [EvaluasiKinerjaController::class, 'context'])->whereNumber('tahun');
+    Route::get('evaluasi/{id}', [EvaluasiKinerjaController::class, 'show']);
+    Route::put('evaluasi/{id}', [EvaluasiKinerjaController::class, 'update']);
+    Route::delete('evaluasi/{id}', [EvaluasiKinerjaController::class, 'destroy']);
+
     // Pengajuan Pendidikan & Booster Ijazah (+25% AK)
     Route::get('/pengajuan-pendidikan', [PengajuanPendidikanController::class, 'index']);
     Route::post('/pengajuan-pendidikan', [PengajuanPendidikanController::class, 'store']);

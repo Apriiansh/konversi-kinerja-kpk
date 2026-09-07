@@ -70,6 +70,11 @@ const ADMIN_MENU: MenuItem[] = [
     icon: <i className="fa-solid fa-file-import text-xs w-4 text-center" />,
   },
   {
+    to: '/admin/input-kinerja',
+    label: 'Input Kinerja',
+    icon: <i className="fa-solid fa-clipboard-list text-xs w-4 text-center" />,
+  },
+  {
     to: '/admin/rekapitulasi',
     label: 'Rekapitulasi & PAK',
     icon: <i className="fa-solid fa-file-contract text-xs w-4 text-center" />,
