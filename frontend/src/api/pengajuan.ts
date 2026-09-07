@@ -41,8 +41,21 @@ export async function verifikasiPengajuan(
 // Helper untuk URL berkas fisik (storage Laravel)
 export function getStorageFileUrl(filePath: string): string {
   if (!filePath) return '#'
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+  if (filePath.startsWith('http')) return filePath
+  const clean = filePath.replace(/^\/?storage\//, '')
+  // Gunakan URL relatif agar Vite proxy bekerja (jangan hardcode host)
+  return `/storage/${clean}`
+=======
+>>>>>>> Stashed changes
   if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath
   // Sanitasi path lokal atau protocol file:///
   const cleaned = filePath.replace(/^(file:\/\/\/|[a-zA-Z]:[\\\/])/i, '').replace(/\\/g, '/')
   return `/storage/${cleaned.replace(/^\/?storage\//, '')}`
+<<<<<<< Updated upstream
+=======
+>>>>>>> main
+>>>>>>> Stashed changes
 }

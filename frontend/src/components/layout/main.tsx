@@ -8,7 +8,18 @@ import Footer from './footer'
 export default function Main({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+<<<<<<< Updated upstream
 const toggleCollapsed = () => setCollapsed((c) => !c)
+=======
+<<<<<<< HEAD
+  const { user } = useAuth()
+  const isPegawai = user?.role !== 'ADMIN'
+
+  const toggleCollapsed = () => setCollapsed((c) => !c)
+=======
+const toggleCollapsed = () => setCollapsed((c) => !c)
+>>>>>>> main
+>>>>>>> Stashed changes
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#f8fafc] text-gray-800 font-sans antialiased">
