@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pengajuan-pendidikan', [PengajuanPendidikanController::class, 'store']);
     Route::get('/pengajuan-pendidikan/{id}', [PengajuanPendidikanController::class, 'show']);
     Route::post('/pengajuan-pendidikan/{id}/verifikasi', [PengajuanPendidikanController::class, 'verifikasi']);
+    Route::delete('/pengajuan-pendidikan/{id}', [PengajuanPendidikanController::class, 'destroy']);
 
     // Notifikasi Pegawai / Admin
     Route::get('/notifikasi', [NotifikasiController::class, 'index']);

@@ -165,6 +165,8 @@ class PengajuanPendidikanController extends Controller
                 "Admin {$user->name} menolak berkas pengajuan ID {$id}. Alasan: {$request->catatan}"
             );
 
+            $this->syncBoosterPenetapan($pengajuan->pegawai_id, (int) now()->year);
+
             return response()->json([
                 'message' => 'Dokumen pengajuan telah ditolak.',
                 'data'    => $pengajuan,
@@ -180,5 +182,69 @@ class PengajuanPendidikanController extends Controller
                 : 'Dokumen valid, namun pengajuan ditolak sistem karena tidak memenuhi kriteria otomatis.',
             'data'    => $hasil,
         ]);
+    }
+
+    /**
+     * Hapus pengajuan pendidikan (Pegawai atau Admin).
+     * Otomatis menyinkronkan kembali AK Booster & progress bar di PenetapanAK.
+     */
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+        $pengajuan = PengajuanPendidikan::findOrFail($id);
+
+        if ($user->role !== 'ADMIN' && $pengajuan->pegawai_id !== $user->pegawai?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk menghapus pengajuan ini.'], 403);
+        }
+
+        $pegawaiId = $pengajuan->pegawai_id;
+        $tahunPengajuan = $pengajuan->diverifikasi_pada ? (int) $pengajuan->diverifikasi_pada->year : (int) $pengajuan->created_at->year;
+
+        // Hapus file jika ada
+        if ($pengajuan->file_ijazah) {
+            Storage::disk('public')->delete($pengajuan->file_ijazah);
+        }
+        if ($pengajuan->file_bukti_bkn) {
+            Storage::disk('public')->delete($pengajuan->file_bukti_bkn);
+        }
+
+        $pengajuan->delete();
+
+        // Sinkronkan ulang PenetapanAK tahun tersebut & tahun berjalan
+        $this->syncBoosterPenetapan($pegawaiId, $tahunPengajuan);
+        $this->syncBoosterPenetapan($pegawaiId, (int) now()->year);
+
+        return response()->json(['message' => 'Pengajuan pendidikan berhasil dihapus.']);
+    }
+
+    /**
+     * Helper sinkronisasi AK Booster di tabel penetapan_ak.
+     */
+    public function syncBoosterPenetapan(string $pegawaiId, int $tahun): void
+    {
+        $liveAkBooster = (float) PengajuanPendidikan::where('pegawai_id', $pegawaiId)
+            ->where('status', 'DISETUJUI')
+            ->where(function ($q) use ($tahun) {
+                $q->whereYear('diverifikasi_pada', $tahun)
+                  ->orWhereYear('created_at', $tahun);
+            })
+            ->sum('ak_bonus');
+
+        $penetapan = \App\Models\PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->first();
+
+        if ($penetapan) {
+            $akLamaEffective = (float) $penetapan->ak_lama > 0
+                ? (float) $penetapan->ak_lama
+                : (float) $penetapan->ak_dasar + (float) $penetapan->ak_pak_pelantikan + (float) $penetapan->ak_historis + (float) $penetapan->ak_carry_over;
+
+            $akKumulatif = round($akLamaEffective + (float) $penetapan->ak_baru + $liveAkBooster, 2);
+
+            $penetapan->update([
+                'ak_booster'   => $liveAkBooster,
+                'ak_kumulatif' => $akKumulatif,
+            ]);
+        }
     }
 }

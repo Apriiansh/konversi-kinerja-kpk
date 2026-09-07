@@ -20,28 +20,39 @@ export default function PegawaiDashboard() {
   const [loadingAktivitas, setLoadingAktivitas] = useState<boolean>(true)
 
   // Fetch data AK dari backend
+  const [refetchKey, setRefetchKey] = useState(0)
+
   useEffect(() => {
     let isMounted = true
     const pegawaiId = user?.pegawai?.id
     const currentYear = new Date().getFullYear()
 
-    if (pegawaiId) {
+    const fetchPak = () => {
+      if (!pegawaiId) {
+        setLoadingPak(false)
+        return
+      }
       getDetailPak(pegawaiId, currentYear)
         .then((data) => {
           if (isMounted) setPakData(data)
         })
-        .catch(() => { })
+        .catch(() => {})
         .finally(() => {
           if (isMounted) setLoadingPak(false)
         })
-    } else {
-      setLoadingPak(false)
     }
+
+    fetchPak()
+
+    // Auto-polling setiap 15 detik agar progress bar live terupdate
+    // saat admin menginput/menghapus nilai TW tanpa perlu refresh manual
+    const interval = setInterval(fetchPak, 15_000)
 
     return () => {
       isMounted = false
+      clearInterval(interval)
     }
-  }, [user?.pegawai?.id])
+  }, [user?.pegawai?.id, refetchKey])
 
   // Fetch data pengajuan pendidikan dari database
   useEffect(() => {
@@ -61,14 +72,23 @@ export default function PegawaiDashboard() {
     }
   }, [])
 
-  // Fetch aktivitas terbaru dari backend
+  // Fetch aktivitas terbaru dari backend (dengan polling 15 detik)
   useEffect(() => {
     let isMounted = true
-    getAktivitasTerbaru(5)
-      .then((data) => { if (isMounted) setAktivitasList(data) })
-      .catch(() => {})
-      .finally(() => { if (isMounted) setLoadingAktivitas(false) })
-    return () => { isMounted = false }
+
+    const fetchAktivitas = () => {
+      getAktivitasTerbaru(5)
+        .then((data) => { if (isMounted) setAktivitasList(data) })
+        .catch(() => {})
+        .finally(() => { if (isMounted) setLoadingAktivitas(false) })
+    }
+
+    fetchAktivitas()
+    const interval = setInterval(fetchAktivitas, 15_000)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
   }, [])
 
   // Data pegawai
@@ -92,16 +112,28 @@ export default function PegawaiDashboard() {
   }
   const tmt = formatTmt(user?.pegawai?.tmt_jabatan ?? pakData?.pegawai?.tmt_jabatan)
 
-  // Hitung AK
-  const akLama = pakData?.ak_lama ?? 0
-  const akBaru = pakData?.ak_baru ?? 0
-  const akKumulatif = pakData?.ak_kumulatif ?? (akLama + akBaru)
+  // Hitung AK — live per TW (bergerak tiap triwulan, tidak nunggu finalisasi TW4)
+  const akDasar = pakData?.ak_dasar ?? 0
+  const akPakPelantikan = pakData?.ak_pak_pelantikan ?? 0
+  const akHistoris = pakData?.ak_historis ?? 0
+  const akCarry = pakData?.ak_carry_over ?? 0
+  const akLamaRaw = pakData?.ak_lama ?? 0
+  const akLamaEffective = akLamaRaw > 0 ? akLamaRaw : (akDasar + akPakPelantikan + akHistoris + akCarry)
+  // live AK baru: gunakan total_ak_baru atau sum_ak_periodik (live sum dari evaluasi_kinerja)
+  // Ini yang membuat progress bar naik real-time tiap TW diisi, dan reset saat dihapus.
+  const liveAkBaru = pakData?.total_ak_baru ?? pakData?.sum_ak_periodik ?? pakData?.ak_baru ?? 0
+  const akBooster = pakData?.ak_booster ?? 0
+  const akLama = akLamaEffective
+  const akBaru = liveAkBaru
+
+  // Live akumulasi selalu responsif terhadap perolehan TW saat ini
+  const akKumulatif = Number((akLama + akBaru + akBooster).toFixed(2))
   const targetKp = pakData?.kelayakan?.target_kp ?? 50.0
-  const persentaseStatus = targetKp > 0
-    ? Math.min(100, Math.round((akKumulatif / targetKp) * 1000) / 10)
-    : 0
+  const persentaseStatus = targetKp > 0 ? Math.min(100, Math.round((akKumulatif / targetKp) * 1000) / 10) : 0
   const kurangAk = Math.max(0, Math.round((targetKp - akKumulatif) * 100) / 100)
-  const kelayakanBadge = pakData?.kelayakan?.badge_label ?? (persentaseStatus >= 100 ? 'Layak KP' : 'Belum Memenuhi')
+  const kelayakanBadge = persentaseStatus >= 100
+    ? (pakData?.is_final ? 'Layak KP' : 'Layak KP (Draft)')
+    : (pakData?.kelayakan?.badge_label ?? 'Belum Memenuhi')
 
   // Ambil pengajuan terbaru (item pertama karena sudah sorted latest)
   const pengajuanTerbaru = pengajuanList.length > 0 ? pengajuanList[0] : null
@@ -235,6 +267,18 @@ export default function PegawaiDashboard() {
             <div>
               <p className="text-[10px] text-slate-400 font-medium">Email</p>
               <p className="text-xs sm:text-sm text-slate-600 font-medium truncate max-w-[200px] sm:max-w-xs">{email}</p>
+            </div>
+
+            {/* Segarkan button */}
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => setRefetchKey((r) => r + 1)}
+                className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                title="Segarkan data PAK"
+              >
+                <i className="fa-solid fa-rotate text-[10px]" />
+                Segarkan
+              </button>
             </div>
           </div>
         </div>

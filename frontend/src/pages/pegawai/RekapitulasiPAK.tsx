@@ -66,10 +66,10 @@ export default function RekapitulasiPAK() {
   const akHistoris = pakData?.ak_historis ?? 0
   const akLama = pakData?.ak_lama ?? 0
   const akCarry = pakData?.ak_carry_over ?? 0
-  const akBaru = pakData?.ak_baru ?? pakData?.total_ak_baru ?? 0
-  const akBooster = pakData?.ak_booster ?? 0
-  const akKumulatif = pakData?.ak_kumulatif ?? akLama + akBaru + akBooster
   const totalSaldoAwal = akLama > 0 ? akLama : akDasar + akPakPelantikan + akHistoris + akCarry
+  const akBaru = pakData?.total_ak_baru ?? pakData?.sum_ak_periodik ?? pakData?.ak_baru ?? 0
+  const akBooster = pakData?.ak_booster ?? 0
+  const akKumulatif = Number((totalSaldoAwal + akBaru + akBooster).toFixed(2))
 
   const targetKp = pakData?.kelayakan?.target_kp ?? 50
   const targetJenjang = pakData?.kelayakan?.target_jenjang ?? 100

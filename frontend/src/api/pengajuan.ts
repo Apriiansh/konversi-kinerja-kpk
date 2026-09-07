@@ -46,6 +46,12 @@ export async function submitPengajuan(formData: FormData): Promise<{ message: st
   return response.data
 }
 
+// 5. Hapus pengajuan pendidikan (Pegawai / Admin)
+export async function deletePengajuan(id: string): Promise<{ message: string }> {
+  const response = await api.delete(`/pengajuan-pendidikan/${id}`)
+  return response.data
+}
+
 export interface KampusItem { id: number; name: string; country: string | null }
 export async function getKampusList(search: string, limit = 10): Promise<KampusItem[]> {
   const res = await api.get('/kampus', { params: { search, limit } })
