@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useAuth } from '../../context/useAuth'
-import { getDetailPakLive, getPengajuanPendidikan } from '../../api/rekapitulasi'
-import type { DetailPakResponse, PengajuanPendidikanItem } from '../../api/rekapitulasi'
+import {
+  getDetailPakLive,
+  getPengajuanPendidikan,
+  type DetailPakResponse,
+  type PengajuanPendidikanItem,
+} from '../../api/rekapitulasi'
 import { getAktivitasTerbaru, type AktivitasItem } from '../../api/aktivitas'
 
 export default function PegawaiDashboard() {
@@ -19,35 +23,47 @@ export default function PegawaiDashboard() {
   const [aktivitasList, setAktivitasList] = useState<AktivitasItem[]>([])
   const [loadingAktivitas, setLoadingAktivitas] = useState<boolean>(true)
 
-  // Fetch data AK dari backend
+  // Trigger untuk refresh data PAK secara manual
   const [refetchKey, setRefetchKey] = useState(0)
 
+  // ============================================================
+  // FETCH DATA PAK
+  // ============================================================
   useEffect(() => {
     let isMounted = true
+
     const pegawaiId = user?.pegawai?.id
     const currentYear = new Date().getFullYear()
 
     const fetchPak = () => {
       if (!pegawaiId) {
-        setLoadingPak(false)
+        if (isMounted) {
+          setLoadingPak(false)
+        }
         return
       }
-      getDetailPak(pegawaiId, currentYear)
-    if (pegawaiId) {
+
       getDetailPakLive(pegawaiId, currentYear)
         .then((data) => {
-          if (isMounted) setPakData(data)
+          if (isMounted) {
+            setPakData(data)
+          }
         })
-        .catch(() => {})
+        .catch(() => {
+          // Error sengaja tidak ditampilkan di dashboard.
+          // Data sebelumnya tetap dipertahankan.
+        })
         .finally(() => {
-          if (isMounted) setLoadingPak(false)
+          if (isMounted) {
+            setLoadingPak(false)
+          }
         })
     }
 
     fetchPak()
 
-    // Auto-polling setiap 15 detik agar progress bar live terupdate
-    // saat admin menginput/menghapus nilai TW tanpa perlu refresh manual
+    // Auto-polling setiap 15 detik agar progress bar live ter-update
+    // saat admin menginput/menghapus nilai TW tanpa perlu refresh manual.
     const interval = setInterval(fetchPak, 15_000)
 
     return () => {
@@ -56,17 +72,25 @@ export default function PegawaiDashboard() {
     }
   }, [user?.pegawai?.id, refetchKey])
 
-  // Fetch data pengajuan pendidikan dari database
+  // ============================================================
+  // FETCH PENGAJUAN PENDIDIKAN
+  // ============================================================
   useEffect(() => {
     let isMounted = true
 
     getPengajuanPendidikan()
       .then((data) => {
-        if (isMounted) setPengajuanList(data)
+        if (isMounted) {
+          setPengajuanList(data)
+        }
       })
-      .catch(() => { })
+      .catch(() => {
+        // Error sengaja tidak ditampilkan di dashboard.
+      })
       .finally(() => {
-        if (isMounted) setLoadingPengajuan(false)
+        if (isMounted) {
+          setLoadingPengajuan(false)
+        }
       })
 
     return () => {
@@ -74,37 +98,60 @@ export default function PegawaiDashboard() {
     }
   }, [])
 
-  // Fetch aktivitas terbaru dari backend (dengan polling 15 detik)
+  // ============================================================
+  // FETCH AKTIVITAS TERBARU
+  // ============================================================
   useEffect(() => {
     let isMounted = true
 
     const fetchAktivitas = () => {
       getAktivitasTerbaru(5)
-        .then((data) => { if (isMounted) setAktivitasList(data) })
-        .catch(() => {})
-        .finally(() => { if (isMounted) setLoadingAktivitas(false) })
+        .then((data) => {
+          if (isMounted) {
+            setAktivitasList(data)
+          }
+        })
+        .catch(() => {
+          // Error sengaja tidak ditampilkan di dashboard.
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoadingAktivitas(false)
+          }
+        })
     }
 
     fetchAktivitas()
+
+    // Polling aktivitas setiap 15 detik.
     const interval = setInterval(fetchAktivitas, 15_000)
+
     return () => {
       isMounted = false
       clearInterval(interval)
     }
   }, [])
 
-  // Data pegawai
+  // ============================================================
+  // DATA PEGAWAI
+  // ============================================================
   const name = user?.pegawai?.nama_lengkap ?? user?.name ?? 'Pegawai'
   const nip = user?.pegawai?.nip ?? '-'
   const email = user?.email ?? '-'
   const golongan = user?.pegawai?.pangkat_golongan?.golongan ?? '-'
   const jenjang = user?.pegawai?.pangkat_golongan?.jenjang_jabatan?.nama ?? '-'
   const pendidikan = user?.pegawai?.pendidikan_terakhir ?? '-'
+
   const formatTmt = (value?: string | null) => {
     if (!value) return '-'
 
-    const date = new Date(value.includes('T') ? value : `${value}T00:00:00`)
-    if (Number.isNaN(date.getTime())) return value
+    const date = new Date(
+      value.includes('T') ? value : `${value}T00:00:00`,
+    )
+
+    if (Number.isNaN(date.getTime())) {
+      return value
+    }
 
     return new Intl.DateTimeFormat('id-ID', {
       day: '2-digit',
@@ -112,82 +159,184 @@ export default function PegawaiDashboard() {
       year: 'numeric',
     }).format(date)
   }
-  const tmt = formatTmt(user?.pegawai?.tmt_jabatan ?? pakData?.pegawai?.tmt_jabatan)
 
-  // Hitung AK — live per TW (bergerak tiap triwulan, tidak nunggu finalisasi TW4)
+  const tmt = formatTmt(
+    user?.pegawai?.tmt_jabatan ?? pakData?.pegawai?.tmt_jabatan,
+  )
+
+  // ============================================================
+  // PERHITUNGAN ANGKA KREDIT
+  // ============================================================
   const akDasar = pakData?.ak_dasar ?? 0
   const akPakPelantikan = pakData?.ak_pak_pelantikan ?? 0
   const akHistoris = pakData?.ak_historis ?? 0
   const akCarry = pakData?.ak_carry_over ?? 0
+
+  /*
+   * Saldo AK lama:
+   *
+   * 1. Gunakan ak_lama jika tersedia dan > 0.
+   * 2. Jika tidak tersedia / bernilai 0, gunakan fallback:
+   *    ak_dasar + ak_pak_pelantikan + ak_historis + ak_carry_over.
+   */
   const akLamaRaw = pakData?.ak_lama ?? 0
-  const akLamaEffective = akLamaRaw > 0 ? akLamaRaw : (akDasar + akPakPelantikan + akHistoris + akCarry)
-  // live AK baru: gunakan total_ak_baru atau sum_ak_periodik (live sum dari evaluasi_kinerja)
-  // Ini yang membuat progress bar naik real-time tiap TW diisi, dan reset saat dihapus.
-  const liveAkBaru = pakData?.total_ak_baru ?? pakData?.sum_ak_periodik ?? pakData?.ak_baru ?? 0
+
+  const akLamaEffective =
+    akLamaRaw > 0
+      ? akLamaRaw
+      : akDasar + akPakPelantikan + akHistoris + akCarry
+
+  /*
+   * AK tahun berjalan dibuat live.
+   *
+   * Prioritas:
+   * 1. total_ak_baru
+   * 2. sum_ak_periodik
+   * 3. ak_baru
+   * 4. 0
+   *
+   * Dengan demikian perubahan nilai TW dari backend langsung
+   * tercermin pada dashboard tanpa menunggu finalisasi TW4.
+   */
+  const liveAkBaru =
+    pakData?.total_ak_baru ??
+    pakData?.sum_ak_periodik ??
+    pakData?.ak_baru ??
+    0
+
   const akBooster = pakData?.ak_booster ?? 0
+
   const akLama = akLamaEffective
   const akBaru = liveAkBaru
 
-  // Live akumulasi selalu responsif terhadap perolehan TW saat ini
-  const akKumulatif = Number((akLama + akBaru + akBooster).toFixed(2))
-  // Hitung AK
-  const akLama = pakData?.ak_lama ?? 0
-  const akBaru = pakData?.ak_baru ?? 0
-  const akBooster = pakData?.ak_booster ?? 0
-  const akKumulatif = pakData?.ak_kumulatif ?? (akLama + akBaru + akBooster)
+  /*
+   * Akumulasi AK live:
+   * saldo lama + AK tahun berjalan + booster pendidikan.
+   */
+  const akKumulatif = Number(
+    (akLama + akBaru + akBooster).toFixed(2),
+  )
+
   const targetKp = pakData?.kelayakan?.target_kp ?? 50.0
-  const persentaseStatus = targetKp > 0 ? Math.min(100, Math.round((akKumulatif / targetKp) * 1000) / 10) : 0
-  const kurangAk = Math.max(0, Math.round((targetKp - akKumulatif) * 100) / 100)
-  const kelayakanBadge = persentaseStatus >= 100
-    ? (pakData?.is_final ? 'Layak KP' : 'Layak KP (Draft)')
-    : (pakData?.kelayakan?.badge_label ?? 'Belum Memenuhi')
 
-  // Ambil pengajuan terbaru (item pertama karena sudah sorted latest)
-  const pengajuanTerbaru = pengajuanList.length > 0 ? pengajuanList[0] : null
+  const persentaseStatus =
+    targetKp > 0
+      ? Math.min(
+          100,
+          Math.round((akKumulatif / targetKp) * 1000) / 10,
+        )
+      : 0
 
-  // Status badge color helper
+  const kurangAk = Math.max(
+    0,
+    Math.round((targetKp - akKumulatif) * 100) / 100,
+  )
+
+  const kelayakanBadge =
+    persentaseStatus >= 100
+      ? pakData?.is_final
+        ? 'Layak KP'
+        : 'Layak KP (Draft)'
+      : pakData?.kelayakan?.badge_label ?? 'Belum Memenuhi'
+
+  // ============================================================
+  // PENGAJUAN TERBARU
+  // ============================================================
+  const pengajuanTerbaru =
+    pengajuanList.length > 0 ? pengajuanList[0] : null
+
+  // ============================================================
+  // STATUS BADGE
+  // ============================================================
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DISETUJUI': return 'text-green-700 bg-green-50 border-green-200'
-      case 'DIAJUKAN': return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+      case 'DISETUJUI':
+        return 'text-green-700 bg-green-50 border-green-200'
+
+      case 'DIAJUKAN':
+        return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+
       case 'DITOLAK_ADMIN':
-      case 'DITOLAK_SYARAT': return 'text-red-700 bg-red-50 border-red-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
+      case 'DITOLAK_SYARAT':
+        return 'text-red-700 bg-red-50 border-red-200'
+
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200'
     }
   }
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'DISETUJUI': return 'Disetujui'
-      case 'DIAJUKAN': return 'Menunggu Verifikasi'
-      case 'DITOLAK_ADMIN': return 'Ditolak Admin'
-      case 'DITOLAK_SYARAT': return 'Ditolak Syarat'
-      default: return status
+      case 'DISETUJUI':
+        return 'Disetujui'
+
+      case 'DIAJUKAN':
+        return 'Menunggu Verifikasi'
+
+      case 'DITOLAK_ADMIN':
+        return 'Ditolak Admin'
+
+      case 'DITOLAK_SYARAT':
+        return 'Ditolak Syarat'
+
+      default:
+        return status
     }
   }
 
-  // Helper salam berdasarkan waktu (human touch)
+  // ============================================================
+  // GREETING
+  // ============================================================
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi'
-    if (hour >= 11 && hour < 15) return 'Selamat Siang'
-    if (hour >= 15 && hour < 18) return 'Selamat Sore'
+
+    if (hour >= 4 && hour < 11) {
+      return 'Selamat Pagi'
+    }
+
+    if (hour >= 11 && hour < 15) {
+      return 'Selamat Siang'
+    }
+
+    if (hour >= 15 && hour < 18) {
+      return 'Selamat Sore'
+    }
+
     return 'Selamat Malam'
   }
 
+  // ============================================================
+  // FRAMER MOTION
+  // ============================================================
   const containerVariants: Variants = {
-    hidden: { opacity: 0 },
+    hidden: {
+      opacity: 0,
+    },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 },
+      transition: {
+        staggerChildren: 0.08,
+      },
     },
   }
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+    hidden: {
+      opacity: 0,
+      y: 12,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.35,
+      },
+    },
   }
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <motion.div
       variants={containerVariants}
@@ -195,24 +344,31 @@ export default function PegawaiDashboard() {
       animate="visible"
       className="space-y-5 pb-10"
     >
-      {/* Unified Hero Section: Exact Match to Reference Design */}
+      {/* Unified Hero Section */}
       <motion.section
         variants={itemVariants}
         className="relative overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 lg:p-9"
       >
-        {/* Right-edge Red Wave Swoosh (Reference Design Accent) */}
+        {/* Right-edge Red Wave Swoosh */}
         <div className="absolute top-0 right-0 bottom-0 w-36 sm:w-52 lg:w-72 pointer-events-none overflow-hidden select-none z-0">
-          <svg className="w-full h-full" viewBox="0 0 240 400" preserveAspectRatio="none" fill="none">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 240 400"
+            preserveAspectRatio="none"
+            fill="none"
+          >
             {/* Main deep red wave */}
             <path
               d="M130 400 C40 280 60 140 240 60 L240 400 Z"
               fill="url(#kpkRedWave)"
             />
+
             {/* Secondary inner contour wave */}
             <path
               d="M170 400 C90 290 100 170 240 110 L240 400 Z"
               fill="#a81c24"
             />
+
             {/* White accent contour wave line */}
             <path
               d="M130 400 C40 280 60 140 240 60"
@@ -221,8 +377,15 @@ export default function PegawaiDashboard() {
               strokeOpacity="0.4"
               fill="none"
             />
+
             <defs>
-              <linearGradient id="kpkRedWave" x1="100%" y1="0%" x2="0%" y2="100%">
+              <linearGradient
+                id="kpkRedWave"
+                x1="100%"
+                y1="0%"
+                x2="0%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="#d32f2f" />
                 <stop offset="60%" stopColor="#b71c1c" />
                 <stop offset="100%" stopColor="#821319" />
@@ -231,13 +394,18 @@ export default function PegawaiDashboard() {
           </svg>
         </div>
 
-        {/* Main Content: Greetings + Status/Email */}
+        {/* Main Content */}
         <div className="relative z-10 space-y-5">
           {/* Top Tagline */}
           <div className="flex items-center gap-2.5 text-sm">
             <span className="w-2.5 h-2.5 rounded-full bg-[#c62828] shrink-0" />
-            <span className="font-bold text-slate-800 tracking-tight">Portal Kepegawaian KPK</span>
+
+            <span className="font-bold text-slate-800 tracking-tight">
+              Portal Kepegawaian KPK
+            </span>
+
             <span className="h-3.5 w-px bg-slate-300 mx-1" />
+
             <span className="font-mono text-xs sm:text-sm text-slate-500 font-medium tracking-wide">
               NIP. {nip}
             </span>
@@ -248,22 +416,32 @@ export default function PegawaiDashboard() {
             <p className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">
               {getGreeting()},
             </p>
+
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#c62828] tracking-tight leading-tight mt-1">
               {name}
             </h1>
+
             <p className="text-xs sm:text-sm text-slate-500 mt-3 leading-relaxed max-w-2xl">
-              Selamat beraktivitas! Pantau perkembangan angka kredit, riwayat jabatan, dan persiapan kenaikan jenjang kepangkatan Anda secara transparan.
+              Selamat beraktivitas! Pantau perkembangan angka kredit,
+              riwayat jabatan, dan persiapan kenaikan jenjang kepangkatan
+              Anda secara transparan.
             </p>
           </div>
 
-          {/* Status & Email Pill Box */}
+          {/* Status & Email */}
           <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-5 sm:gap-7 rounded-2xl bg-slate-50/90 border border-slate-100 px-5 py-3">
             {/* Status */}
             <div className="flex items-center gap-3">
               <span className="w-2.5 h-2.5 rounded-full bg-[#c62828] shrink-0" />
+
               <div>
-                <p className="text-[10px] text-slate-400 font-medium">Status</p>
-                <p className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">Pegawai Aktif</p>
+                <p className="text-[10px] text-slate-400 font-medium">
+                  Status
+                </p>
+
+                <p className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
+                  Pegawai Aktif
+                </p>
               </div>
             </div>
 
@@ -272,14 +450,20 @@ export default function PegawaiDashboard() {
 
             {/* Email */}
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Email</p>
-              <p className="text-xs sm:text-sm text-slate-600 font-medium truncate max-w-[200px] sm:max-w-xs">{email}</p>
+              <p className="text-[10px] text-slate-400 font-medium">
+                Email
+              </p>
+
+              <p className="text-xs sm:text-sm text-slate-600 font-medium truncate max-w-[200px] sm:max-w-xs">
+                {email}
+              </p>
             </div>
 
-            {/* Segarkan button */}
+            {/* Refresh */}
             <div className="ml-auto flex items-center gap-2">
               <button
-                onClick={() => setRefetchKey((r) => r + 1)}
+                type="button"
+                onClick={() => setRefetchKey((current) => current + 1)}
                 className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
                 title="Segarkan data PAK"
               >
@@ -292,116 +476,240 @@ export default function PegawaiDashboard() {
 
         {/* Bottom Strip: Kepegawaian Data */}
         <div className="mt-7 relative z-20 rounded-2xl bg-white border border-slate-100 p-4 sm:p-5">
-          {/* Label Header */}
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Informasi Pegawai</p>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">
+            Informasi Pegawai
+          </p>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-            {/* 1. Pangkat / Golongan */}
+            {/* Pangkat / Golongan */}
             <div className="px-3 sm:px-5">
-              <p className="text-[11px] text-slate-400 font-medium">Pangkat / Golongan</p>
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">{golongan}</p>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Pangkat / Golongan
+              </p>
+
+              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">
+                {golongan}
+              </p>
             </div>
 
-            {/* 2. Jenjang */}
+            {/* Jenjang */}
             <div className="px-3 sm:px-5 pt-3 sm:pt-0">
-              <p className="text-[11px] text-slate-400 font-medium">Jenjang</p>
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate" title={jenjang}>{jenjang}</p>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Jenjang
+              </p>
+
+              <p
+                className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate"
+                title={jenjang}
+              >
+                {jenjang}
+              </p>
             </div>
 
-            {/* 3. Pendidikan */}
+            {/* Pendidikan */}
             <div className="px-3 sm:px-5 pt-3 sm:pt-0">
-              <p className="text-[11px] text-slate-400 font-medium">Pendidikan</p>
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate" title={pendidikan}>{pendidikan}</p>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Pendidikan
+              </p>
+
+              <p
+                className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate"
+                title={pendidikan}
+              >
+                {pendidikan}
+              </p>
             </div>
 
-            {/* 4. TMT Jabatan */}
+            {/* TMT Jabatan */}
             <div className="px-3 sm:px-5 pt-3 sm:pt-0">
-              <p className="text-[11px] text-slate-400 font-medium">TMT Jabatan</p>
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">{tmt}</p>
+              <p className="text-[11px] text-slate-400 font-medium">
+                TMT Jabatan
+              </p>
+
+              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">
+                {tmt}
+              </p>
             </div>
           </div>
         </div>
       </motion.section>
 
-      {/* 5 Card Angka Kredit with Subtle Wave Accents */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* 5 Card Angka Kredit */}
+      <motion.div
+        variants={itemVariants}
+        className="grid grid-cols-2 lg:grid-cols-5 gap-3"
+      >
         {/* Saldo AK */}
         <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
-          <svg className="absolute bottom-0 right-0 w-28 h-10 text-gray-100/90 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
-            <path d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z" fill="currentColor" />
+          <svg
+            className="absolute bottom-0 right-0 w-28 h-10 text-gray-100/90 pointer-events-none"
+            viewBox="0 0 120 40"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z"
+              fill="currentColor"
+            />
           </svg>
+
           <div className="relative z-10 flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase">Saldo AK</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase">
+              Saldo AK
+            </p>
+
             <i className="fa-solid fa-wallet text-[10px] text-gray-300" />
           </div>
+
           <p className="relative z-10 text-xl font-bold text-gray-800 font-mono">
-            {loadingPak ? '...' : akLama.toLocaleString('id-ID', { minimumFractionDigits: 3 })}
+            {loadingPak
+              ? '...'
+              : akLama.toLocaleString('id-ID', {
+                  minimumFractionDigits: 3,
+                })}
           </p>
-          <p className="relative z-10 text-[10px] text-gray-400 mt-0.5">Akumulasi saldo awal</p>
+
+          <p className="relative z-10 text-[10px] text-gray-400 mt-0.5">
+            Akumulasi saldo awal
+          </p>
         </div>
 
         {/* AK Tahun Berjalan */}
         <div className="relative overflow-hidden rounded-xl border border-green-200 bg-green-50/50 p-4">
-          <svg className="absolute bottom-0 right-0 w-28 h-10 text-green-200/50 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
-            <path d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z" fill="currentColor" />
+          <svg
+            className="absolute bottom-0 right-0 w-28 h-10 text-green-200/50 pointer-events-none"
+            viewBox="0 0 120 40"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z"
+              fill="currentColor"
+            />
           </svg>
+
           <div className="relative z-10 flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-green-700 uppercase">AK {new Date().getFullYear()}</p>
+            <p className="text-[10px] font-semibold text-green-700 uppercase">
+              AK {new Date().getFullYear()}
+            </p>
+
             <i className="fa-solid fa-arrow-trend-up text-[10px] text-green-400" />
           </div>
+
           <p className="relative z-10 text-xl font-bold text-green-700 font-mono">
-            +{loadingPak ? '...' : akBaru.toLocaleString('id-ID', { minimumFractionDigits: 3 })}
+            +
+            {loadingPak
+              ? '...'
+              : akBaru.toLocaleString('id-ID', {
+                  minimumFractionDigits: 3,
+                })}
           </p>
-          <p className="relative z-10 text-[10px] text-green-600 mt-0.5">Tahun berjalan</p>
+
+          <p className="relative z-10 text-[10px] text-green-600 mt-0.5">
+            Tahun berjalan
+          </p>
         </div>
 
-        {/* Peningkatan Pendidikan (Booster) */}
+        {/* Peningkatan Pendidikan */}
         <div className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
-          <svg className="absolute bottom-0 right-0 w-28 h-10 text-emerald-200/50 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
-            <path d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z" fill="currentColor" />
+          <svg
+            className="absolute bottom-0 right-0 w-28 h-10 text-emerald-200/50 pointer-events-none"
+            viewBox="0 0 120 40"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z"
+              fill="currentColor"
+            />
           </svg>
+
           <div className="relative z-10 flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-emerald-700 uppercase">Peningkatan Pendidikan</p>
+            <p className="text-[10px] font-semibold text-emerald-700 uppercase">
+              Peningkatan Pendidikan
+            </p>
+
             <i className="fa-solid fa-graduation-cap text-[10px] text-emerald-400" />
           </div>
+
           <p className="relative z-10 text-xl font-bold text-emerald-700 font-mono">
-            {loadingPak ? '...' : `+${akBooster.toLocaleString('id-ID', { minimumFractionDigits: 3 })}`}
+            {loadingPak
+              ? '...'
+              : `+${akBooster.toLocaleString('id-ID', {
+                  minimumFractionDigits: 3,
+                })}`}
           </p>
-          <p className="relative z-10 text-[10px] text-emerald-600 mt-0.5">Booster ijasah disetujui</p>
+
+          <p className="relative z-10 text-[10px] text-emerald-600 mt-0.5">
+            Booster ijasah disetujui
+          </p>
         </div>
 
         {/* Target */}
         <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
-          <svg className="absolute bottom-0 right-0 w-28 h-10 text-blue-100/60 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
-            <path d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z" fill="currentColor" />
+          <svg
+            className="absolute bottom-0 right-0 w-28 h-10 text-blue-100/60 pointer-events-none"
+            viewBox="0 0 120 40"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,25 C30,40 60,10 90,20 C105,25 115,15 120,20 L120,40 L0,40 Z"
+              fill="currentColor"
+            />
           </svg>
+
           <div className="relative z-10 flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase">Target KP</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase">
+              Target KP
+            </p>
+
             <i className="fa-solid fa-bullseye text-[10px] text-blue-300" />
           </div>
+
           <p className="relative z-10 text-xl font-bold text-gray-800 font-mono">
-            {targetKp.toLocaleString('id-ID', { minimumFractionDigits: 3 })}
+            {targetKp.toLocaleString('id-ID', {
+              minimumFractionDigits: 3,
+            })}
           </p>
-          <p className="relative z-10 text-[10px] text-gray-400 mt-0.5">Syarat kenaikan pangkat</p>
+
+          <p className="relative z-10 text-[10px] text-gray-400 mt-0.5">
+            Syarat kenaikan pangkat
+          </p>
         </div>
 
         {/* Status */}
         <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#991b1b] to-[#b71c1c] p-4 text-white shadow-xs">
-          <svg className="absolute bottom-0 right-0 w-32 h-12 text-white/10 pointer-events-none" viewBox="0 0 120 40" preserveAspectRatio="none">
-            <path d="M0,20 C30,35 60,5 90,18 C105,22 115,12 120,18 L120,40 L0,40 Z" fill="currentColor" />
+          <svg
+            className="absolute bottom-0 right-0 w-32 h-12 text-white/10 pointer-events-none"
+            viewBox="0 0 120 40"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,20 C30,35 60,5 90,18 C105,22 115,12 120,18 L120,40 L0,40 Z"
+              fill="currentColor"
+            />
           </svg>
+
           <div className="relative z-10 flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-white/70 uppercase">Status</p>
+            <p className="text-[10px] font-semibold text-white/70 uppercase">
+              Status
+            </p>
+
             <i className="fa-solid fa-chart-line text-[10px] text-white/50" />
           </div>
+
           <p className="relative z-10 text-xl font-bold font-mono">
             {loadingPak ? '...' : `${persentaseStatus}%`}
           </p>
-          <p className="relative z-10 text-[10px] text-white/70 mt-0.5">{kelayakanBadge}</p>
+
+          <p className="relative z-10 text-[10px] text-white/70 mt-0.5">
+            {kelayakanBadge}
+          </p>
         </div>
       </motion.div>
 
       {/* Progres KP & Posisi Karier */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <motion.div
+        variants={itemVariants}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+      >
         {/* Progres Bar */}
         <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
@@ -409,6 +717,7 @@ export default function PegawaiDashboard() {
               <i className="fa-solid fa-chart-simple text-[10px]" />
               Progres Kenaikan Pangkat
             </h3>
+
             <span className="text-[10px] font-semibold bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-100">
               {golongan} → III/b
             </span>
@@ -417,26 +726,47 @@ export default function PegawaiDashboard() {
           <div className="space-y-3">
             <div className="flex justify-between text-xs">
               <span className="text-gray-500">
-                {akKumulatif.toLocaleString('id-ID')} / {targetKp.toLocaleString('id-ID')} AK
+                {akKumulatif.toLocaleString('id-ID')} /{' '}
+                {targetKp.toLocaleString('id-ID')} AK
               </span>
-              <span className="font-bold text-red-700">{persentaseStatus}%</span>
+
+              <span className="font-bold text-red-700">
+                {persentaseStatus}%
+              </span>
             </div>
 
             <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, persentaseStatus)}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
+                animate={{
+                  width: `${Math.min(100, persentaseStatus)}%`,
+                }}
+                transition={{
+                  duration: 0.8,
+                  ease: 'easeOut',
+                }}
                 className="h-full rounded-full bg-red-600"
               />
             </div>
 
             <div className="flex justify-between text-[10px] text-gray-400">
               <span>0 AK</span>
-              <span className={`font-semibold ${kurangAk > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                {kurangAk > 0 ? `Kurang ${kurangAk.toLocaleString('id-ID')} AK` : 'Syarat Terpenuhi'}
+
+              <span
+                className={`font-semibold ${
+                  kurangAk > 0
+                    ? 'text-amber-600'
+                    : 'text-green-600'
+                }`}
+              >
+                {kurangAk > 0
+                  ? `Kurang ${kurangAk.toLocaleString('id-ID')} AK`
+                  : 'Syarat Terpenuhi'}
               </span>
-              <span>{targetKp.toLocaleString('id-ID')} AK</span>
+
+              <span>
+                {targetKp.toLocaleString('id-ID')} AK
+              </span>
             </div>
           </div>
         </div>
@@ -450,17 +780,34 @@ export default function PegawaiDashboard() {
 
           <div className="space-y-2.5">
             <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-[10px] text-gray-400">Jabatan Saat Ini</p>
-              <p className="text-xs font-bold text-gray-700">{jenjang}</p>
+              <p className="text-[10px] text-gray-400">
+                Jabatan Saat Ini
+              </p>
+
+              <p className="text-xs font-bold text-gray-700">
+                {jenjang}
+              </p>
             </div>
+
             <div className="bg-red-50 rounded-lg p-3 flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-red-400">Golongan</p>
-                <p className="text-sm font-bold text-red-700">{golongan}</p>
+                <p className="text-[10px] text-red-400">
+                  Golongan
+                </p>
+
+                <p className="text-sm font-bold text-red-700">
+                  {golongan}
+                </p>
               </div>
+
               <div className="text-right">
-                <p className="text-[10px] text-gray-400">Target</p>
-                <p className="text-sm font-bold text-gray-600">→ III/b</p>
+                <p className="text-[10px] text-gray-400">
+                  Target
+                </p>
+
+                <p className="text-sm font-bold text-gray-600">
+                  → III/b
+                </p>
               </div>
             </div>
           </div>
@@ -468,8 +815,11 @@ export default function PegawaiDashboard() {
       </motion.div>
 
       {/* Aktivitas & Pengajuan Pendidikan */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Aktivitas Terbaru — dari backend */}
+      <motion.div
+        variants={itemVariants}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+      >
+        {/* Aktivitas Terbaru */}
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-2 mb-3">
             <i className="fa-solid fa-clock-rotate-left text-[10px]" />
@@ -478,32 +828,53 @@ export default function PegawaiDashboard() {
 
           {loadingAktivitas ? (
             <div className="py-4 text-center">
-              <p className="text-xs text-gray-400">Memuat data...</p>
+              <p className="text-xs text-gray-400">
+                Memuat data...
+              </p>
             </div>
           ) : aktivitasList.length === 0 ? (
             <div className="py-4 text-center">
               <i className="fa-solid fa-clock-rotate-left text-2xl text-gray-200 mb-2" />
-              <p className="text-xs text-gray-400">Belum ada aktivitas tercatat</p>
+
+              <p className="text-xs text-gray-400">
+                Belum ada aktivitas tercatat
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
               {aktivitasList.map((item) => (
-                <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between bg-gray-50 rounded-lg p-3"
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-gray-700 truncate">{item.judul}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{item.keterangan}</p>
+                    <p className="text-xs font-semibold text-gray-700 truncate">
+                      {item.judul}
+                    </p>
+
+                    <p className="text-[10px] text-gray-400 truncate">
+                      {item.keterangan}
+                    </p>
                   </div>
+
                   {item.angka_kredit ? (
                     <span className="ml-3 shrink-0 text-xs font-bold text-green-600 font-mono">
                       +{item.angka_kredit} AK
                     </span>
                   ) : item.badge ? (
-                    <span className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      item.badge_color === 'green' ? 'bg-green-100 text-green-700' :
-                      item.badge_color === 'amber' ? 'bg-amber-100 text-amber-700' :
-                      item.badge_color === 'red'   ? 'bg-red-100 text-red-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>{item.badge}</span>
+                    <span
+                      className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        item.badge_color === 'green'
+                          ? 'bg-green-100 text-green-700'
+                          : item.badge_color === 'amber'
+                            ? 'bg-amber-100 text-amber-700'
+                            : item.badge_color === 'red'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
                   ) : null}
                 </div>
               ))}
@@ -511,7 +882,7 @@ export default function PegawaiDashboard() {
           )}
         </div>
 
-        {/* Pengajuan Pendidikan - dari database */}
+        {/* Pengajuan Pendidikan */}
         <div className="rounded-xl border border-gray-200 bg-white p-5 flex flex-col">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-2 mb-3">
             <i className="fa-solid fa-graduation-cap text-[10px]" />
@@ -520,38 +891,76 @@ export default function PegawaiDashboard() {
 
           {loadingPengajuan ? (
             <div className="flex-1 flex items-center justify-center py-6">
-              <p className="text-xs text-gray-400">Memuat data...</p>
+              <p className="text-xs text-gray-400">
+                Memuat data...
+              </p>
             </div>
           ) : pengajuanTerbaru ? (
             <div className="flex-1 flex flex-col justify-between">
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-[10px] text-gray-400 font-medium">Jenjang</p>
-                    <p className="text-sm font-bold text-gray-800">{pengajuanTerbaru.jenjang_pendidikan}</p>
+                    <p className="text-[10px] text-gray-400 font-medium">
+                      Jenjang
+                    </p>
+
+                    <p className="text-sm font-bold text-gray-800">
+                      {pengajuanTerbaru.jenjang_pendidikan}
+                    </p>
                   </div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${getStatusColor(pengajuanTerbaru.status)}`}>
+
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${getStatusColor(
+                      pengajuanTerbaru.status,
+                    )}`}
+                  >
                     {getStatusLabel(pengajuanTerbaru.status)}
                   </span>
                 </div>
+
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <p className="text-[10px] text-gray-400">Jurusan</p>
-                    <p className="font-semibold text-gray-700">{pengajuanTerbaru.jurusan}</p>
+                    <p className="text-[10px] text-gray-400">
+                      Jurusan
+                    </p>
+
+                    <p className="font-semibold text-gray-700">
+                      {pengajuanTerbaru.jurusan}
+                    </p>
                   </div>
+
                   <div>
-                    <p className="text-[10px] text-gray-400">Institusi</p>
-                    <p className="font-semibold text-gray-700">{pengajuanTerbaru.nama_institusi}</p>
+                    <p className="text-[10px] text-gray-400">
+                      Institusi
+                    </p>
+
+                    <p className="font-semibold text-gray-700">
+                      {pengajuanTerbaru.nama_institusi}
+                    </p>
                   </div>
+
                   <div>
-                    <p className="text-[10px] text-gray-400">Tahun Lulus</p>
-                    <p className="font-semibold text-gray-700">{pengajuanTerbaru.tahun_lulus}</p>
+                    <p className="text-[10px] text-gray-400">
+                      Tahun Lulus
+                    </p>
+
+                    <p className="font-semibold text-gray-700">
+                      {pengajuanTerbaru.tahun_lulus}
+                    </p>
                   </div>
+
                   <div>
-                    <p className="text-[10px] text-gray-400">Bonus AK</p>
+                    <p className="text-[10px] text-gray-400">
+                      Bonus AK
+                    </p>
+
                     <p className="font-semibold text-green-700">
                       {pengajuanTerbaru.status === 'DISETUJUI'
-                        ? `+${Number(pengajuanTerbaru.ak_bonus).toLocaleString('id-ID', { minimumFractionDigits: 3 })} AK`
+                        ? `+${Number(
+                            pengajuanTerbaru.ak_bonus,
+                          ).toLocaleString('id-ID', {
+                            minimumFractionDigits: 3,
+                          })} AK`
                         : '-'}
                     </p>
                   </div>
@@ -562,11 +971,13 @@ export default function PegawaiDashboard() {
                 <span className="text-gray-400">
                   {pengajuanList.length} pengajuan tercatat
                 </span>
+
                 <a
                   href="/pegawai/pengajuan-pendidikan"
                   className="font-semibold text-red-700 hover:text-red-800 flex items-center gap-1"
                 >
-                  Lihat Semua <i className="fa-solid fa-arrow-right text-[10px]" />
+                  Lihat Semua
+                  <i className="fa-solid fa-arrow-right text-[10px]" />
                 </a>
               </div>
             </div>
@@ -574,14 +985,19 @@ export default function PegawaiDashboard() {
             <div className="flex-1 flex flex-col justify-between">
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <i className="fa-solid fa-graduation-cap text-2xl text-gray-300 mb-2" />
-                <p className="text-xs text-gray-400">Belum ada pengajuan pendidikan</p>
+
+                <p className="text-xs text-gray-400">
+                  Belum ada pengajuan pendidikan
+                </p>
               </div>
+
               <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
                 <a
                   href="/pegawai/pengajuan-pendidikan"
                   className="text-xs font-semibold text-red-700 hover:text-red-800 flex items-center gap-1"
                 >
-                  Ajukan Baru <i className="fa-solid fa-arrow-right text-[10px]" />
+                  Ajukan Baru
+                  <i className="fa-solid fa-arrow-right text-[10px]" />
                 </a>
               </div>
             </div>
@@ -589,17 +1005,22 @@ export default function PegawaiDashboard() {
         </div>
       </motion.div>
 
-      {/* Footer info */}
-      <motion.div variants={itemVariants} className="rounded-xl bg-gray-50 border border-gray-200 p-4">
+      {/* Footer Info */}
+      <motion.div
+        variants={itemVariants}
+        className="rounded-xl bg-gray-50 border border-gray-200 p-4"
+      >
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
           <div>
             <p className="text-xs font-semibold text-gray-600">
               Sistem Evaluasi & Konversi Kinerja Digital
             </p>
+
             <p className="text-[10px] text-gray-400">
               Biro Kepegawaian & Organisasi KPK RI
             </p>
           </div>
+
           <span className="text-[10px] font-semibold text-gray-400 bg-white px-2.5 py-1 rounded border border-gray-200">
             Tahap Validasi {new Date().getFullYear()}
           </span>
