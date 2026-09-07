@@ -247,9 +247,9 @@ class ImportKonversiService
             return null;
         }
 
-        // Sudah Y-m-d
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-            return $value;
+        // Sudah Y-m-d (sebagian tool OpenXML menyimpan t="d" dengan ISO 8601 ber-waktu)
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+            return substr($value, 0, 10);
         }
 
         // d/m/Y atau d-m-Y (juga menangani 1 angka d/m)
@@ -257,6 +257,15 @@ class ImportKonversiService
             $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
             $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
             return "{$m[3]}-{$mo}-{$d}";
+        }
+
+        // Serial date Excel: sel berformat Date menyimpan angka (mis. 46052 = 2026-01-01),
+        // bukan teks tanggal. Rentang 10000..80000 ≈ tahun 1927..2119.
+        if (is_numeric($value)) {
+            $serial = (float) $value;
+            if ($serial >= 10000 && $serial <= 80000) {
+                return date('Y-m-d', (int) round(($serial - 25569) * 86400));
+            }
         }
 
         return $value;

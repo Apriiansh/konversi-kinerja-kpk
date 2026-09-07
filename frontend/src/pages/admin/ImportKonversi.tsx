@@ -586,12 +586,23 @@ export const ImportKonversi: React.FC = () => {
               <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
                 2. Evaluasi Ambang Batas Kenaikan Pangkat / Jenjang:
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
                   <span className="text-gray-500 font-bold block text-[11px]">Kebutuhan Target Kenaikan Pangkat:</span>
                   <span className="font-mono font-extrabold text-gray-900 text-sm">
                     {(inspectItem.kelayakan?.target_kp ?? 0).toFixed(3)} AK
                   </span>
+                </div>
+                <div className="p-2.5 bg-blue-50/60 rounded-lg border border-blue-200/80">
+                  <span className="text-blue-600 font-bold block text-[11px]">Kebutuhan Kenaikan Jenjang:</span>
+                  <span className="font-mono font-extrabold text-blue-800 text-sm">
+                    {(inspectItem.kelayakan?.target_jenjang ?? 0).toFixed(3)} AK
+                  </span>
+                  {inspectItem.kelayakan?.next_jenjang && (
+                    <span className="text-[9px] text-blue-500 block font-semibold">
+                      Target: {inspectItem.kelayakan.next_jenjang}
+                    </span>
+                  )}
                 </div>
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
                   <span className="text-gray-500 font-bold block text-[11px]">Deposit Carry-Over Tahun Depan:</span>
