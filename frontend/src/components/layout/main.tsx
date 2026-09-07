@@ -15,6 +15,12 @@ export default function Main({ children }: { children: ReactNode }) {
 
   const toggleCollapsed = () => setCollapsed((c) => !c)
 const toggleCollapsed = () => setCollapsed((c) => !c)
+  const { user } = useAuth()
+  const isPegawai = user?.role !== 'ADMIN'
+
+  const toggleCollapsed = () => setCollapsed((c) => !c)
+  const toggleCollapsed = () => setCollapsed((c) => !c)
+
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#f8fafc] text-gray-800 font-sans antialiased">
