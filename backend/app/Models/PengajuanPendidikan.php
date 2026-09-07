@@ -31,7 +31,7 @@ class PengajuanPendidikan extends Model
     protected function casts(): array
     {
         return [
-            'ak_bonus' => 'decimal:2',
+            'ak_bonus' => 'decimal:3',
             'diverifikasi_pada' => 'datetime',
         ];
     }

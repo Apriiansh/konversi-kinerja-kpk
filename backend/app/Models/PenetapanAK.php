@@ -32,14 +32,14 @@ class PenetapanAK extends Model
     {
         return [
             'tahun' => 'integer',
-            'ak_dasar' => 'decimal:2',
-            'ak_pak_pelantikan' => 'decimal:2',
-            'ak_historis' => 'decimal:2',
-            'ak_lama' => 'decimal:2',
-            'ak_baru' => 'decimal:2',
-            'ak_booster' => 'decimal:2',
-            'ak_carry_over' => 'decimal:2',
-            'ak_kumulatif' => 'decimal:2',
+            'ak_dasar' => 'decimal:3',
+            'ak_pak_pelantikan' => 'decimal:3',
+            'ak_historis' => 'decimal:3',
+            'ak_lama' => 'decimal:3',
+            'ak_baru' => 'decimal:3',
+            'ak_booster' => 'decimal:3',
+            'ak_carry_over' => 'decimal:3',
+            'ak_kumulatif' => 'decimal:3',
             'is_final' => 'boolean',
         ];
     }

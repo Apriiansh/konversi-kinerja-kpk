@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EvaluasiKinerja;
 use App\Models\Pegawai;
 use App\Models\PenetapanAK;
+use App\Models\PengajuanPendidikan;
 use App\Services\AuditTrailService;
 use App\Services\CarryOverService;
 use App\Services\FinalisasiAkService;
@@ -117,35 +118,7 @@ class RekapitulasiController extends Controller
             ->orderBy('periode_bulan')
             ->get();
 
-        $triwulan = [];
-
-        foreach (range(1, 4) as $q) {
-            $from = (($q - 1) * 3) + 1;
-            $to = $q * 3;
-
-            $rows = $evaluasi->filter(function ($e) use ($q, $from, $to) {
-                if ($e->triwulan) {
-                    return (int) $e->triwulan === $q;
-                }
-                return $e->periode_bulan >= $from && $e->periode_bulan <= $to;
-            });
-
-            $triwulan[$q] = [
-                'triwulan'     => $q,
-                'label'        => "Triwulan {$q} (TW{$q})",
-                'jumlah_bulan' => $rows->sum('jumlah_bulan') ?: $rows->count(),
-                'ak_total'     => round($rows->sum('angka_kredit'), 2),
-                'rincian'      => $rows->map(fn ($e) => [
-                    'id'           => $e->id,
-                    'triwulan'     => $e->triwulan ?? $q,
-                    'jumlah_bulan' => $e->jumlah_bulan ?? 3,
-                    'periode_bulan'=> $e->periode_bulan,
-                    'predikat'     => $e->predikat?->nama,
-                    'angka_kredit' => $e->angka_kredit,
-                    'is_locked'    => $e->is_locked,
-                ])->values(),
-            ];
-        }
+        $triwulan = $this->buildTriwulan($evaluasi);
 
         // Evaluasi kelayakan kenaikan pangkat / jenjang
         $kelayakan = $this->carryOverService->evaluasiKelayakan(
@@ -187,6 +160,132 @@ class RekapitulasiController extends Controller
                 'total_ak_baru'     => round($evaluasi->sum('angka_kredit'), 2),
             ],
         ]);
+    }
+
+    /**
+     * Detail PAK "live" satu pegawai untuk tahun tertentu, tanpa menunggu finalisasi.
+     *
+     * Nilai AK dihitung langsung dari data yang sudah tercatat:
+     *   - ak_lama       = saldo awal (ak_dasar + ak_pak_pelantikan + ak_historis + ak_lama)
+     *   - ak_baru       = sum angka kredit evaluasi TW1–TW4 (Formula A riil yang sudah tercatat)
+     *   - ak_booster    = booster Peningkatan Pendidikan (ijazah disetujui) tahun berjalan
+     *   - ak_kumulatif  = ak_lama + ak_baru + ak_booster
+     *
+     * Endpoint ini tidak memodifikasi data dan tidak memerlukan record penetapan final.
+     */
+    public function showLive(Request $request, string $pegawaiId, int $tahun): JsonResponse
+    {
+        $pegawai = Pegawai::with('pangkatGolongan.jenjangJabatan')->findOrFail($pegawaiId);
+
+        $penetapan = PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->first();
+
+        $akDasar = (float) ($penetapan?->ak_dasar ?? $pegawai->pangkatGolongan?->ak_dasar ?? 0);
+        $akPakPelantikan = (float) ($penetapan?->ak_pak_pelantikan ?? 0);
+        $akHistoris = (float) ($penetapan?->ak_historis ?? 0);
+        $akLamaTersimpan = (float) ($penetapan?->ak_lama ?? 0);
+
+        $saldoAwal = round($akDasar + $akPakPelantikan + $akHistoris + $akLamaTersimpan, 3);
+
+        $evaluasi = EvaluasiKinerja::query()
+            ->with('predikat:id,nama,persentase_konversi')
+            ->where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->orderBy('periode_bulan')
+            ->get();
+
+        $triwulan = $this->buildTriwulan($evaluasi);
+
+        $akBaru = round($evaluasi->sum('angka_kredit'), 3);
+
+        $akBooster = max(
+            (float) PengajuanPendidikan::where('pegawai_id', $pegawaiId)
+                ->where('status', 'DISETUJUI')
+                ->whereYear('diverifikasi_pada', $tahun)
+                ->sum('ak_bonus'),
+            (float) ($penetapan?->ak_booster ?? 0)
+        );
+
+        $akKumulatif = round($saldoAwal + $akBaru + $akBooster, 3);
+
+        $kelayakan = $this->carryOverService->evaluasiKelayakan($pegawai, $akKumulatif);
+
+        return response()->json([
+            'message' => 'Detail PAK live (tanpa finalisasi).',
+            'data' => [
+                'pegawai' => $pegawai->only(['id', 'nama_lengkap', 'nip', 'pendidikan_terakhir', 'tmt_jabatan']),
+                'pangkat' => [
+                    'golongan' => $pegawai->pangkatGolongan?->golongan,
+                    'jenjang'  => $pegawai->pangkatGolongan?->jenjangJabatan?->nama,
+                    'koefisien'=> $pegawai->pangkatGolongan?->jenjangJabatan?->koefisien_tahunan,
+                ],
+                'tahun'             => $tahun,
+                'ak_dasar'          => $akDasar,
+                'ak_pak_pelantikan' => $akPakPelantikan,
+                'ak_historis'       => $akHistoris,
+                'ak_lama'           => $saldoAwal,
+                'ak_baru'           => $akBaru,
+                'ak_booster'        => $akBooster,
+                'ak_carry_over'     => (float) ($penetapan?->ak_carry_over ?? 0),
+                'ak_kumulatif'      => $akKumulatif,
+                'is_final'          => (bool) ($penetapan?->is_final ?? false),
+                'kelayakan'         => [
+                    'status'         => $kelayakan['status'],
+                    'badge_label'    => $kelayakan['badge_label'],
+                    'badge_color'    => $kelayakan['badge_color'],
+                    'target_kp'      => $kelayakan['target_kp'],
+                    'target_jenjang' => $kelayakan['target_jenjang'],
+                    'carry_over'     => $kelayakan['carry_over'],
+                    'kurang_ak'      => $kelayakan['kurang_ak'],
+                    'catatan'        => $kelayakan['catatan'],
+                ],
+                'triwulan'          => $triwulan,
+                'sum_ak_periodik'   => $akBaru,
+                'total_ak_baru'     => $akBaru,
+            ],
+        ]);
+    }
+
+    /**
+     * Bangun blok rincian triwulan (TW1–TW4) dari kumpulan evaluasi kinerja.
+     *
+     * @param \Illuminate\Support\Collection<int, EvaluasiKinerja> $evaluasi
+     * @return array<int, array>
+     */
+    protected function buildTriwulan($evaluasi): array
+    {
+        $triwulan = [];
+
+        foreach (range(1, 4) as $q) {
+            $from = (($q - 1) * 3) + 1;
+            $to = $q * 3;
+
+            $rows = $evaluasi->filter(function ($e) use ($q, $from, $to) {
+                if ($e->triwulan) {
+                    return (int) $e->triwulan === $q;
+                }
+                return $e->periode_bulan >= $from && $e->periode_bulan <= $to;
+            });
+
+            $triwulan[$q] = [
+                'triwulan'     => $q,
+                'label'        => "Triwulan {$q} (TW{$q})",
+                'jumlah_bulan' => $rows->sum('jumlah_bulan') ?: $rows->count(),
+                'ak_total'     => round($rows->sum('angka_kredit'), 2),
+                'rincian'      => $rows->map(fn ($e) => [
+                    'id'           => $e->id,
+                    'triwulan'     => $e->triwulan ?? $q,
+                    'jumlah_bulan' => $e->jumlah_bulan ?? 3,
+                    'periode_bulan'=> $e->periode_bulan,
+                    'predikat'     => $e->predikat?->nama,
+                    'angka_kredit' => $e->angka_kredit,
+                    'is_locked'    => $e->is_locked,
+                ])->values(),
+            ];
+        }
+
+        return $triwulan;
     }
 
     /**

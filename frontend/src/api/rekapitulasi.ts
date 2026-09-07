@@ -143,6 +143,13 @@ export async function getDetailPak(pegawaiId: string, tahun: number): Promise<De
   return data.data
 }
 
+// 2b. Get detail PAK "live" (tanpa menunggu finalisasi) - pegawai dashboard
+// Nilai AK dihitung langsung dari evaluasi & booster yang sudah tercatat.
+export async function getDetailPakLive(pegawaiId: string, tahun: number): Promise<DetailPakResponse['data']> {
+  const { data } = await api.get<DetailPakResponse>(`/rekapitulasi/${pegawaiId}/${tahun}/live`)
+  return data.data
+}
+
 // Pengajuan Pendidikan
 export interface PengajuanPendidikanResponse {
   message: string

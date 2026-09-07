@@ -100,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/rekapitulasi', [RekapitulasiController::class, 'index']);
     Route::get('/rekapitulasi/ringkasan', [RekapitulasiController::class, 'ringkasan']);
     Route::get('/rekapitulasi/export', [ImportExportController::class, 'export']);
+    Route::get('/rekapitulasi/{pegawaiId}/{tahun}/live', [RekapitulasiController::class, 'showLive'])->whereNumber('tahun');
     Route::get('/rekapitulasi/{pegawaiId}/{tahun}', [RekapitulasiController::class, 'show'])->whereNumber('tahun');
     Route::post('/rekapitulasi/{pegawaiId}/{tahun}/finalisasi', [RekapitulasiController::class, 'finalisasi'])->whereNumber('tahun');
     Route::post('/rekapitulasi/{pegawaiId}/pak-pelantikan', [RekapitulasiController::class, 'simpanPakPelantikan']);

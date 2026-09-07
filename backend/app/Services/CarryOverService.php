@@ -45,14 +45,14 @@ class CarryOverService
             $status = 'LAYAK_PANGKAT';
             $badgeLabel = 'LAYAK NAIK PANGKAT';
             $badgeColor = 'success';
-            $carryOver = round($akKumulatif - $targetKp, 2);
+            $carryOver = round($akKumulatif - $targetKp, 3);
             $keterangan = "Selamat! Pegawai telah memenuhi syarat AK untuk Kenaikan Pangkat (Target: {$targetKp} AK). Sisa tabungan AK sebesar {$carryOver} AK akan dibawa ke periode berikutnya.";
         } else {
             $status = 'BELUM_CUKUP';
             $badgeLabel = 'BELUM CUKUP AK';
             $badgeColor = 'secondary';
-            $selisih = round($targetKp - $akKumulatif, 2);
-            $carryOver = round($akKumulatif, 2); // Dibawa utuh karena belum naik pangkat
+            $selisih = round($targetKp - $akKumulatif, 3);
+            $carryOver = round($akKumulatif, 3); // Dibawa utuh karena belum naik pangkat
             $keterangan = "Angka Kredit belum mencukupi untuk Kenaikan Pangkat. Kurang {$selisih} AK dari target {$targetKp} AK. Seluruh saldo {$carryOver} AK disimpan untuk tahun depan.";
         }
 
