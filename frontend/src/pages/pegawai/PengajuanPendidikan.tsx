@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useAuth } from '../../context/useAuth'
-import { getPengajuanList, submitPengajuan, getStorageFileUrl, getKampusList, getProdiList, type KampusItem, type ProdiItem } from '../../api/pengajuan'
+import { getPengajuanList, submitPengajuan, deletePengajuan, getStorageFileUrl, getKampusList, getProdiList, type KampusItem, type ProdiItem } from '../../api/pengajuan'
 import type { PengajuanPendidikanItem } from '../../types'
 
 const containerVariants: Variants = {
@@ -68,6 +68,22 @@ export default function PengajuanPendidikan() {
       // diamkan, tampilkan kosong
     } finally {
       setLoadingList(false)
+    }
+  }
+
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus pengajuan pendidikan ini? Data bonus AK akan otomatis dihitung ulang.')) return
+    try {
+      setDeletingId(id)
+      await deletePengajuan(id)
+      setSuccessMsg('Pengajuan pendidikan berhasil dihapus.')
+      fetchList()
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Gagal menghapus pengajuan.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -611,6 +627,7 @@ export default function PengajuanPendidikan() {
                   <th className="py-3 px-3">Berkas</th>
                   <th className="py-3 px-3 text-center">Status</th>
                   <th className="py-3 px-3">Catatan / Bonus</th>
+                  <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -648,6 +665,17 @@ export default function PengajuanPendidikan() {
                       <td className="py-3 px-3 max-w-[220px]">
                         <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3" title={it.catatan_verifikasi ?? ''}>{it.catatan_verifikasi || '-'}</p>
                         {it.diverifikasi_pada && <p className="text-[10px] text-slate-400 mt-1">{new Date(it.diverifikasi_pada).toLocaleDateString('id-ID')}</p>}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          onClick={() => handleDelete(it.id)}
+                          disabled={deletingId === it.id}
+                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50/60 px-2.5 py-1 text-[11px] font-bold text-[#ba191d] hover:bg-red-100 transition disabled:opacity-50"
+                          title="Hapus pengajuan"
+                        >
+                          <i className="fa-solid fa-trash-can text-[10px]" />
+                          {deletingId === it.id ? '...' : 'Hapus'}
+                        </button>
                       </td>
                     </tr>
                   )

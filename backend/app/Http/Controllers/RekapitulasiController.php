@@ -120,10 +120,43 @@ class RekapitulasiController extends Controller
 
         $triwulan = $this->buildTriwulan($evaluasi);
 
-        // Evaluasi kelayakan kenaikan pangkat / jenjang
+        // Hitung live booster dari tabel pengajuan_pendidikan yang disetujui di tahun ini
+        $liveAkBooster = (float) \App\Models\PengajuanPendidikan::where('pegawai_id', $pegawaiId)
+            ->where('status', 'DISETUJUI')
+            ->where(function ($q) use ($tahun) {
+                $q->whereYear('diverifikasi_pada', $tahun)
+                  ->orWhereYear('created_at', $tahun);
+            })
+            ->sum('ak_bonus');
+
+        // Jika data ak_booster di penetapan berbeda dengan data live pengajuan (misal pengajuan dihapus/dibatalkan), sinkronkan otomatis!
+        if ((float) $penetapan->ak_booster !== (float) $liveAkBooster) {
+            $penetapan->update(['ak_booster' => $liveAkBooster]);
+        }
+
+        // Evaluasi kelayakan kenaikan pangkat / jenjang — live per TW (tidak nunggu finalisasi TW4)
+        $akLamaEffective = (float) $penetapan->ak_lama > 0
+            ? (float) $penetapan->ak_lama
+            : (float) $penetapan->ak_dasar + (float) $penetapan->ak_pak_pelantikan + (float) $penetapan->ak_historis + (float) $penetapan->ak_carry_over;
+        $liveAkBaru = round($evaluasi->sum('angka_kredit'), 2);
+        $liveKumulatif = round($akLamaEffective + $liveAkBaru + $liveAkBooster, 2);
+
+        // Jika semua evaluasi dihapus tapi status masih final lama, unfinalize otomatis
+        $isFinal = (bool) $penetapan->is_final;
+        if ($evaluasi->isEmpty() && $isFinal) {
+            $isFinal = false;
+            $penetapan->update([
+                'ak_baru'          => 0,
+                'ak_kumulatif'     => $liveKumulatif,
+                'is_final'         => false,
+                'status_kelayakan' => 'BELUM_CUKUP',
+            ]);
+        }
+
+        $kumulatifForKelayakan = $isFinal ? (float) $penetapan->ak_kumulatif : $liveKumulatif;
         $kelayakan = $this->carryOverService->evaluasiKelayakan(
             $penetapan->pegawai,
-            (float) $penetapan->ak_kumulatif
+            $kumulatifForKelayakan
         );
 
         return response()->json([
@@ -140,11 +173,13 @@ class RekapitulasiController extends Controller
                 'ak_pak_pelantikan' => (float) $penetapan->ak_pak_pelantikan,
                 'ak_historis'       => (float) $penetapan->ak_historis,
                 'ak_lama'           => (float) $penetapan->ak_lama,
-                'ak_baru'           => (float) $penetapan->ak_baru,
-                'ak_booster'        => (float) $penetapan->ak_booster,
+                'ak_baru'           => $isFinal ? (float) $penetapan->ak_baru : $liveAkBaru,
+                'ak_booster'        => $liveAkBooster,
                 'ak_carry_over'     => (float) $penetapan->ak_carry_over,
-                'ak_kumulatif'      => (float) $penetapan->ak_kumulatif,
-                'is_final'          => (bool) $penetapan->is_final,
+                'ak_kumulatif'      => $isFinal ? (float) $penetapan->ak_kumulatif : $liveKumulatif,
+                'ak_kumulatif_live' => $liveKumulatif,
+                'ak_kumulatif_efektif' => $kumulatifForKelayakan,
+                'is_final'          => $isFinal,
                 'kelayakan'         => [
                     'status'         => $kelayakan['status'],
                     'badge_label'    => $kelayakan['badge_label'],

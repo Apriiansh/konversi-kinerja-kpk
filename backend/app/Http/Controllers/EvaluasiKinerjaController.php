@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EvaluasiKinerja;
 use App\Models\MasterPredikatKinerja;
 use App\Models\Pegawai;
+use App\Models\PenetapanAK;
 use App\Services\AuditTrailService;
 use App\Services\HitungKonversiService;
 use Illuminate\Http\JsonResponse;
@@ -102,6 +103,9 @@ class EvaluasiKinerjaController extends Controller
 
             return $data;
         });
+
+        // Sinkronisasi otomatis ke PenetapanAK agar progress bar dan live AK langsung terupdate
+        $this->syncPenetapanAK($validated['pegawai_id'], (int) $validated['tahun']);
 
         return response()->json([
             'message' => 'Evaluasi Kinerja berhasil disimpan.',
@@ -262,6 +266,9 @@ class EvaluasiKinerjaController extends Controller
             $evaluasi->fresh()->toArray()
         );
 
+        // Sinkronisasi otomatis ke PenetapanAK
+        $this->syncPenetapanAK($evaluasi->pegawai_id, (int) $evaluasi->tahun);
+
         return response()->json([
             'message' => 'Evaluasi kinerja berhasil diperbarui.',
             'data'    => $evaluasi->load('predikat'),
@@ -279,6 +286,9 @@ class EvaluasiKinerjaController extends Controller
             return response()->json(['message' => 'Evaluasi sudah dikunci dan tidak dapat dihapus.'], 422);
         }
 
+        $pegawaiId = $evaluasi->pegawai_id;
+        $tahun = (int) $evaluasi->tahun;
+
         $this->auditTrail->log(
             'EVALUASI_KINERJA',
             'DELETE',
@@ -288,6 +298,9 @@ class EvaluasiKinerjaController extends Controller
         );
 
         $evaluasi->delete();
+
+        // Sinkronisasi otomatis ke PenetapanAK agar progress bar dan live AK langsung terupdate & status final batal
+        $this->syncPenetapanAK($pegawaiId, $tahun);
 
         return response()->json(['message' => 'Evaluasi kinerja berhasil dihapus.']);
     }
@@ -421,5 +434,55 @@ class EvaluasiKinerjaController extends Controller
         }
 
         return $bulan;
+    }
+
+    /**
+     * Sinkronisasi data ke PenetapanAK saat evaluasi kinerja ditambah/diubah/dihapus.
+     * Mengupdate total angka kredit berjalan dan mereset status final ke draft jika ada perubahan.
+     */
+    protected function syncPenetapanAK(string $pegawaiId, int $tahun): void
+    {
+        $penetapan = PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->first();
+
+        $sumAk = EvaluasiKinerja::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->sum('angka_kredit');
+
+        $liveAkBooster = (float) \App\Models\PengajuanPendidikan::where('pegawai_id', $pegawaiId)
+            ->where('status', 'DISETUJUI')
+            ->where(function ($q) use ($tahun) {
+                $q->whereYear('diverifikasi_pada', $tahun)
+                  ->orWhereYear('created_at', $tahun);
+            })
+            ->sum('ak_bonus');
+
+        if ($penetapan) {
+            $akLamaEffective = (float) $penetapan->ak_lama > 0
+                ? (float) $penetapan->ak_lama
+                : (float) $penetapan->ak_dasar + (float) $penetapan->ak_pak_pelantikan + (float) $penetapan->ak_historis + (float) $penetapan->ak_carry_over;
+
+            $akBaru = round((float) $sumAk, 2);
+            $akKumulatif = round($akLamaEffective + $akBaru + $liveAkBooster, 2);
+
+            $penetapan->update([
+                'ak_baru'          => $akBaru,
+                'ak_booster'       => $liveAkBooster,
+                'ak_kumulatif'     => $akKumulatif,
+                'is_final'         => false,
+                'status_kelayakan' => 'BELUM_CUKUP',
+            ]);
+
+            // Jika ada record draft tahun berikutnya yang sempat digenerate dari carry-over lama, sesuaikan/reset
+            PenetapanAK::where('pegawai_id', $pegawaiId)
+                ->where('tahun', $tahun + 1)
+                ->where('is_final', false)
+                ->update([
+                    'ak_lama'       => 0,
+                    'ak_carry_over' => 0,
+                    'ak_kumulatif'  => 0,
+                ]);
+        }
     }
 }

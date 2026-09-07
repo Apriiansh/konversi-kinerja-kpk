@@ -84,9 +84,10 @@ export default function PenilaianTriwulan() {
   const akCarryOver = pakData?.ak_carry_over ?? 0
   const totalSaldoAwal = akLama > 0 ? akLama : (akDasar + akPakPelantikan + akHistoris + akCarryOver)
 
-  const totalAkBaru = pakData?.total_ak_baru ?? pakData?.ak_baru ?? 0
+  // Gunakan total_ak_baru/sum_ak_periodik (live sum dari evaluasi_kinerja)
+  const totalAkBaru = pakData?.total_ak_baru ?? pakData?.sum_ak_periodik ?? pakData?.ak_baru ?? 0
   const akBooster = pakData?.ak_booster ?? 0
-  const akKumulatif = pakData?.ak_kumulatif ?? (totalSaldoAwal + totalAkBaru + akBooster)
+  const akKumulatif = Number((totalSaldoAwal + totalAkBaru + akBooster).toFixed(2))
 
   // Target & Kelayakan
   const targetKp = pakData?.kelayakan?.target_kp ?? 50.0
