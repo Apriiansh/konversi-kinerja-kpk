@@ -28,10 +28,10 @@ export default function PegawaiHeader({ onOpenMobile }: HeaderProps) {
         />
         <div className="flex flex-col">
           <span className="text-sm font-black tracking-tight text-gray-900 leading-tight">
-            Konversi Kinerja
+            KIRANA - KPK 
           </span>
           <span className="text-[10px] font-semibold text-gray-500 tracking-wide">
-            Portal Pegawai KPK
+            Portal Konversi Kinerja Pegawai KPK
           </span>
         </div>
       </div>
