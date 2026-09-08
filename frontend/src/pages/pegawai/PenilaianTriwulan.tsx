@@ -144,7 +144,7 @@ export default function PenilaianTriwulan() {
     if (lower.includes('sangat kurang')) {
       return {
         label: 'Sangat Kurang',
-        badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+        badgeClass: 'bg-error/10 text-error border-error/20',
         persenText: '25%',
       }
     }
@@ -176,10 +176,10 @@ export default function PenilaianTriwulan() {
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-            <span className="w-2 h-2 rounded-full bg-[#c62828]" />
+            <span className="w-2 h-2 rounded-full bg-primary" />
             <span>Role Pegawai</span>
             <span>•</span>
-            <span className="text-[#c62828]">Penilaian Kinerja</span>
+            <span className="text-primary">Penilaian Kinerja</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Penilaian Triwulan & Konversi Angka Kredit
@@ -198,7 +198,7 @@ export default function PenilaianTriwulan() {
             id="select-tahun-tw"
             value={selectedTahun}
             onChange={(e) => setSelectedTahun(Number(e.target.value))}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#c62828] cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
           >
             {[currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map((yr) => (
               <option key={yr} value={yr}>
@@ -216,7 +216,7 @@ export default function PenilaianTriwulan() {
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-[#c62828] shrink-0 text-xl font-black">
+            <div className="w-12 h-12 rounded-2xl bg-secondary border border-primary/15 flex items-center justify-center text-primary shrink-0 text-xl font-black">
               {nama.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -244,9 +244,9 @@ export default function PenilaianTriwulan() {
 
           {/* Saldo Awal Context Metric */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l border-slate-100 lg:pl-6 text-xs">
-            <div className="bg-red-50/50 p-3 rounded-xl border border-red-100">
+            <div className="bg-secondary/50 p-3 rounded-xl border border-primary/15">
               <p className="text-[11px] text-slate-500 font-medium">Saldo Awal (AK Lama)</p>
-              <p className="text-base font-extrabold text-[#c62828] font-mono mt-0.5">
+              <p className="text-base font-extrabold text-primary font-mono mt-0.5">
                 {loading ? '...' : totalSaldoAwal.toFixed(3)}
               </p>
             </div>
@@ -345,7 +345,7 @@ export default function PenilaianTriwulan() {
               Rumus BKN: (Jumlah Bulan / 12) × Persentase Predikat × Koefisien Jenjang ({koefisien} AK/Thn)
             </p>
           </div>
-          <span className="text-xs font-bold text-[#c62828] bg-red-50 px-3 py-1 rounded-xl self-start sm:self-auto border border-red-100">
+          <span className="text-xs font-bold text-primary bg-secondary px-3 py-1 rounded-xl self-start sm:self-auto border border-primary/15">
             Total AK TW: +{totalAkBaru.toFixed(4)} AK
           </span>
         </div>
@@ -481,7 +481,7 @@ export default function PenilaianTriwulan() {
                       <button
                         type="button"
                         onClick={() => setSelectedTahun(hist.tahun)}
-                        className="rounded-lg bg-slate-100 hover:bg-red-50 hover:text-[#c62828] text-slate-700 px-3 py-1 text-xs font-bold transition-colors cursor-pointer"
+                        className="rounded-lg bg-slate-100 hover:bg-secondary hover:text-primary text-slate-700 px-3 py-1 text-xs font-bold transition-colors cursor-pointer"
                       >
                         Lihat Triwulan
                       </button>
@@ -499,7 +499,7 @@ export default function PenilaianTriwulan() {
         variants={itemVariants}
         className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 text-xs text-slate-600 flex flex-col sm:flex-row items-start gap-4"
       >
-        <div className="w-9 h-9 rounded-xl bg-red-100 text-[#c62828] flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-secondary text-primary flex items-center justify-center shrink-0">
           <i className="fa-solid fa-circle-info text-sm" />
         </div>
         <div className="space-y-1">

@@ -31,7 +31,7 @@ export default function FloatingKalkulator() {
         onClick={() => setOpen((v) => !v)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#800f13] via-[#ba191d] to-[#9c1317] text-white shadow-lg shadow-red-900/30 ring-4 ring-white cursor-pointer select-none"
+        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary-dark via-primary to-primary-dark text-white shadow-lg shadow-primary/30 ring-4 ring-white cursor-pointer select-none"
         aria-label="Buka Kalkulator BKN"
         title="Kalkulator BKN"
       >
@@ -58,7 +58,7 @@ export default function FloatingKalkulator() {
               className="fixed bottom-24 right-6 z-[60] w-[92vw] max-w-[420px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
             >
               {/* header */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-[#800f13] to-[#ba191d] px-5 py-4 text-white">
+              <div className="flex items-center justify-between bg-gradient-to-r from-primary-dark to-primary px-5 py-4 text-white">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
                     <i className="fa-solid fa-calculator text-sm" />
@@ -86,7 +86,7 @@ export default function FloatingKalkulator() {
                     <select
                       value={jabatan}
                       onChange={(e) => setJabatan(e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ba191d]"
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="Ahli Pertama">Ahli Pertama (Koefisien: 12.5)</option>
                       <option value="Ahli Muda">Ahli Muda (Koefisien: 25.0)</option>
@@ -99,7 +99,7 @@ export default function FloatingKalkulator() {
                     <select
                       value={predikat}
                       onChange={(e) => setPredikat(e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ba191d]"
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="Sangat Baik">Sangat Baik (150%)</option>
                       <option value="Baik">Baik (100%)</option>
@@ -116,12 +116,12 @@ export default function FloatingKalkulator() {
                       max={12}
                       value={bulan}
                       onChange={(e) => setBulan(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ba191d]"
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-gradient-to-br from-[#8b1518] to-[#ba191d] p-5 text-white shadow-md">
+                <div className="rounded-xl bg-gradient-to-br from-primary-dark to-primary p-5 text-white shadow-md">
                   <span className="text-xs font-bold text-white/80">Hasil Konversi Angka Kredit</span>
                   <h4 className="mt-2 text-3xl font-black font-mono tracking-tight">{hasilAK}</h4>
                   <p className="mt-2 text-xs text-white/90 font-medium">Kalkulasi: {koefisien} × {(persentase * 100)}% × ({bulan}/12)</p>

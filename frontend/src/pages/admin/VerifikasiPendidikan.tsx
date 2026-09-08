@@ -178,7 +178,7 @@ export const VerifikasiPendidikan: React.FC = () => {
       {/* 1. Header Banner */}
       <CardHeader
         tag="Verifikator SDM"
-        tagColor="#ba191d"
+        tagColor="#0b484d"
         regulation="Booster Ijazah +25% AK"
         title="Verifikasi Pengajuan Peningkatan Pendidikan"
         subtitle="Periksa keabsahan fisik berkas Ijazah dan SK Pencantuman Gelar BKN. Persetujuan berkas akan otomatis menyuntikkan bonus +25% Angka Kredit dan meng-upgrade jenjang pendidikan pegawai."
@@ -282,8 +282,8 @@ export const VerifikasiPendidikan: React.FC = () => {
             onClick={() => setFilterStatus("DITOLAK_ADMIN")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
               filterStatus.startsWith("DITOLAK")
-                ? "bg-red-700 text-white"
-                : "bg-red-50 text-red-800 hover:bg-red-100 border border-red-200"
+                ? "bg-error text-white"
+                : "bg-error/10 text-error hover:bg-error/15 border border-error/20"
             }`}
           >
             Ditolak ({stats.ditolak})
@@ -320,7 +320,7 @@ export const VerifikasiPendidikan: React.FC = () => {
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-gray-400">
-                    <RefreshCw className="h-6 w-6 mx-auto animate-spin text-[#ba191d] mb-2" />
+                    <RefreshCw className="h-6 w-6 mx-auto animate-spin text-primary mb-2" />
                     <p className="font-bold text-gray-600">
                       Memuat berkas pengajuan...
                     </p>
@@ -362,7 +362,7 @@ export const VerifikasiPendidikan: React.FC = () => {
                           {item.pegawai?.pendidikan_terakhir || "Lama"}
                         </span>
                         <span className="text-gray-400">→</span>
-                        <span className="text-[#ba191d] font-black text-xs bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                        <span className="text-primary font-black text-xs bg-secondary px-2 py-0.5 rounded border border-primary/20">
                           {item.jenjang_pendidikan}
                         </span>
                       </div>
@@ -492,7 +492,7 @@ export const VerifikasiPendidikan: React.FC = () => {
                 <span className="text-gray-400 font-medium block text-[10px] uppercase">
                   Jenjang Diajukan
                 </span>
-                <span className="font-extrabold text-[#ba191d] text-sm">
+                <span className="font-extrabold text-primary text-sm">
                   {selectedItem.jenjang_pendidikan}
                 </span>
               </div>
@@ -533,10 +533,10 @@ export const VerifikasiPendidikan: React.FC = () => {
                   href={getStorageFileUrl(selectedItem.file_ijazah)}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:border-[#ba191d] hover:bg-red-50/20 transition-all text-xs"
+                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:border-primary hover:bg-secondary/20 transition-all text-xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <FileText className="h-4 w-4 text-[#ba191d] shrink-0" />
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
                     <div className="truncate">
                       <p className="font-bold text-gray-900">
                         Scan Ijazah / SKL
@@ -554,7 +554,7 @@ export const VerifikasiPendidikan: React.FC = () => {
                   href={getStorageFileUrl(selectedItem.file_bukti_bkn)}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:border-[#ba191d] hover:bg-red-50/20 transition-all text-xs"
+                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:border-primary hover:bg-secondary/20 transition-all text-xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <ShieldCheck className="h-4 w-4 text-blue-600 shrink-0" />
@@ -602,7 +602,7 @@ export const VerifikasiPendidikan: React.FC = () => {
                   value={catatan}
                   onChange={(e) => setCatatan(e.target.value)}
                   placeholder="Contoh: Dokumen asli terverifikasi valid, atau tuliskan alasan penolakan berkas..."
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:border-[#ba191d] focus:ring-1 focus:ring-[#ba191d]"
+                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-700">

@@ -120,7 +120,7 @@ export const AdminDashboard: React.FC = () => {
               : '—'
           }
           suffix="AK"
-          icon={<TrendingUp className="h-4 w-4 text-[#ba191d]" />}
+          icon={<TrendingUp className="h-4 w-4 text-primary" />}
           color="default"
         />
         <StatCard
@@ -144,7 +144,7 @@ export const AdminDashboard: React.FC = () => {
         <Card className="xl:col-span-1">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-[#ba191d]" />
+              <Layers className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-extrabold text-gray-900">Sebaran Jenjang Jabatan</h3>
             </div>
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">
@@ -167,7 +167,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#ba191d] to-[#9c1317]"
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary-dark"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -182,12 +182,12 @@ export const AdminDashboard: React.FC = () => {
         <Card className="xl:col-span-2">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#ba191d]" />
+              <FileText className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-extrabold text-gray-900">Capaian Akumulasi AK Terbaru</h3>
             </div>
             <Link
               to="/admin/rekapitulasi"
-              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#ba191d] hover:underline"
+              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-primary hover:underline"
             >
               Lihat Semua <ChevronRight className="h-3 w-3" />
             </Link>
@@ -247,7 +247,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <Link
               to="/admin/pengajuan"
-              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#ba191d] hover:underline"
+              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-primary hover:underline"
             >
               Verifikasi Sekarang <ChevronRight className="h-3 w-3" />
             </Link>
@@ -290,9 +290,9 @@ export const AdminDashboard: React.FC = () => {
           <div className="space-y-2.5 p-5">
             <Link
               to="/admin/import"
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-red-200 hover:bg-red-50/40"
+              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-primary/20 hover:bg-secondary/40"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-[#ba191d] ring-1 ring-red-100">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary ring-1 ring-primary/15">
                 <FileSpreadsheet className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -303,7 +303,7 @@ export const AdminDashboard: React.FC = () => {
             </Link>
             <Link
               to="/admin/rekapitulasi"
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-red-200 hover:bg-red-50/40"
+              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-primary/20 hover:bg-secondary/40"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
                 <Layers className="h-5 w-5" />
@@ -316,7 +316,7 @@ export const AdminDashboard: React.FC = () => {
             </Link>
             <Link
               to="/admin/pegawai"
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-red-200 hover:bg-red-50/40"
+              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-primary/20 hover:bg-secondary/40"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-gray-700 ring-1 ring-gray-200">
                 <Users className="h-5 w-5" />

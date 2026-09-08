@@ -117,7 +117,7 @@ export const MasterData: React.FC = () => {
                 onClick={() => setActiveTab(tab.key)}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all whitespace-nowrap ${
                   activeTab === tab.key
-                    ? 'bg-[#ba191d] text-white shadow-sm'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -154,7 +154,7 @@ export const MasterData: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500">
-                    <Info className="h-3.5 w-3.5 text-[#ba191d]" />
+                    <Info className="h-3.5 w-3.5 text-primary" />
                     <span>{jenjangData.length} data</span>
                   </div>
                 </div>
@@ -245,7 +245,7 @@ export const MasterData: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500">
-                    <Info className="h-3.5 w-3.5 text-[#ba191d]" />
+                    <Info className="h-3.5 w-3.5 text-primary" />
                     <span>{predikatData.length} data</span>
                   </div>
                 </div>
@@ -333,7 +333,7 @@ export const MasterData: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500">
-                    <Info className="h-3.5 w-3.5 text-[#ba191d]" />
+                    <Info className="h-3.5 w-3.5 text-primary" />
                     <span>{akDasarData.length} data</span>
                   </div>
                 </div>

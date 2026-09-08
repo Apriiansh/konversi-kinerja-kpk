@@ -178,7 +178,7 @@ export const Kalkulator: React.FC = () => {
       {/* 1. Header Banner */}
       <CardHeader
         tag="Simulasi Regulasi"
-        tagColor="#ba191d"
+        tagColor="#0b484d"
         regulation="PerBKN No. 3/2023 · Penetapan Kinerja Tahunan"
         title="Kalkulator Simulasi Angka Kredit BKN"
         subtitle="Simulasikan perolehan Angka Kredit berkala, dampak predikat kinerja triwulanan, pengakuan kualifikasi pendidikan baru, dan estimasi kelayakan kenaikan pangkat secara seketika."
@@ -200,7 +200,7 @@ export const Kalkulator: React.FC = () => {
           {/* Card 1: Data Jabatan & Saldo */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-              <Briefcase className="h-4 w-4 text-[#ba191d]" />
+              <Briefcase className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-extrabold text-gray-900">1. Profil Jabatan & Saldo Awal</h3>
             </div>
 
@@ -211,7 +211,7 @@ export const Kalkulator: React.FC = () => {
                 <select
                   value={selectedJenjangKey}
                   onChange={(e) => handleJenjangChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-[#ba191d]"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-primary"
                 >
                   {Object.entries(MASTER_JENJANG).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -227,7 +227,7 @@ export const Kalkulator: React.FC = () => {
                 <select
                   value={selectedGolongan}
                   onChange={(e) => setSelectedGolongan(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-[#ba191d]"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-primary"
                 >
                   {config.golonganList.map((gol) => (
                     <option key={gol} value={gol}>
@@ -247,7 +247,7 @@ export const Kalkulator: React.FC = () => {
                     min="0"
                     value={saldoAwal}
                     onChange={(e) => setSaldoAwal(Number(e.target.value) || 0)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-[#ba191d]"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-primary"
                   />
                   <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 font-bold">AK</span>
                 </div>
@@ -263,7 +263,7 @@ export const Kalkulator: React.FC = () => {
                     max="12"
                     value={bulanAktif}
                     onChange={(e) => setBulanAktif(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-[#ba191d]"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-gray-900 focus:bg-white focus:outline-none focus:border-primary"
                   />
                   <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Bulan</span>
                 </div>
@@ -277,7 +277,7 @@ export const Kalkulator: React.FC = () => {
                   type="checkbox"
                   checked={enablePakPelantikan}
                   onChange={(e) => setEnablePakPelantikan(e.target.checked)}
-                  className="rounded border-gray-300 text-[#ba191d] focus:ring-[#ba191d] h-4 w-4"
+                  className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
                 />
                 <span className="text-xs font-bold text-gray-800">
                   Konversi Masa Kerja Jabatan Lama (PAK Penyesuaian)
@@ -308,7 +308,7 @@ export const Kalkulator: React.FC = () => {
                     />
                   </div>
                   <div className="col-span-2 text-[11px] text-gray-500 font-medium">
-                    Hasil Konversi Masa Kerja: <strong className="font-mono text-[#ba191d]">{akPakPelantikan.toFixed(2)} AK</strong>
+                    Hasil Konversi Masa Kerja: <strong className="font-mono text-primary">{akPakPelantikan.toFixed(2)} AK</strong>
                   </div>
                 </div>
               )}
@@ -319,10 +319,10 @@ export const Kalkulator: React.FC = () => {
           <Card className="p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-[#ba191d]" />
+                <Layers className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-extrabold text-gray-900">2. Predikat Evaluasi Kinerja (TW1 – TW4)</h3>
               </div>
-              <span className="text-[10px] font-bold text-[#ba191d] bg-red-50 px-2 py-0.5 rounded border border-red-200">
+              <span className="text-[10px] font-bold text-primary bg-secondary px-2 py-0.5 rounded border border-primary/20">
                 Penetapan Kinerja Tahunan
               </span>
             </div>
@@ -386,18 +386,18 @@ export const Kalkulator: React.FC = () => {
               </div>
 
               {/* TW4 (ACUAN TAHUNAN) */}
-              <div className="p-3 rounded-xl border-2 border-[#ba191d] bg-red-50/20 space-y-1.5">
-                <div className="flex items-center justify-between font-extrabold text-[#ba191d]">
+              <div className="p-3 rounded-xl border-2 border-primary bg-secondary/20 space-y-1.5">
+                <div className="flex items-center justify-between font-extrabold text-primary">
                   <div className="flex items-center gap-1.5">
                     <span>TW 4</span>
-                    <span className="text-[9px] bg-[#ba191d] text-white px-1.5 py-0.5 rounded font-black tracking-wider">ACUAN TAHUNAN</span>
+                    <span className="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded font-black tracking-wider">ACUAN TAHUNAN</span>
                   </div>
                   <span className="font-mono">{akBaruTahunan.toFixed(2)} AK</span>
                 </div>
                 <select
                   value={predikatTw4}
                   onChange={(e) => setPredikatTw4(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 bg-white border border-red-200 rounded-lg font-extrabold text-gray-900"
+                  className="w-full px-2.5 py-1.5 bg-white border border-primary/20 rounded-lg font-extrabold text-gray-900"
                 >
                   {PREDIKAT_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -427,7 +427,7 @@ export const Kalkulator: React.FC = () => {
                   onChange={(e) => setHasBooster(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ba191d]"></div>
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
 
@@ -454,15 +454,15 @@ export const Kalkulator: React.FC = () => {
         {/* Kolom Kanan: Hasil Simulasi Real-Time (5 cols) */}
         <div className="lg:col-span-5 space-y-5 sticky top-20">
           {/* Card Highlight Utama: Total AK Kumulatif */}
-          <div className="bg-linear-to-br from-red-900 to-[#ba191d] text-white p-6 rounded-2xl shadow-md space-y-4">
-            <div className="flex items-center justify-between text-xs font-bold text-red-100 uppercase tracking-wider">
+          <div className="bg-linear-to-br from-primary-dark to-primary text-white p-6 rounded-2xl shadow-md space-y-4">
+            <div className="flex items-center justify-between text-xs font-bold text-white/70 uppercase tracking-wider">
               <span>Hasil Simulasi AK Akhir</span>
               <Sparkles className="h-4 w-4" />
             </div>
 
             <div>
               <p className="text-4xl font-black font-mono tracking-tight">{totalAkKumulatif.toFixed(2)}</p>
-              <p className="text-xs text-red-200 mt-1 font-medium">Total Angka Kredit Kumulatif Tahun Berjalan</p>
+              <p className="text-xs text-white/60 mt-1 font-medium">Total Angka Kredit Kumulatif Tahun Berjalan</p>
             </div>
 
             {/* Progress Menuju Target */}
@@ -534,7 +534,7 @@ export const Kalkulator: React.FC = () => {
               )}
               <div className="flex justify-between font-extrabold text-gray-900 pt-2 border-t border-gray-100">
                 <span>Estimasi Tabungan Tahun Depan:</span>
-                <span className="font-mono text-[#ba191d]">{kelayakan.carryOver.toFixed(2)} AK</span>
+                <span className="font-mono text-primary">{kelayakan.carryOver.toFixed(2)} AK</span>
               </div>
             </div>
           </Card>

@@ -41,7 +41,7 @@ export default function KalkulatorBKN() {
               <select
                 value={jabatan}
                 onChange={(e) => setJabatan(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#ba191d]"
+                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="Ahli Pertama">Ahli Pertama (Koefisien: 12.5)</option>
                 <option value="Ahli Muda">Ahli Muda (Koefisien: 25.0)</option>
@@ -55,7 +55,7 @@ export default function KalkulatorBKN() {
               <select
                 value={predikat}
                 onChange={(e) => setPredikat(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#ba191d]"
+                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="Sangat Baik">Sangat Baik (150%)</option>
                 <option value="Baik">Baik (100%)</option>
@@ -73,13 +73,13 @@ export default function KalkulatorBKN() {
                 max="12"
                 value={bulan}
                 onChange={(e) => setBulan(Number(e.target.value))}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#ba191d]"
+                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
           {/* Hasil Kalkulasi */}
-          <div className="flex flex-col justify-between rounded-xl bg-gradient-to-br from-[#8b1518] to-[#ba191d] p-6 text-white shadow-md">
+          <div className="flex flex-col justify-between rounded-xl bg-gradient-to-br from-primary-dark to-primary p-6 text-white shadow-md">
             <div>
               <span className="text-xs font-bold text-white/80">Hasil Konversi Angka Kredit</span>
               <h2 className="mt-4 text-4xl font-black font-mono tracking-tight">{hasilAK}</h2>

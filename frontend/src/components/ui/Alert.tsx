@@ -11,22 +11,22 @@ interface AlertProps {
 
 const variantStyles: Record<AlertVariant, { bg: string; border: string; text: string; icon: string }> = {
   error: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-800',
-    icon: 'text-red-600',
+    bg: 'bg-error/10',
+    border: 'border-error/20',
+    text: 'text-error',
+    icon: 'text-error',
   },
   success: {
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    text: 'text-emerald-900',
-    icon: 'text-emerald-600',
+    bg: 'bg-success/10',
+    border: 'border-success/20',
+    text: 'text-success',
+    icon: 'text-success',
   },
   info: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    text: 'text-blue-800',
-    icon: 'text-blue-600',
+    bg: 'bg-info/10',
+    border: 'border-info/20',
+    text: 'text-info',
+    icon: 'text-info',
   },
 }
 

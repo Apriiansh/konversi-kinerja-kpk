@@ -65,7 +65,7 @@ export default function Main({ children }: { children: ReactNode }) {
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div className="p-4 sm:p-6 lg:p-8 relative min-h-full">
             {/* Subtle Decorative Background Shapes */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-red-50/40 to-transparent -z-10" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-primary/10 to-transparent -z-10" />
 
             {children}
           </div>

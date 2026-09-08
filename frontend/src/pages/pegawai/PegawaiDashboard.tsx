@@ -258,7 +258,7 @@ export default function PegawaiDashboard() {
 
       case 'DITOLAK_ADMIN':
       case 'DITOLAK_SYARAT':
-        return 'text-red-700 bg-red-50 border-red-200'
+        return 'text-error bg-error/10 border-error/20'
 
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200'
@@ -360,7 +360,7 @@ export default function PegawaiDashboard() {
             {/* Main deep red wave */}
             <path
               d="M130 400 C40 280 60 140 240 60 L240 400 Z"
-              fill="url(#kpkRedWave)"
+              fill="url(#primaryWave)"
             />
 
             {/* Secondary inner contour wave */}
@@ -380,15 +380,15 @@ export default function PegawaiDashboard() {
 
             <defs>
               <linearGradient
-                id="kpkRedWave"
+                id="primaryWave"
                 x1="100%"
                 y1="0%"
                 x2="0%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#d32f2f" />
-                <stop offset="60%" stopColor="#b71c1c" />
-                <stop offset="100%" stopColor="#821319" />
+                <stop offset="0%" stopColor="#1a7a80" />
+                <stop offset="60%" stopColor="#0b484d" />
+                <stop offset="100%" stopColor="#062e31" />
               </linearGradient>
             </defs>
           </svg>
@@ -398,7 +398,7 @@ export default function PegawaiDashboard() {
         <div className="relative z-10 space-y-5">
           {/* Top Tagline */}
           <div className="flex items-center gap-2.5 text-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#c62828] shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
 
             <span className="font-bold text-slate-800 tracking-tight">
               Portal Kepegawaian KPK
@@ -417,7 +417,7 @@ export default function PegawaiDashboard() {
               {getGreeting()},
             </p>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#c62828] tracking-tight leading-tight mt-1">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary tracking-tight leading-tight mt-1">
               {name}
             </h1>
 
@@ -432,7 +432,7 @@ export default function PegawaiDashboard() {
           <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-5 sm:gap-7 rounded-2xl bg-slate-50/90 border border-slate-100 px-5 py-3">
             {/* Status */}
             <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#c62828] shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
 
               <div>
                 <p className="text-[10px] text-slate-400 font-medium">
@@ -487,7 +487,7 @@ export default function PegawaiDashboard() {
                 Pangkat / Golongan
               </p>
 
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">
+              <p className="text-lg sm:text-xl font-bold text-primary mt-1 tracking-tight">
                 {golongan}
               </p>
             </div>
@@ -499,7 +499,7 @@ export default function PegawaiDashboard() {
               </p>
 
               <p
-                className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate"
+                className="text-lg sm:text-xl font-bold text-primary mt-1 tracking-tight truncate"
                 title={jenjang}
               >
                 {jenjang}
@@ -513,7 +513,7 @@ export default function PegawaiDashboard() {
               </p>
 
               <p
-                className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate"
+                className="text-lg sm:text-xl font-bold text-primary mt-1 tracking-tight truncate"
                 title={pendidikan}
               >
                 {pendidikan}
@@ -526,7 +526,7 @@ export default function PegawaiDashboard() {
                 TMT Jabatan
               </p>
 
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">
+              <p className="text-lg sm:text-xl font-bold text-primary mt-1 tracking-tight">
                 {tmt}
               </p>
             </div>
@@ -675,7 +675,7 @@ export default function PegawaiDashboard() {
         </div>
 
         {/* Status */}
-        <div className="relative overflow-hidden rounded-xl bg-linear-to-r from-[#991b1b] to-[#b71c1c] p-4 text-white shadow-xs">
+        <div className="relative overflow-hidden rounded-xl bg-linear-to-r from-primary-dark to-primary p-4 text-white shadow-xs">
           <svg
             className="absolute bottom-0 right-0 w-32 h-12 text-white/10 pointer-events-none"
             viewBox="0 0 120 40"
@@ -718,7 +718,7 @@ export default function PegawaiDashboard() {
               Progres Kenaikan Pangkat
             </h3>
 
-            <span className="text-[10px] font-semibold bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-100">
+            <span className="text-[10px] font-semibold bg-secondary text-primary px-2 py-0.5 rounded border border-primary/15">
               {golongan} → III/b
             </span>
           </div>
@@ -730,7 +730,7 @@ export default function PegawaiDashboard() {
                 {targetKp.toLocaleString('id-ID')} AK
               </span>
 
-              <span className="font-bold text-red-700">
+              <span className="font-bold text-primary">
                 {persentaseStatus}%
               </span>
             </div>
@@ -745,7 +745,7 @@ export default function PegawaiDashboard() {
                   duration: 0.8,
                   ease: 'easeOut',
                 }}
-                className="h-full rounded-full bg-red-600"
+                className="h-full rounded-full bg-primary"
               />
             </div>
 
@@ -789,13 +789,13 @@ export default function PegawaiDashboard() {
               </p>
             </div>
 
-            <div className="bg-red-50 rounded-lg p-3 flex items-center justify-between">
+            <div className="bg-secondary rounded-lg p-3 flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-red-400">
+                <p className="text-[10px] text-primary/50">
                   Golongan
                 </p>
 
-                <p className="text-sm font-bold text-red-700">
+                <p className="text-sm font-bold text-primary">
                   {golongan}
                 </p>
               </div>
@@ -869,7 +869,7 @@ export default function PegawaiDashboard() {
                           : item.badge_color === 'amber'
                             ? 'bg-amber-100 text-amber-700'
                             : item.badge_color === 'red'
-                              ? 'bg-red-100 text-red-700'
+                              ? 'bg-error/10 text-error'
                               : 'bg-gray-100 text-gray-600'
                       }`}
                     >
@@ -974,7 +974,7 @@ export default function PegawaiDashboard() {
 
                 <a
                   href="/pegawai/pengajuan-pendidikan"
-                  className="font-semibold text-red-700 hover:text-red-800 flex items-center gap-1"
+                  className="font-semibold text-primary hover:text-primary-hover flex items-center gap-1"
                 >
                   Lihat Semua
                   <i className="fa-solid fa-arrow-right text-[10px]" />
@@ -994,7 +994,7 @@ export default function PegawaiDashboard() {
               <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
                 <a
                   href="/pegawai/pengajuan-pendidikan"
-                  className="text-xs font-semibold text-red-700 hover:text-red-800 flex items-center gap-1"
+                  className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1"
                 >
                   Ajukan Baru
                   <i className="fa-solid fa-arrow-right text-[10px]" />

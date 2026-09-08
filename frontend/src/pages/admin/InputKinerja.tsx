@@ -62,7 +62,7 @@ const ASAL_JABATAN_OPTIONS = [
 ]
 
 // Warna brand institusi — konsisten dipakai lewat token di bawah, bukan hex tersebar
-const BRAND = '#ba191d'
+const BRAND = '#0b484d'
 
 // ─── Tipe Bantuan (interop dengan response /pegawai biasa) ───────────────
 type PegawaiSearchItem = {
@@ -586,7 +586,7 @@ export const InputKinerja: React.FC = () => {
                     <button
                       key={p.id}
                       onClick={() => selectPegawai(p.id)}
-                      className="w-full text-left px-4 py-3.5 hover:bg-red-50/60 transition-colors cursor-pointer group"
+                      className="w-full text-left px-4 py-3.5 hover:bg-secondary/60 transition-colors cursor-pointer group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-[--brand]" style={{ ['--brand' as any]: BRAND }}>
@@ -699,7 +699,7 @@ export const InputKinerja: React.FC = () => {
           <Card className="p-6">
             <div className="flex flex-col lg:flex-row items-start justify-between gap-5">
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border" style={{ backgroundColor: '#fdf1f1', color: BRAND, borderColor: '#f6d5d6' }}>
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border" style={{ backgroundColor: '#eef5f5', color: BRAND, borderColor: '#cfe3e3' }}>
                   <UserRound className="h-7 w-7" />
                 </div>
                 <div>
@@ -819,8 +819,8 @@ export const InputKinerja: React.FC = () => {
                     onClick={() => handleSelectTw(m.tw)}
                     className="relative flex flex-col items-center gap-1 rounded-2xl border py-3.5 px-2 text-center transition-colors cursor-pointer"
                     style={{
-                      borderColor: isActive ? BRAND : m.anchor ? '#f0b9ba' : '#e2e8f0',
-                      backgroundColor: isActive ? '#fdf1f1' : m.anchor ? '#fdf3f3' : '#f8fafc',
+                      borderColor: isActive ? BRAND : m.anchor ? '#a9cfcf' : '#e2e8f0',
+                      backgroundColor: isActive ? '#eef5f5' : m.anchor ? '#f2f8f8' : '#f8fafc',
                     }}
                   >
                     <span className="flex items-center gap-1.5 text-sm font-bold" style={{ color: isActive ? BRAND : unlocked ? '#334155' : '#cbd5e1' }}>
@@ -837,7 +837,7 @@ export const InputKinerja: React.FC = () => {
                     {m.anchor && (
                       <span
                         className="mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ color: BRAND, backgroundColor: '#fbe2e2' }}
+                        style={{ color: BRAND, backgroundColor: '#e3efef' }}
                       >
                         Acuan tahunan
                       </span>
@@ -929,7 +929,7 @@ export const InputKinerja: React.FC = () => {
                   value={draft.predikatId}
                   onChange={(e) => setDraft((d) => ({ ...d, predikatId: e.target.value }))}
                   className="w-full text-sm font-bold px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 transition-shadow"
-                  style={{ ['--tw-ring-color' as any]: '#f2c9ca' }}
+                  style={{ ['--tw-ring-color' as any]: '#bcd9d9' }}
                 >
                   <option value="">– Pilih predikat –</option>
                   {predikatList.map((p) => (
@@ -1012,7 +1012,7 @@ export const InputKinerja: React.FC = () => {
               <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => handleEditTw(existing)}>
                 Edit
               </Button>
-              <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-rose-500" />} onClick={() => handleDeleteTw(existing)}>
+              <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-error" />} onClick={() => handleDeleteTw(existing)}>
                 Hapus
               </Button>
               <Button variant="primary" size="sm" icon={<Lock className="h-3.5 w-3.5" />} onClick={() => handleLockTw(existing)}>
@@ -1119,7 +1119,7 @@ export const InputKinerja: React.FC = () => {
               value={draft.predikatId}
               onChange={(e) => setDraft((d) => ({ ...d, predikatId: e.target.value }))}
               className="w-full text-sm font-bold px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 transition-shadow"
-              style={{ ['--tw-ring-color' as any]: '#f2c9ca' }}
+              style={{ ['--tw-ring-color' as any]: '#bcd9d9' }}
             >
               <option value="">– Pilih predikat –</option>
               {predikatList.map((p) => (
@@ -1226,7 +1226,7 @@ export const InputKinerja: React.FC = () => {
               <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => handleEditTw(tw4)}>
                 Edit
               </Button>
-              <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-rose-500" />} onClick={() => handleDeleteTw(tw4)}>
+              <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-error" />} onClick={() => handleDeleteTw(tw4)}>
                 Hapus
               </Button>
               <Button variant="primary" size="sm" icon={<Lock className="h-3.5 w-3.5" />} onClick={() => handleLockTw(tw4)}>
@@ -1276,7 +1276,7 @@ function Field({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 transition-shadow"
-        style={{ ['--tw-ring-color' as any]: '#f2c9ca' }}
+        style={{ ['--tw-ring-color' as any]: '#bcd9d9' }}
       />
     </div>
   )
@@ -1303,7 +1303,7 @@ function SelectField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 transition-shadow"
-        style={{ ['--tw-ring-color' as any]: '#f2c9ca' }}
+        style={{ ['--tw-ring-color' as any]: '#bcd9d9' }}
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (

@@ -22,7 +22,7 @@ export function Modal({ open, onClose, title, subtitle, icon, maxWidth = 'max-w-
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-6 py-4">
           <div className="flex items-center gap-3">
             {icon && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-[#ba191d] border border-red-100">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary border border-primary/15">
                 {icon}
               </div>
             )}

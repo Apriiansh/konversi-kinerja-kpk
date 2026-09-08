@@ -15,7 +15,7 @@ interface SidebarProps {
 const BADGE_COLOR: Record<string, string> = {
   green: 'bg-green-100 text-green-700',
   amber: 'bg-amber-100 text-amber-700',
-  red: 'bg-red-100 text-red-700',
+  red: 'bg-error/10 text-error',
   gray: 'bg-gray-100 text-gray-600',
 }
 
@@ -131,8 +131,8 @@ export default function Sidebar({
 
   return (
     <aside className="flex h-full w-full flex-col bg-white select-none border-r border-gray-200/80 shadow-xs overflow-hidden">
-      {/* Top Banner Header with Red KPK Gradient & Wave Ornament */}
-      <div className="relative bg-[#0b484d] pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
+      {/* Top Banner Header with Teal Gradient & Wave Ornament */}
+      <div className="relative bg-primary pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size:12px_12px" />
 
@@ -157,7 +157,7 @@ export default function Sidebar({
             <h1 className="text-sm font-black tracking-tight leading-tight text-white drop-shadow-xs">
               Konversi Kinerja
             </h1>
-            <p className="text-[10px] font-semibold text-red-100/90 tracking-wide uppercase">
+            <p className="text-[10px] font-semibold text-white/80 tracking-wide uppercase">
               Komisi Pemberantasan Korupsi
             </p>
           </div>
@@ -176,10 +176,10 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Card Summary Section - avatar hilang saat minimize */}
-      <div className={`relative flex flex-col items-center text-center border-b border-[#0b484d] shrink-0 ${collapsed ? 'hidden' : 'px-5 pt-1 pb-4'}`}>
-        {/* User Avatar with Red Glowing Accent & Status Dot */}
+      <div className={`relative flex flex-col items-center text-center shrink-0 ${collapsed ? 'hidden' : 'px-5 pt-1 pb-4'}`}>
+        {/* User Avatar with Teal Accent & Status Dot */}
         <div className="relative -mt-7 mb-2 z-10">
-          <div className="relative h-16 w-16 rounded-full p-1 bg-white shadow-md ring-2 ring-[#0b484d]">
+          <div className="relative h-16 w-16 rounded-full p-1 bg-white shadow-md ring-2 ring-primary">
             <div className="flex h-full w-full overflow-hidden rounded-full">
               <img
                 src="/avatar-pegawai.jpg"
@@ -219,9 +219,9 @@ export default function Sidebar({
             onClick={onNavigate}
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
-              `group relative flex items-center gap-3 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 ${collapsed ? 'justify-center px-2' : 'px-3.5'} ${isActive
-                ? 'bg-[#0b484d] text-white shadow-md shadow-red-900/15'
-                : 'text-gray-600 hover:bg-red-50/60 hover:text-[#ba191d]'
+              `group relative flex itembs-center gap-3 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 ${collapsed ? 'justify-center px-2' : 'px-3.5'} ${isActive
+                ? 'bg-primary text-white shadow-md shadow-primary/20'
+                : 'text-gray-600 hover:bg-primary/5 hover:text-primary'
               }`
             }
           >
@@ -229,7 +229,7 @@ export default function Sidebar({
               <>
                 <motion.span
                   whileHover={{ scale: 1.15, rotate: 5 }}
-                  className={`shrink-0 transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-[#ba191d]'}`}
+                  className={`shrink-0 transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary'}`}
                 >
                   {item.icon}
                 </motion.span>
@@ -299,7 +299,7 @@ export default function Sidebar({
                 whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={handleLogout}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200/80 bg-red-50/70 py-2 px-3 text-xs font-bold text-[#ba191d] transition-all hover:bg-red-100/80 hover:text-red-800 cursor-pointer shadow-xs"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-error/20 bg-error/10 py-2 px-3 text-xs font-bold text-error transition-all hover:bg-error/15 cursor-pointer shadow-xs"
                 title="Keluar Sistem"
               >
                 <i className="fa-solid fa-right-from-bracket text-xs" />
@@ -332,7 +332,7 @@ export default function Sidebar({
               whileTap={{ scale: 0.95 }}
               type="button"
               onClick={handleLogout}
-              className="mt-2 flex w-full items-center justify-center rounded-xl border border-red-200/80 bg-red-50/70 py-2.5 px-3 text-xs font-bold text-[#ba191d] transition-all hover:bg-red-100/80 hover:text-red-800 cursor-pointer shadow-xs"
+              className="mt-2 flex w-full items-center justify-center rounded-xl border border-error/20 bg-error/10 py-2.5 px-3 text-xs font-bold text-error transition-all hover:bg-error/15 cursor-pointer shadow-xs"
               title="Keluar Sistem"
             >
               <i className="fa-solid fa-right-from-bracket text-xs" />

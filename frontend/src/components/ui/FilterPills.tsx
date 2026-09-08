@@ -24,8 +24,8 @@ const colorMap: Record<string, { active: string; inactive: string }> = {
     inactive: 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200',
   },
   red: {
-    active: 'bg-red-700 text-white',
-    inactive: 'bg-red-50 text-red-800 hover:bg-red-100 border border-red-200',
+    active: 'bg-error text-white',
+    inactive: 'bg-error/10 text-error hover:bg-error/15 border border-error/20',
   },
 }
 

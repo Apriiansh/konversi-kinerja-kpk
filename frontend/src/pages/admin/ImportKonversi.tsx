@@ -266,11 +266,11 @@ export const ImportKonversi: React.FC = () => {
           onDrop={handleDrop}
           className={`flex flex-col items-center justify-center p-8 sm:p-10 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 text-center ${
             isDragging
-              ? "border-[#ba191d] bg-red-50/50 scale-[0.99]"
-              : "border-gray-200 hover:border-[#ba191d]/50 hover:bg-red-50/20"
+              ? "border-primary bg-secondary/50 scale-[0.99]"
+              : "border-gray-200 hover:border-primary/50 hover:bg-secondary/20"
           }`}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-[#ba191d] mb-3.5 border border-red-100 shadow-xs">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary mb-3.5 border border-primary/15 shadow-xs">
             {loadingPreview ? (
               <RefreshCw className="h-6 w-6 animate-spin" />
             ) : (
@@ -281,7 +281,7 @@ export const ImportKonversi: React.FC = () => {
           <div className="space-y-1">
             <p className="text-sm font-extrabold text-gray-900">
               {selectedFile ? (
-                <span className="text-[#ba191d]">{selectedFile.name}</span>
+                <span className="text-primary">{selectedFile.name}</span>
               ) : (
                 "Klik untuk memilih berkas atau seret file ke sini"
               )}
@@ -298,7 +298,7 @@ export const ImportKonversi: React.FC = () => {
               Sinkronisasi Otomatis NIP
             </span>
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
-              <ShieldCheck className="h-3 w-3 text-[#ba191d]" /> Penetapan
+              <ShieldCheck className="h-3 w-3 text-primary" /> Penetapan
               Kinerja Tahunan
             </span>
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
@@ -325,7 +325,7 @@ export const ImportKonversi: React.FC = () => {
             type="checkbox"
             checked={buatAkun}
             onChange={(e) => setBuatAkun(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-[#ba191d] focus:ring-[#ba191d] cursor-pointer"
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
           />
           <label
             htmlFor="buat-akun-toggle"
@@ -376,7 +376,7 @@ export const ImportKonversi: React.FC = () => {
           {/* Decision Bar */}
           <Card className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-[#ba191d] shrink-0 border border-red-100">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary shrink-0 border border-primary/15">
                 <FileText className="h-4 w-4" />
               </div>
               <div>
@@ -443,7 +443,7 @@ export const ImportKonversi: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500">
-                <Info className="h-3.5 w-3.5 text-[#ba191d]" />
+                <Info className="h-3.5 w-3.5 text-primary" />
                 <span>
                   Klik baris / Bedah Nilai untuk melihat breakdown rumus lengkap
                 </span>
@@ -499,7 +499,7 @@ export const ImportKonversi: React.FC = () => {
                           className={`transition-colors ${
                             item.is_valid
                               ? "hover:bg-gray-50/80"
-                              : "bg-red-50/60"
+                              : "bg-error/5"
                           }`}
                         >
                           <td className="py-3 px-3.5 font-mono font-bold text-gray-400">
@@ -517,11 +517,11 @@ export const ImportKonversi: React.FC = () => {
                               </div>
                             ) : (
                               <div>
-                                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-red-700">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-error">
                                   <XCircle className="h-3.5 w-3.5" /> Baris
                                   Ditolak (Regulasi)
                                 </span>
-                                <p className="text-[10px] text-red-600 font-medium">
+                                <p className="text-[10px] text-error font-medium">
                                   {item.errors?.join(", ")}
                                 </p>
                               </div>
@@ -558,7 +558,7 @@ export const ImportKonversi: React.FC = () => {
                                     title={`TW${qNum}: ${q?.predikat ?? "-"} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
                                     className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                                       isAnchor
-                                        ? "bg-red-50 text-[#ba191d] border-red-200 font-black"
+                                        ? "bg-secondary text-primary border-primary/20 font-black"
                                         : "bg-gray-100 text-gray-600 border-gray-200"
                                     }`}
                                   >
@@ -633,7 +633,7 @@ export const ImportKonversi: React.FC = () => {
             ? `NIP: ${inspectItem.nip} · Golongan: ${inspectItem.golongan} (${inspectItem.jenjang})`
             : undefined
         }
-        icon={<FileText className="h-5 w-5 text-[#ba191d]" />}
+        icon={<FileText className="h-5 w-5 text-primary" />}
         footer={
           <Button variant="secondary" onClick={() => setInspectItem(null)}>
             Tutup
@@ -718,14 +718,14 @@ export const ImportKonversi: React.FC = () => {
                     Klaim Ijazah Sah
                   </span>
                 </div>
-                <div className="p-3 bg-linear-to-br from-red-900 to-[#ba191d] text-white rounded-xl text-center shadow-xs">
-                  <span className="text-[10px] uppercase font-bold text-red-100 block">
+                <div className="p-3 bg-linear-to-br from-primary-dark to-primary text-white rounded-xl text-center shadow-xs">
+                  <span className="text-[10px] uppercase font-bold text-white/70 block">
                     Total AK Kumulatif
                   </span>
                   <span className="font-mono font-black text-white text-base mt-0.5 block">
                     {(inspectItem.ak_kumulatif ?? 0).toFixed(3)}
                   </span>
-                  <span className="text-[9px] text-red-200 block">
+                  <span className="text-[9px] text-white/60 block">
                     Total Modal Sah
                   </span>
                 </div>

@@ -198,7 +198,7 @@ export const Rekapitulasi: React.FC = () => {
               {loading ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-gray-400">
-                    <RefreshCw className="h-6 w-6 mx-auto animate-spin text-[#ba191d] mb-2" />
+                    <RefreshCw className="h-6 w-6 mx-auto animate-spin text-primary mb-2" />
                     <p className="font-bold text-gray-600">Memuat data rekapitulasi...</p>
                   </td>
                 </tr>
@@ -362,7 +362,7 @@ export const Rekapitulasi: React.FC = () => {
             <Card className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-[#ba191d]" />
+                  <TrendingUp className="h-4 w-4 text-primary" />
                   <span className="text-xs font-extrabold text-gray-900">
                     Progress Menuju Target Kenaikan Pangkat
                   </span>
@@ -379,7 +379,7 @@ export const Rekapitulasi: React.FC = () => {
                   <div className="space-y-1">
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
-                        className="h-full bg-[#ba191d] transition-all duration-500 rounded-full"
+                        className="h-full bg-primary transition-all duration-500 rounded-full"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -423,10 +423,10 @@ export const Rekapitulasi: React.FC = () => {
                 <span className="font-mono font-black text-emerald-800 text-sm mt-0.5 block">+{selectedDetail.ak_booster.toFixed(2)}</span>
                 <span className="text-[9px] text-emerald-600 block">Klaim Ijazah</span>
               </div>
-              <div className="p-3 bg-gradient-to-br from-red-900 to-[#ba191d] text-white rounded-xl shadow-sm">
-                <span className="text-[10px] font-extrabold uppercase text-red-100 block">Total AK Kumulatif</span>
+              <div className="p-3 bg-gradient-to-br from-primary-dark to-primary text-white rounded-xl shadow-sm">
+                <span className="text-[10px] font-extrabold uppercase text-white/70 block">Total AK Kumulatif</span>
                 <span className="font-mono font-black text-white text-base mt-0.5 block">{selectedDetail.ak_kumulatif.toFixed(2)}</span>
-                <span className="text-[9px] text-red-200 block">Total Modal Sah</span>
+                <span className="text-[9px] text-white/60 block">Total Modal Sah</span>
               </div>
             </div>
 
@@ -451,15 +451,15 @@ export const Rekapitulasi: React.FC = () => {
                     <div
                       key={qNum}
                       className={`p-3.5 rounded-xl border transition-all ${
-                        isAnchor ? 'border-[#ba191d]/60 bg-red-50/30 ring-1 ring-[#ba191d]/20' : 'border-gray-200 bg-white'
+                        isAnchor ? 'border-primary/60 bg-secondary/30 ring-1 ring-primary/20' : 'border-gray-200 bg-white'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs font-extrabold">
-                        <span className={isAnchor ? 'text-[#ba191d]' : 'text-gray-800'}>
+                        <span className={isAnchor ? 'text-primary' : 'text-gray-800'}>
                           Triwulan {qNum}
                         </span>
                         {isAnchor && (
-                          <span className="text-[9px] font-black uppercase text-[#ba191d] bg-red-100 px-1.5 py-0.5 rounded">
+                          <span className="text-[9px] font-black uppercase text-primary bg-secondary px-1.5 py-0.5 rounded">
                             Acuan Tahunan
                           </span>
                         )}
@@ -480,10 +480,10 @@ export const Rekapitulasi: React.FC = () => {
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-xs space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-gray-700 flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-[#ba191d]"></span>
+                    <span className="h-2 w-2 rounded-full bg-primary"></span>
                     Penetapan Kinerja Tahunan (PerBKN No. 3/2023):
                   </span>
-                  <span className="font-mono font-extrabold text-[#ba191d] bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                  <span className="font-mono font-extrabold text-primary bg-secondary border border-primary/20 px-2 py-0.5 rounded">
                     Kinerja Tahunan = {selectedDetail.ak_baru.toFixed(2)} AK
                   </span>
                 </div>

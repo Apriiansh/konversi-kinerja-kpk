@@ -1,24 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --kpk-base: #ba191d;
-  --kpk-hover: #a31519;
-  --kpk-dark: #6b1118;
-  --kpk-darker: #3b0d16;
-  --kpk-darkest: #16080d;
-  --background: #fbfbfb;
+  --primary: #0b484d;
+  --primary-hover: #083a3e;
+  --primary-dark: #062e31;
+  --secondary: #e3efef;
+  --muted: #f1f5f9;
+  --background: #f6f9f9;
   --foreground: #1e293b;
+  --border: #e2e8f0;
 }
 
 @theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-kpk: var(--kpk-base);
-  --color-kpk-hover: var(--kpk-hover);
-  --color-kpk-dark: var(--kpk-dark);
-  --color-kpk-darker: var(--kpk-darker);
-  --color-kpk-darkest: var(--kpk-darkest);
-  --font-sans: "Tahoma", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --color-border: var(--border);
+  --color-success: var(--color-emerald-600);
+  --color-error: var(--color-rose-600);
+  --color-warning: var(--color-amber-600);
+  --color-info: var(--color-sky-600);
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
 }
 
 html,
@@ -27,23 +34,11 @@ body,
   height: 100%;
 }
 
-* {
-  font-family: 'Tahoma', 'Segoe UI', Geneva, Verdana, sans-serif;
-}
-
 body {
   margin: 0;
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Tahoma', 'Segoe UI', Geneva, Verdana, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', Geneva, Verdana, sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
-
-/* Red KPK Batik Background Pattern */
-.bg-batik-pattern {
-  background-color: #7f1216;
-  background-image: radial-gradient(#ba191d 1.5px, transparent 1.5px), radial-gradient(#ba191d 1.5px, #7f1216 1.5px);
-  background-size: 30px 30px;
-  background-position: 0 0, 15px 15px;
-}

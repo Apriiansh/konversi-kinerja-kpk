@@ -22,7 +22,7 @@ interface CardHeaderProps {
   actions?: ReactNode
 }
 
-export function CardHeader({ title, subtitle, tag, tagColor = '#ba191d', regulation, actions }: CardHeaderProps) {
+export function CardHeader({ title, subtitle, tag, tagColor = 'var(--primary)', regulation, actions }: CardHeaderProps) {
   return (
     <div className="flex flex-col gap-4 bg-white p-5 sm:p-6 rounded-xl border border-gray-200/80 shadow-xs md:flex-row md:items-center md:justify-between">
       <div className="space-y-1">
@@ -30,7 +30,7 @@ export function CardHeader({ title, subtitle, tag, tagColor = '#ba191d', regulat
           <div className="flex items-center gap-2">
             {tag && (
               <span
-                className="text-[11px] font-extrabold uppercase tracking-wider bg-red-50 px-2.5 py-0.5 rounded border border-red-200"
+                className="text-[11px] font-extrabold uppercase tracking-wider bg-secondary px-2.5 py-0.5 rounded border border-primary/15"
                 style={{ color: tagColor }}
               >
                 {tag}

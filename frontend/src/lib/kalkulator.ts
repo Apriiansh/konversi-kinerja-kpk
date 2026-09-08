@@ -146,7 +146,7 @@ export const PREDIKAT_BADGE_STYLE: Record<string, string> = {
   Baik: 'bg-blue-50 text-blue-700 border-blue-200',
   'Butuh Perbaikan': 'bg-amber-50 text-amber-700 border-amber-200',
   Kurang: 'bg-orange-50 text-orange-700 border-orange-200',
-  'Sangat Kurang': 'bg-red-50 text-red-700 border-red-200',
+  'Sangat Kurang': 'bg-error/10 text-error border-error/20',
 }
 
 export const DEFAULT_INPUT: KalkulatorInput = {

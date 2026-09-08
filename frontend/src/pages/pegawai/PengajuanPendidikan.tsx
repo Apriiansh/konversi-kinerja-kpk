@@ -18,12 +18,12 @@ function statusBadge(status: string) {
     case 'DISETUJUI':
       return { label: 'Disetujui (+25% AK)', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     case 'DITOLAK_ADMIN':
-      return { label: 'Ditolak Verifikator', cls: 'bg-red-50 text-red-700 border-red-200' }
+      return { label: 'Ditolak Verifikator', cls: 'bg-error/10 text-error border-error/20' }
     case 'DITOLAK_SYARAT':
       return { label: 'Gagal Syarat Sistem', cls: 'bg-orange-50 text-orange-700 border-orange-200' }
     case 'DIAJUKAN':
     default:
-      return { label: 'Menunggu Verifikasi', cls: 'bg-red-50 text-red-700 border-red-200' }
+      return { label: 'Menunggu Verifikasi', cls: 'bg-warning/10 text-warning border-warning/20' }
   }
 }
 
@@ -212,10 +212,10 @@ export default function PengajuanPendidikan() {
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-            <span className="w-2 h-2 rounded-full bg-[#c62828]" />
+            <span className="w-2 h-2 rounded-full bg-primary" />
             <span>Role Pegawai</span>
             <span>•</span>
-            <span className="text-[#c62828]">Pengajuan Pendidikan</span>
+            <span className="text-primary">Pengajuan Pendidikan</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Pengajuan Pendidikan Baru</h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
@@ -228,7 +228,7 @@ export default function PengajuanPendidikan() {
       <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-[#c62828] shrink-0 text-xl font-black">
+            <div className="w-12 h-12 rounded-2xl bg-secondary border border-primary/15 flex items-center justify-center text-primary shrink-0 text-xl font-black">
               {nama.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -277,13 +277,13 @@ export default function PengajuanPendidikan() {
         </motion.div>
       )}
       {errorMsg && (
-        <motion.div variants={itemVariants} className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-3">
-          <i className="fa-solid fa-triangle-exclamation text-red-600 mt-0.5" />
+        <motion.div variants={itemVariants} className="rounded-2xl border border-error/20 bg-error/10 px-4 py-3 flex items-start gap-3">
+          <i className="fa-solid fa-triangle-exclamation text-error mt-0.5" />
           <div className="flex-1">
-            <p className="text-xs font-bold text-red-800">Gagal mengirim</p>
-            <p className="text-xs text-red-700">{errorMsg}</p>
+            <p className="text-xs font-bold text-error">Gagal mengirim</p>
+            <p className="text-xs text-error/80">{errorMsg}</p>
           </div>
-          <button onClick={() => setErrorMsg(null)} className="text-red-700 text-xs font-bold underline">Tutup</button>
+          <button onClick={() => setErrorMsg(null)} className="text-error text-xs font-bold underline">Tutup</button>
         </motion.div>
       )}
 
@@ -297,31 +297,31 @@ export default function PengajuanPendidikan() {
               {/* blur backdrop */}
               <div className="absolute inset-0 bg-white/70 backdrop-blur-[6px]" />
               {/* decorative gradient */}
-              <div className="absolute -top-24 left-1/2 h-48 w-[120%] -translate-x-1/2 bg-gradient-to-r from-red-300 via-red-100 to-red-700 opacity-90 blur-3xl" />
+              <div className="absolute -top-24 left-1/2 h-48 w-[120%] -translate-x-1/2 bg-gradient-to-r from-primary/40 via-secondary to-primary-dark opacity-90 blur-3xl" />
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="relative w-full max-w-md rounded-2xl border border-red-200 bg-gradient-to-br from-white to-red-50/60 p-6 shadow-xl"
+                className="relative w-full max-w-md rounded-2xl border border-primary/20 bg-gradient-to-br from-white to-secondary/60 p-6 shadow-xl"
               >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 border border-red-200 text-red-700 shadow-inner">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary border border-primary/20 text-primary shadow-inner">
                   <i className="fa-solid fa-lock text-xl" />
                 </div>
                 <h3 className="mt-4 text-sm font-extrabold text-slate-900">Pengajuan Terkunci</h3>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                  Anda telah mengajukan pengajuan pendidikan  dengan status <br/> <span className="font-bold text-red-700">Menunggu Verifikasi</span> <br /> Form dikunci sampai verifikator menyelesaikan proses.
+                  Anda telah mengajukan pengajuan pendidikan  dengan status <br/> <span className="font-bold text-warning">Menunggu Verifikasi</span> <br /> Form dikunci sampai verifikator menyelesaikan proses.
                 </p>
                 {pendingItem && (
-                  <div className="mt-4 rounded-xl border border-red-200 bg-white p-3 text-left">
+                  <div className="mt-4 rounded-xl border border-primary/20 bg-white p-3 text-left">
                     <div className="flex items-center justify-between">
                       
-                      <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-black text-[#ba191d]">{pendingItem.jenjang_pendidikan}</span>
+                      <span className="rounded-full bg-secondary border border-primary/20 px-2 py-0.5 text-[11px] font-black text-primary">{pendingItem.jenjang_pendidikan}</span>
                       <span className="text-[11px] font-mono font-bold text-slate-500">{pendingItem.tahun_lulus}</span>
                     </div>
                     <p className="mt-1 text-xs font-bold text-slate-800 truncate">{pendingItem.nama_institusi}</p>
                     <p className="text-[11px] text-slate-500 truncate">{(pendingItem as any).program_studi ?? '-'} • {pendingItem.jurusan}</p>
-                    <div className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-red-700">
-                      <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> Dalam antrean verifikasi
+                    <div className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-warning">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-warning" /> Dalam antrean verifikasi
                     </div>
                   </div>
                 )}
@@ -338,12 +338,12 @@ export default function PengajuanPendidikan() {
           <form onSubmit={handleSubmit} className={`mt-5 space-y-4 ${hasPending ? 'pointer-events-none opacity-40' : ''}`} aria-disabled={hasPending}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700">Jenjang Pendidikan <span className="text-red-600">*</span></label>
+                <label className="block text-xs font-bold text-slate-700">Jenjang Pendidikan <span className="text-error">*</span></label>
                 <select
                   value={jenjang}
                   disabled={hasPending}
                   onChange={(e) => setJenjang(e.target.value as any)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:bg-slate-100 disabled:text-slate-400"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <option value="D3">Diploma 3 (D3)</option>
                   <option value="S1">Sarjana (S1 / D4)</option>
@@ -352,7 +352,7 @@ export default function PengajuanPendidikan() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700">Tahun Lulus <span className="text-red-600">*</span></label>
+                <label className="block text-xs font-bold text-slate-700">Tahun Lulus <span className="text-error">*</span></label>
                 <input
                   type="number"
                   min={1980}
@@ -360,14 +360,14 @@ export default function PengajuanPendidikan() {
                   value={tahunLulus}
                   disabled={hasPending}
                   onChange={(e) => setTahunLulus(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:bg-slate-100"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-100"
                   required
                 />
               </div>
             </div>
 
             <div ref={prodiRef} className="relative">
-              <label className="block text-xs font-bold text-slate-700">Program Studi <span className="text-red-600">*</span></label>
+              <label className="block text-xs font-bold text-slate-700">Program Studi <span className="text-error">*</span></label>
               <div className="relative">
                 <input
                   type="text"
@@ -384,7 +384,7 @@ export default function PengajuanPendidikan() {
                     if (prodiOptions.length === 0) fetchProdi(programStudi)
                   }}
                   placeholder="Ketik untuk cari prodi — mis: Ilmu Hukum"
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 pr-9 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:bg-slate-100"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 pr-9 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-100"
                   required
                   maxLength={150}
                   autoComplete="off"
@@ -405,7 +405,7 @@ export default function PengajuanPendidikan() {
                           setJurusan(p.nm_prodi)
                           setShowProdiDrop(false)
                         }}
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-red-50 transition-colors"
+                        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-secondary transition-colors"
                       >
                         <span className="text-xs font-semibold text-slate-800 truncate pr-2">{p.nm_prodi}</span>
                         <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{p.kel_jenj} • {p.kode_prodi}</span>
@@ -432,21 +432,21 @@ export default function PengajuanPendidikan() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700">Jurusan <span className="text-red-600">*</span></label>
+              <label className="block text-xs font-bold text-slate-700">Jurusan <span className="text-error">*</span></label>
               <input
                 type="text"
                 value={jurusan}
                 disabled={hasPending}
                 onChange={(e) => setJurusan(e.target.value)}
                 placeholder="Contoh: Hukum Pidana / Manajemen"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:bg-slate-100"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-100"
                 required
                 maxLength={150}
               />
             </div>
 
             <div ref={kampusRef} className="relative">
-              <label className="block text-xs font-bold text-slate-700">Nama Perguruan Tinggi / Institusi <span className="text-red-600">*</span></label>
+              <label className="block text-xs font-bold text-slate-700">Nama Perguruan Tinggi / Institusi <span className="text-error">*</span></label>
               <div className="relative">
                 <input
                   type="text"
@@ -463,7 +463,7 @@ export default function PengajuanPendidikan() {
                     if (kampusOptions.length === 0) fetchKampus(institusi)
                   }}
                   placeholder="Ketik untuk cari kampus — mis: Universitas Indonesia"
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 pr-9 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:bg-slate-100"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 pr-9 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-100"
                   required
                   maxLength={150}
                   autoComplete="off"
@@ -484,7 +484,7 @@ export default function PengajuanPendidikan() {
                           setInstitusi(k.name)
                           setShowKampusDrop(false)
                         }}
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-red-50 transition-colors"
+                        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-secondary transition-colors"
                       >
                         <span className="text-xs font-semibold text-slate-800 truncate pr-2">{k.name}</span>
                         {k.country && <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{k.country}</span>}
@@ -512,27 +512,27 @@ export default function PengajuanPendidikan() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700">File Ijazah / SKL (PDF/JPG/PNG, max 5MB) <span className="text-red-600">*</span></label>
+                <label className="block text-xs font-bold text-slate-700">File Ijazah / SKL (PDF/JPG/PNG, max 5MB) <span className="text-error">*</span></label>
                 <input
                   id="file_ijazah"
                   type="file"
                   disabled={hasPending}
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => setFileIjazah(e.target.files?.[0] ?? null)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-red-50 file:px-3 file:py-1 file:text-xs file:font-bold file:text-[#ba191d] focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:opacity-50"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-bold file:text-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                   required
                 />
                 {fileIjazah && <p className="text-[11px] text-slate-500 mt-1">{fileIjazah.name} • {(fileIjazah.size / 1024).toFixed(0)} KB</p>}
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700">Bukti Pencantuman Gelar BKN (PDF/JPG/PNG, max 5MB) <span className="text-red-600">*</span></label>
+                <label className="block text-xs font-bold text-slate-700">Bukti Pencantuman Gelar BKN (PDF/JPG/PNG, max 5MB) <span className="text-error">*</span></label>
                 <input
                   id="file_bukti_bkn"
                   type="file"
                   disabled={hasPending}
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => setFileBkn(e.target.files?.[0] ?? null)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-red-50 file:px-3 file:py-1 file:text-xs file:font-bold file:text-[#ba191d] focus:outline-none focus:ring-2 focus:ring-[#c62828] disabled:opacity-50"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-bold file:text-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                   required
                 />
                 {fileBkn && <p className="text-[11px] text-slate-500 mt-1">{fileBkn.name} • {(fileBkn.size / 1024).toFixed(0)} KB</p>}
@@ -543,7 +543,7 @@ export default function PengajuanPendidikan() {
               <button
                 type="submit"
                 disabled={submitting || hasPending || !user?.pegawai}
-                className="inline-flex items-center gap-2 rounded-full bg-[#ba191d] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-hover transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
@@ -561,8 +561,8 @@ export default function PengajuanPendidikan() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
           <h3 className="text-sm font-bold text-slate-900">Alur & Tahapan yang harus dilalui</h3>
           <div className="space-y-3 text-xs">
-            <div className="flex gap-3 p-3 rounded-xl bg-red-50 border border-red-100">
-              <span className="w-7 h-7 rounded-lg bg-white border border-red-200 flex items-center justify-center font-bold text-red-700 shrink-0">1</span>
+            <div className="flex gap-3 p-3 rounded-xl bg-secondary border border-primary/15">
+              <span className="w-7 h-7 rounded-lg bg-white border border-primary/20 flex items-center justify-center font-bold text-primary shrink-0">1</span>
               <div>
                 <p className="font-bold text-slate-800">Upload → DIAJUKAN</p>
                 <p className="text-slate-600 leading-relaxed">Berkas masuk antrean verifikator SDM.</p>
@@ -636,7 +636,7 @@ export default function PengajuanPendidikan() {
                   return (
                     <tr key={it.id} className="hover:bg-slate-50/80">
                       <td className="py-3 px-3">
-                        <span className="rounded-full bg-red-50 border border-red-200 px-2.5 py-0.5 text-xs font-black text-[#ba191d]">{it.jenjang_pendidikan}</span>
+                        <span className="rounded-full bg-secondary border border-primary/20 px-2.5 py-0.5 text-xs font-black text-primary">{it.jenjang_pendidikan}</span>
                       </td>
                       <td className="py-3 px-3">
                         <p className="font-bold text-slate-800">{(it as any).program_studi ?? '-'}</p>
@@ -646,7 +646,7 @@ export default function PengajuanPendidikan() {
                       <td className="py-3 px-3 font-mono font-bold">{it.tahun_lulus}</td>
                       <td className="py-3 px-3">
                         <div className="flex flex-col gap-1">
-                          <a href={getStorageFileUrl(it.file_ijazah)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-[#ba191d] hover:underline">
+                          <a href={getStorageFileUrl(it.file_ijazah)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
                             <i className="fa-solid fa-file-pdf text-[10px]" /> Ijazah
                           </a>
                           <a href={getStorageFileUrl(it.file_bukti_bkn)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:underline">
@@ -670,7 +670,7 @@ export default function PengajuanPendidikan() {
                         <button
                           onClick={() => handleDelete(it.id)}
                           disabled={deletingId === it.id}
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50/60 px-2.5 py-1 text-[11px] font-bold text-[#ba191d] hover:bg-red-100 transition disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-primary/20 bg-secondary/60 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-secondary transition disabled:opacity-50"
                           title="Hapus pengajuan"
                         >
                           <i className="fa-solid fa-trash-can text-[10px]" />
@@ -688,7 +688,7 @@ export default function PengajuanPendidikan() {
 
       {/* 5. Info Efisiensi Storage */}
       {/* <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 text-xs text-slate-600 flex gap-4">
-        <div className="w-9 h-9 rounded-xl bg-red-100 text-[#c62828] flex items-center justify-center shrink-0"><i className="fa-solid fa-database text-sm" /></div>
+        <div className="w-9 h-9 rounded-xl bg-secondary text-primary flex items-center justify-center shrink-0"><i className="fa-solid fa-database text-sm" /></div>
         <div className="space-y-1">
           <h4 className="font-bold text-slate-800">Efisiensi Penyimpanan</h4>
           <p className="text-slate-500 leading-relaxed">

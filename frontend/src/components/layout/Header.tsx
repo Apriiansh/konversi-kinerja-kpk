@@ -49,8 +49,8 @@ export default function PegawaiHeader({ onOpenMobile }: HeaderProps) {
             <i className="fa-solid fa-bell text-base" />
             {/* Notification Indicator Dot */}
             <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ba191d] opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ba191d]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
             </span>
           </button>
 
@@ -59,7 +59,7 @@ export default function PegawaiHeader({ onOpenMobile }: HeaderProps) {
             <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl ring-1 ring-black/5 z-50">
               <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                 <h4 className="text-xs font-bold text-gray-900">Notifikasi Terbaru</h4>
-                <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-[#ba191d]">
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-primary">
                   2 Baru
                 </span>
               </div>

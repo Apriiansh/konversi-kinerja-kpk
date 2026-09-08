@@ -121,10 +121,10 @@ export default function InisialisasiSaldoAwal() {
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-            <span className="w-2 h-2 rounded-full bg-[#c62828]" />
+            <span className="w-2 h-2 rounded-full bg-primary" />
             <span>Role Pegawai</span>
             <span>•</span>
-            <span className="text-[#c62828]">Informasi Saldo Awal</span>
+            <span className="text-primary">Informasi Saldo Awal</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Informasi Saldo Awal Angka Kredit
@@ -143,7 +143,7 @@ export default function InisialisasiSaldoAwal() {
             id="pilih-tahun"
             value={selectedTahun}
             onChange={(e) => setSelectedTahun(Number(e.target.value))}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#c62828] cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
           >
             {[currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map((yr) => (
               <option key={yr} value={yr}>
@@ -161,7 +161,7 @@ export default function InisialisasiSaldoAwal() {
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-[#c62828] shrink-0 text-xl font-black">
+            <div className="w-12 h-12 rounded-2xl bg-secondary border border-primary/15 flex items-center justify-center text-primary shrink-0 text-xl font-black">
               {nama.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function InisialisasiSaldoAwal() {
             </div>
             <div>
               <p className="text-slate-400 font-medium">Target KP</p>
-              <p className="font-bold text-[#c62828] mt-0.5">{targetKp.toFixed(2)} AK</p>
+              <p className="font-bold text-primary mt-0.5">{targetKp.toFixed(2)} AK</p>
             </div>
           </div>
         </div>
@@ -208,22 +208,22 @@ export default function InisialisasiSaldoAwal() {
       {/* 3. Kartu Saldo Awal Utama (4 Grid Cards) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Saldo Awal (AK Lama) */}
-        <div className="relative rounded-2xl border-2 border-red-100 bg-gradient-to-br from-red-50/70 via-white to-white p-5 shadow-xs overflow-hidden">
+        <div className="relative rounded-2xl border-2 border-primary/15 bg-gradient-to-br from-secondary/70 via-white to-white p-5 shadow-xs overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#c62828]">Total Saldo Awal</span>
-            <div className="w-8 h-8 rounded-xl bg-red-100/80 flex items-center justify-center text-[#c62828]">
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">Total Saldo Awal</span>
+            <div className="w-8 h-8 rounded-xl bg-secondary/80 flex items-center justify-center text-primary">
               <i className="fa-solid fa-vault text-xs" />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-3xl font-extrabold text-[#c62828] tracking-tight font-mono">
+            <p className="text-3xl font-extrabold text-primary tracking-tight font-mono">
               {loading ? '...' : totalSaldoAwal.toFixed(3)}
             </p>
             <p className="text-[11px] text-slate-500 mt-1 font-medium">
               Modal Angka Kredit awal sebelum konversi {selectedTahun}
             </p>
           </div>
-          <div className="mt-3 pt-3 border-t border-red-100/80 flex items-center justify-between text-[11px]">
+          <div className="mt-3 pt-3 border-t border-primary/10 flex items-center justify-between text-[11px]">
             <span className="text-slate-500">Status Saldo:</span>
             <span className="font-bold text-slate-800">Tercatat Aktif</span>
           </div>
@@ -307,7 +307,7 @@ export default function InisialisasiSaldoAwal() {
                 Struktur kalkulasi modal angka kredit pegawai berdasarkan regulasi BKN KPK
               </p>
             </div>
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-[#c62828] bg-red-50 px-2.5 py-1 rounded-xl">
+            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-primary bg-secondary px-2.5 py-1 rounded-xl">
               <i className="fa-solid fa-calculator text-[10px]" /> Formula Resmi
             </span>
           </div>
@@ -341,9 +341,9 @@ export default function InisialisasiSaldoAwal() {
                   </div>
                 </>
               )}
-              <span className="text-[#c62828] text-base font-sans">=</span>
-              <div className="bg-red-50 border border-red-200 text-[#c62828] px-3.5 py-2 rounded-xl shadow-2xs font-extrabold">
-                <span className="text-[10px] block text-[#c62828]/70 font-sans font-semibold">Total Saldo Awal</span>
+              <span className="text-primary text-base font-sans">=</span>
+              <div className="bg-secondary border border-primary/20 text-primary px-3.5 py-2 rounded-xl shadow-2xs font-extrabold">
+                <span className="text-[10px] block text-primary/70 font-sans font-semibold">Total Saldo Awal</span>
                 {totalSaldoAwal.toFixed(2)} AK
               </div>
             </div>
@@ -415,13 +415,13 @@ export default function InisialisasiSaldoAwal() {
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
                   <div
-                    className="bg-[#c62828] h-2.5 rounded-full transition-all duration-500 ease-out"
+                    className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
                   <span>Saldo Awal: {totalSaldoAwal.toFixed(2)} AK</span>
-                  <span className="font-bold text-[#c62828]">{progressPercent}% Tercapai</span>
+                  <span className="font-bold text-primary">{progressPercent}% Tercapai</span>
                 </div>
               </div>
 
@@ -460,7 +460,7 @@ export default function InisialisasiSaldoAwal() {
           </div>
 
           <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center gap-1.5">
-            <i className="fa-solid fa-circle-info text-[#c62828]" />
+            <i className="fa-solid fa-circle-info text-primary" />
             <span>Data diverifikasi otomatis oleh Sistem Konversi KPK.</span>
           </div>
         </div>
@@ -500,13 +500,13 @@ export default function InisialisasiSaldoAwal() {
                   <tr
                     key={item.id}
                     className={`hover:bg-slate-50/80 transition-colors ${
-                      item.tahun === selectedTahun ? 'bg-red-50/40 font-semibold' : ''
+                      item.tahun === selectedTahun ? 'bg-secondary/40 font-semibold' : ''
                     }`}
                   >
                     <td className="py-3.5 px-4 font-sans font-bold text-slate-900">
                       {item.tahun}
                       {item.tahun === currentYear && (
-                        <span className="ml-2 text-[10px] font-bold text-[#c62828] bg-red-100 px-2 py-0.5 rounded-full font-sans">
+                        <span className="ml-2 text-[10px] font-bold text-primary bg-secondary px-2 py-0.5 rounded-full font-sans">
                           Aktif
                         </span>
                       )}
@@ -514,7 +514,7 @@ export default function InisialisasiSaldoAwal() {
                     <td className="py-3.5 px-4 text-slate-700">{Number(item.ak_dasar ?? 0).toFixed(3)}</td>
                     <td className="py-3.5 px-4 text-slate-700">{Number(item.ak_pak_pelantikan ?? 0).toFixed(3)}</td>
                     <td className="py-3.5 px-4 text-slate-700">{Number(item.ak_historis ?? 0).toFixed(3)}</td>
-                    <td className="py-3.5 px-4 font-bold text-[#c62828]">{Number(item.ak_lama ?? 0).toFixed(3)}</td>
+                    <td className="py-3.5 px-4 font-bold text-primary">{Number(item.ak_lama ?? 0).toFixed(3)}</td>
                     <td className="py-3.5 px-4 text-emerald-600 font-bold">
                       +{Number(item.ak_baru ?? 0).toFixed(3)}
                     </td>
@@ -533,17 +533,17 @@ export default function InisialisasiSaldoAwal() {
                   </tr>
                 ))
               ) : (
-                <tr className="bg-red-50/30">
+                <tr className="bg-secondary/30">
                   <td className="py-3.5 px-4 font-sans font-bold text-slate-900">
                     {selectedTahun}
-                    <span className="ml-2 text-[10px] font-bold text-[#c62828] bg-red-100 px-2 py-0.5 rounded-full font-sans">
+                    <span className="ml-2 text-[10px] font-bold text-primary bg-secondary px-2 py-0.5 rounded-full font-sans">
                       Tahun Berjalan
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-slate-700">{akDasar.toFixed(3)}</td>
                   <td className="py-3.5 px-4 text-slate-700">{akPakPelantikan.toFixed(3)}</td>
                   <td className="py-3.5 px-4 text-slate-700">{akHistoris.toFixed(3)}</td>
-                  <td className="py-3.5 px-4 font-bold text-[#c62828]">{totalSaldoAwal.toFixed(3)}</td>
+                  <td className="py-3.5 px-4 font-bold text-primary">{totalSaldoAwal.toFixed(3)}</td>
                   <td className="py-3.5 px-4 text-emerald-600 font-bold">+{akBaru.toFixed(3)}</td>
                   <td className="py-3.5 px-4 font-bold text-slate-900">{akKumulatif.toFixed(3)}</td>
                   <td className="py-3.5 px-4 text-center font-sans">
@@ -569,7 +569,7 @@ export default function InisialisasiSaldoAwal() {
         variants={itemVariants}
         className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 text-xs text-slate-600 flex flex-col sm:flex-row items-start gap-4"
       >
-        <div className="w-9 h-9 rounded-xl bg-red-100 text-[#c62828] flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-secondary text-primary flex items-center justify-center shrink-0">
           <i className="fa-solid fa-shield-halved text-sm" />
         </div>
         <div className="space-y-1">
