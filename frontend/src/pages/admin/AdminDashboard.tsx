@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users,
@@ -10,9 +10,10 @@ import {
   Layers,
   TrendingUp,
   Clock,
+  CheckCircle2,
 } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
-import { getRekapitulasiList, getRingkasan } from '../../api/rekapitulasi'
+import { getRekapitulasiList, getRingkasan, type RingkasanStatistik } from '../../api/rekapitulasi'
 import { getPengajuanList } from '../../api/pengajuan'
 import {
   Card,
@@ -23,15 +24,22 @@ import {
 } from '../../components/ui'
 import type { PenetapanAKItem, PengajuanPendidikanItem } from '../../types'
 
-interface RingkasanData {
-  total_pegawai: number
-  per_jenjang: Record<string, number>
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      message?: string
+    }
+  }
+}
+
+function getApiErrorMessage(err: unknown, fallback: string): string {
+  return (err as ApiErrorResponse)?.response?.data?.message || fallback
 }
 
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth()
 
-  const [ringkasan, setRingkasan] = useState<RingkasanData | null>(null)
+  const [ringkasan, setRingkasan] = useState<RingkasanStatistik | null>(null)
   const [rekapTerbaru, setRekapTerbaru] = useState<PenetapanAKItem[]>([])
   const [pengajuanPending, setPengajuanPending] = useState<PengajuanPendidikanItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,12 +47,12 @@ export const AdminDashboard: React.FC = () => {
 
   const currentYear = new Date().getFullYear()
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     setErrorMessage(null)
     try {
       const [ring, rekap, pengajuan] = await Promise.allSettled([
-        getRingkasan(),
+        getRingkasan(currentYear),
         getRekapitulasiList({ tahun: currentYear, per_page: 5 }),
         getPengajuanList({ per_page: 50 }),
       ])
@@ -53,19 +61,19 @@ export const AdminDashboard: React.FC = () => {
       if (rekap.status === 'fulfilled') setRekapTerbaru(rekap.value.data)
       if (pengajuan.status === 'fulfilled')
         setPengajuanPending(pengajuan.value.data.filter((p) => p.status === 'DIAJUKAN'))
-    } catch (err: any) {
-      setErrorMessage(err?.response?.data?.message || 'Gagal memuat data dashboard admin.')
+    } catch (err) {
+      setErrorMessage(getApiErrorMessage(err, 'Gagal memuat data dashboard admin.'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentYear])
 
   useEffect(() => {
-    loadAll()
-  }, [])
-
-  const countStatus = (status: string) =>
-    rekapTerbaru.filter((r) => r.status_kelayakan === status).length
+    const timer = window.setTimeout(() => {
+      void loadAll()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [loadAll])
 
   const totalJenjang = ringkasan?.per_jenjang
     ? Object.values(ringkasan.per_jenjang).reduce((a, b) => a + b, 0)
@@ -105,24 +113,28 @@ export const AdminDashboard: React.FC = () => {
           color="default"
         />
         <StatCard
-          label="Jenjang Terisi"
-          value={totalJenjang}
-          suffix="Pegawai"
-          icon={<Layers className="h-4 w-4 text-[#ba191d]" />}
-          color="blue"
+          label="Total AK Tahun Berjalan"
+          value={
+            ringkasan?.statistik_tahun
+              ? ringkasan.statistik_tahun.total_ak_kumulatif.toLocaleString('id-ID', { maximumFractionDigits: 0 })
+              : '—'
+          }
+          suffix="AK"
+          icon={<TrendingUp className="h-4 w-4 text-[#ba191d]" />}
+          color="default"
         />
         <StatCard
           label="Layak Naik Pangkat"
-          value={countStatus('LAYAK_PANGKAT')}
+          value={ringkasan?.statistik_tahun?.layak_pangkat ?? '—'}
           suffix="Tahun Ini"
-          icon={<TrendingUp className="h-4 w-4 text-emerald-600" />}
+          icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />}
           color="emerald"
         />
         <StatCard
           label="Layak Naik Jenjang"
-          value={countStatus('LAYAK_JENJANG')}
+          value={ringkasan?.statistik_tahun?.layak_jenjang ?? '—'}
           suffix="Tahun Ini"
-          icon={<Layers className="h-4 w-4 text-blue-600" />}
+          icon={<GraduationCap className="h-4 w-4 text-blue-600" />}
           color="blue"
         />
       </div>
@@ -290,15 +302,15 @@ export const AdminDashboard: React.FC = () => {
               <ChevronRight className="h-4 w-4 text-gray-300" />
             </Link>
             <Link
-              to="/admin/master-data"
+              to="/admin/rekapitulasi"
               className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 transition-colors hover:border-red-200 hover:bg-red-50/40"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
                 <Layers className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-extrabold text-gray-900">Kelola Master Data</p>
-                <p className="text-[11px] text-gray-500">Jenjang, predikat & AK dasar</p>
+                <p className="text-xs font-extrabold text-gray-900">Lihat Rekapitulasi</p>
+                <p className="text-[11px] text-gray-500">Rekapitulasi konversi kinerja</p>
               </div>
               <ChevronRight className="h-4 w-4 text-gray-300" />
             </Link>
@@ -310,8 +322,8 @@ export const AdminDashboard: React.FC = () => {
                 <Users className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-extrabold text-gray-900">Kelola Data Pegawai</p>
-                <p className="text-[11px] text-gray-500">Segera hadir</p>
+                <p className="text-xs font-extrabold text-gray-900">Peningkatan Pendidikan</p>
+                <p className="text-[11px] text-gray-500">Upload dan perbarui data pendidikan pegawai</p>
               </div>
               <ChevronRight className="h-4 w-4 text-gray-300" />
             </Link>

@@ -510,13 +510,16 @@ class RekapitulasiController extends Controller
     }
 
     /**
-     * Ringkasan statistik dashboard — total pegawai & distribusi jenjang.
+     * Ringkasan statistik dashboard — total pegawai, distribusi jenjang, dan
+     * agregasi capaian AK per tahun (Admin only).
      */
     public function ringkasan(Request $request): JsonResponse
     {
         if ($request->user()->role !== 'ADMIN') {
             return response()->json(['message' => 'Hanya Admin yang dapat mengakses ringkasan.'], 403);
         }
+
+        $tahun = max(2020, $request->integer('tahun', now()->year));
 
         $totalPegawai = Pegawai::count();
 
@@ -526,11 +529,29 @@ class RekapitulasiController extends Controller
             ->groupBy(fn ($p) => $p->effectiveJenjang()?->nama ?? 'Tanpa Jenjang')
             ->map(fn ($group) => $group->count());
 
+        $statistik = PenetapanAK::query()
+            ->where('tahun', $tahun)
+            ->selectRaw('COUNT(*) AS total_rekap')
+            ->selectRaw('COALESCE(SUM(ak_kumulatif), 0) AS total_ak_kumulatif')
+            ->selectRaw("COALESCE(SUM(CASE WHEN status_kelayakan = ? THEN 1 ELSE 0 END), 0) AS layak_pangkat", ['LAYAK_PANGKAT'])
+            ->selectRaw("COALESCE(SUM(CASE WHEN status_kelayakan = ? THEN 1 ELSE 0 END), 0) AS layak_jenjang", ['LAYAK_JENJANG'])
+            ->first();
+
+        $totalRekap = (int) ($statistik->total_rekap ?? 0);
+
         return response()->json([
             'message' => 'Ringkasan statistik.',
             'data' => [
                 'total_pegawai' => $totalPegawai,
                 'per_jenjang'   => $perJenjang,
+                'statistik_tahun' => [
+                    'tahun'              => $tahun,
+                    'total_rekap'        => $totalRekap,
+                    'total_ak_kumulatif' => (float) ($statistik->total_ak_kumulatif ?? 0),
+                    'layak_pangkat'      => (int) ($statistik->layak_pangkat ?? 0),
+                    'layak_jenjang'      => (int) ($statistik->layak_jenjang ?? 0),
+                    'belum_cukup'        => $totalRekap - ((int) ($statistik->layak_pangkat ?? 0) + (int) ($statistik->layak_jenjang ?? 0)),
+                ],
             ],
         ]);
     }

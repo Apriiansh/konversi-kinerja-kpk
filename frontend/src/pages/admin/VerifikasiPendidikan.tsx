@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from "react";
 import {
   GraduationCap,
   CheckCircle2,
@@ -11,12 +11,12 @@ import {
   X,
   RefreshCw,
   Award,
-} from 'lucide-react'
+} from "lucide-react";
 import {
   getPengajuanList,
   verifikasiPengajuan,
   getStorageFileUrl,
-} from '../../api/pengajuan'
+} from "../../api/pengajuan";
 import {
   Button,
   Card,
@@ -26,104 +26,152 @@ import {
   Modal,
   Badge,
   StatCard,
-} from '../../components/ui'
+} from "../../components/ui";
 import type {
   PengajuanPendidikanItem,
   FilterStatusPengajuan,
-} from '../../types'
+} from "../../types";
+import axios from "axios";
 
 export const VerifikasiPendidikan: React.FC = () => {
-  const [items, setItems] = useState<PengajuanPendidikanItem[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [filterStatus, setFilterStatus] = useState<FilterStatusPengajuan>('ALL')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [items, setItems] = useState<PengajuanPendidikanItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterStatus, setFilterStatus] =
+    useState<FilterStatusPengajuan>("ALL");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // State Modal Verifikasi
-  const [selectedItem, setSelectedItem] = useState<PengajuanPendidikanItem | null>(null)
-  const [catatan, setCatatan] = useState<string>('')
-  const [submitting, setSubmitting] = useState<boolean>(false)
+  const [selectedItem, setSelectedItem] =
+    useState<PengajuanPendidikanItem | null>(null);
+  const [catatan, setCatatan] = useState<string>("");
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Fetch daftar pengajuan
   const fetchData = async () => {
-    setLoading(true)
-    setErrorMessage(null)
+    setLoading(true);
+    setErrorMessage(null);
     try {
-      const res = await getPengajuanList({ per_page: 50 })
-      setItems(res.data)
-    } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Gagal memuat daftar pengajuan ijazah.')
+      const res = await getPengajuanList({ per_page: 50 });
+      setItems(res.data);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setErrorMessage(
+          err.response?.data?.message ||
+            "Gagal memuat daftar pengajuan ijazah.",
+        );
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    let cancelled = false;
+
+    const loadData = async () => {
+      setLoading(true);
+      setErrorMessage(null);
+      try {
+        const res = await getPengajuanList({ per_page: 50 });
+        if (!cancelled) {
+          setItems(res.data);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          if (axios.isAxiosError(err)) {
+            setErrorMessage(
+              err.response?.data?.message ||
+                "Gagal memuat daftar pengajuan peningkatan pendidikan",
+            );
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Buka modal periksa
   const handleOpenModal = (item: PengajuanPendidikanItem) => {
-    setSelectedItem(item)
-    setCatatan(item.catatan_verifikasi || '')
-    setErrorMessage(null)
-  }
+    setSelectedItem(item);
+    setCatatan(item.catatan_verifikasi || "");
+    setErrorMessage(null);
+  };
 
   // Eksekusi Verifikasi (Approve / Reject)
   const handleVerifikasi = async (isValid: boolean) => {
-    if (!selectedItem) return
+    if (!selectedItem) return;
 
     if (!isValid && !catatan.trim()) {
-      setErrorMessage('Harap isi alasan / catatan jika menolak berkas pengajuan.')
-      return
+      setErrorMessage(
+        "Harap isi alasan / catatan jika menolak berkas pengajuan.",
+      );
+      return;
     }
 
-    setSubmitting(true)
-    setErrorMessage(null)
+    setSubmitting(true);
+    setErrorMessage(null);
 
     try {
-      const res = await verifikasiPengajuan(selectedItem.id, isValid, catatan)
-      setSuccessMessage(res.message || 'Verifikasi berhasil disimpan.')
-      setSelectedItem(null)
-      fetchData()
-    } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Gagal mengeksekusi verifikasi berkas.')
+      const res = await verifikasiPengajuan(selectedItem.id, isValid, catatan);
+      setSuccessMessage(res.message || "Verifikasi berhasil disimpan.");
+      setSelectedItem(null);
+      fetchData();
+    } catch (err: unknown) {
+      const msg = axios.isAxiosError(err)
+        ? err.response?.data?.message
+        : undefined;
+      setErrorMessage(msg || "Gagal mengeksekusi verifikasi berkas.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   // Statistik Ringkasan
   const stats = useMemo(() => {
     return {
       total: items.length,
-      diajukan: items.filter((i) => i.status === 'DIAJUKAN').length,
-      disetujui: items.filter((i) => i.status === 'DISETUJUI').length,
-      ditolak: items.filter((i) => i.status.startsWith('DITOLAK')).length,
-    }
-  }, [items])
+      diajukan: items.filter((i) => i.status === "DIAJUKAN").length,
+      disetujui: items.filter((i) => i.status === "DISETUJUI").length,
+      ditolak: items.filter((i) => i.status.startsWith("DITOLAK")).length,
+    };
+  }, [items]);
 
   // Filter & Search
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const q = searchQuery.toLowerCase().trim()
-      const nama = item.pegawai?.nama_lengkap?.toLowerCase() || ''
-      const nip = item.pegawai?.nip || ''
-      const kampus = item.nama_institusi?.toLowerCase() || ''
-      const jurusan = item.jurusan?.toLowerCase() || ''
+      const q = searchQuery.toLowerCase().trim();
+      const nama = item.pegawai?.nama_lengkap?.toLowerCase() || "";
+      const nip = item.pegawai?.nip || "";
+      const kampus = item.nama_institusi?.toLowerCase() || "";
+      const jurusan = item.jurusan?.toLowerCase() || "";
 
-      const matchSearch = !q || nama.includes(q) || nip.includes(q) || kampus.includes(q) || jurusan.includes(q)
-      if (!matchSearch) return false
+      const matchSearch =
+        !q ||
+        nama.includes(q) ||
+        nip.includes(q) ||
+        kampus.includes(q) ||
+        jurusan.includes(q);
+      if (!matchSearch) return false;
 
-      if (filterStatus === 'ALL') return true
-      if (filterStatus === 'DIAJUKAN') return item.status === 'DIAJUKAN'
-      if (filterStatus === 'DISETUJUI') return item.status === 'DISETUJUI'
-      if (filterStatus.startsWith('DITOLAK')) return item.status.startsWith('DITOLAK')
+      if (filterStatus === "ALL") return true;
+      if (filterStatus === "DIAJUKAN") return item.status === "DIAJUKAN";
+      if (filterStatus === "DISETUJUI") return item.status === "DISETUJUI";
+      if (filterStatus.startsWith("DITOLAK"))
+        return item.status.startsWith("DITOLAK");
 
-      return true
-    })
-  }, [items, searchQuery, filterStatus])
+      return true;
+    });
+  }, [items, searchQuery, filterStatus]);
 
   return (
     <div className="space-y-6">
@@ -198,42 +246,44 @@ export const VerifikasiPendidikan: React.FC = () => {
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setFilterStatus('ALL')}
+            onClick={() => setFilterStatus("ALL")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filterStatus === 'ALL' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filterStatus === "ALL"
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             Semua ({items.length})
           </button>
           <button
             type="button"
-            onClick={() => setFilterStatus('DIAJUKAN')}
+            onClick={() => setFilterStatus("DIAJUKAN")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filterStatus === 'DIAJUKAN'
-                ? 'bg-amber-700 text-white'
-                : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+              filterStatus === "DIAJUKAN"
+                ? "bg-amber-700 text-white"
+                : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
             }`}
           >
             Menunggu ({stats.diajukan})
           </button>
           <button
             type="button"
-            onClick={() => setFilterStatus('DISETUJUI')}
+            onClick={() => setFilterStatus("DISETUJUI")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filterStatus === 'DISETUJUI'
-                ? 'bg-emerald-700 text-white'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+              filterStatus === "DISETUJUI"
+                ? "bg-emerald-700 text-white"
+                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"
             }`}
           >
             Disetujui ({stats.disetujui})
           </button>
           <button
             type="button"
-            onClick={() => setFilterStatus('DITOLAK_ADMIN')}
+            onClick={() => setFilterStatus("DITOLAK_ADMIN")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filterStatus.startsWith('DITOLAK')
-                ? 'bg-red-700 text-white'
-                : 'bg-red-50 text-red-800 hover:bg-red-100 border border-red-200'
+              filterStatus.startsWith("DITOLAK")
+                ? "bg-red-700 text-white"
+                : "bg-red-50 text-red-800 hover:bg-red-100 border border-red-200"
             }`}
           >
             Ditolak ({stats.ditolak})
@@ -271,29 +321,37 @@ export const VerifikasiPendidikan: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-gray-400">
                     <RefreshCw className="h-6 w-6 mx-auto animate-spin text-[#ba191d] mb-2" />
-                    <p className="font-bold text-gray-600">Memuat berkas pengajuan...</p>
+                    <p className="font-bold text-gray-600">
+                      Memuat berkas pengajuan...
+                    </p>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-gray-400">
                     <GraduationCap className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                    <p className="font-bold text-gray-500">Tidak ada pengajuan berkas yang ditemukan.</p>
+                    <p className="font-bold text-gray-500">
+                      Tidak ada pengajuan berkas yang ditemukan.
+                    </p>
                   </td>
                 </tr>
               ) : (
                 filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50/80 transition-colors"
+                  >
                     {/* Pegawai */}
                     <td className="py-3 px-3.5">
                       <p className="font-extrabold text-gray-900 text-xs">
-                        {item.pegawai?.nama_lengkap ?? '-'}
+                        {item.pegawai?.nama_lengkap ?? "-"}
                       </p>
                       <p className="font-mono text-[11px] font-bold text-gray-500 tracking-tight">
-                        {item.pegawai?.nip ?? '-'}
+                        {item.pegawai?.nip ?? "-"}
                       </p>
                       <p className="text-[10px] text-gray-400 mt-0.5">
-                        {item.pegawai?.pangkat_golongan?.golongan} · {item.pegawai?.pangkat_golongan?.jenjang_jabatan?.nama}
+                        {item.pegawai?.pangkat_golongan?.golongan} ·{" "}
+                        {item.pegawai?.pangkat_golongan?.jenjang_jabatan?.nama}
                       </p>
                     </td>
 
@@ -301,7 +359,7 @@ export const VerifikasiPendidikan: React.FC = () => {
                     <td className="py-3 px-3.5">
                       <div className="flex items-center gap-1.5 font-bold">
                         <span className="text-gray-500 text-[11px]">
-                          {item.pegawai?.pendidikan_terakhir || 'Lama'}
+                          {item.pegawai?.pendidikan_terakhir || "Lama"}
                         </span>
                         <span className="text-gray-400">→</span>
                         <span className="text-[#ba191d] font-black text-xs bg-red-50 px-2 py-0.5 rounded border border-red-200">
@@ -312,8 +370,12 @@ export const VerifikasiPendidikan: React.FC = () => {
 
                     {/* Institusi */}
                     <td className="py-3 px-3.5">
-                      <p className="font-bold text-gray-800">{item.nama_institusi}</p>
-                      <p className="text-[11px] text-gray-500">{item.jurusan}</p>
+                      <p className="font-bold text-gray-800">
+                        {item.nama_institusi}
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        {item.jurusan}
+                      </p>
                     </td>
 
                     {/* Tahun Lulus */}
@@ -323,19 +385,30 @@ export const VerifikasiPendidikan: React.FC = () => {
 
                     {/* Status Badge */}
                     <td className="py-3 px-3.5 text-center">
-                      {item.status === 'DIAJUKAN' && (
-                        <Badge variant="warning" icon={<Clock className="h-3 w-3" />}>
+                      {item.status === "DIAJUKAN" && (
+                        <Badge
+                          variant="warning"
+                          icon={<Clock className="h-3 w-3" />}
+                        >
                           MENUNGGU VERIFIKASI
                         </Badge>
                       )}
-                      {item.status === 'DISETUJUI' && (
-                        <Badge variant="success" icon={<CheckCircle2 className="h-3 w-3" />}>
+                      {item.status === "DISETUJUI" && (
+                        <Badge
+                          variant="success"
+                          icon={<CheckCircle2 className="h-3 w-3" />}
+                        >
                           DISETUJUI (+25% AK)
                         </Badge>
                       )}
-                      {item.status.startsWith('DITOLAK') && (
-                        <Badge variant="danger" icon={<XCircle className="h-3 w-3" />}>
-                          {item.status === 'DITOLAK_ADMIN' ? 'BERKAS DITOLAK' : 'SYARAT TIDAK LOLOS'}
+                      {item.status.startsWith("DITOLAK") && (
+                        <Badge
+                          variant="danger"
+                          icon={<XCircle className="h-3 w-3" />}
+                        >
+                          {item.status === "DITOLAK_ADMIN"
+                            ? "BERKAS DITOLAK"
+                            : "SYARAT TIDAK LOLOS"}
                         </Badge>
                       )}
                     </td>
@@ -344,10 +417,14 @@ export const VerifikasiPendidikan: React.FC = () => {
                     <td className="py-3 px-3.5 text-center">
                       <Button
                         size="sm"
-                        variant={item.status === 'DIAJUKAN' ? 'primary' : 'secondary'}
+                        variant={
+                          item.status === "DIAJUKAN" ? "primary" : "secondary"
+                        }
                         onClick={() => handleOpenModal(item)}
                       >
-                        {item.status === 'DIAJUKAN' ? 'Periksa Dokumen' : 'Detail'}
+                        {item.status === "DIAJUKAN"
+                          ? "Periksa Dokumen"
+                          : "Detail"}
                       </Button>
                     </td>
                   </tr>
@@ -377,11 +454,14 @@ export const VerifikasiPendidikan: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={() => setSelectedItem(null)}>
+                <Button
+                  variant="secondary"
+                  onClick={() => setSelectedItem(null)}
+                >
                   Tutup
                 </Button>
 
-                {selectedItem.status === 'DIAJUKAN' && (
+                {selectedItem.status === "DIAJUKAN" && (
                   <>
                     <Button
                       variant="danger"
@@ -420,19 +500,25 @@ export const VerifikasiPendidikan: React.FC = () => {
                 <span className="text-gray-400 font-medium block text-[10px] uppercase">
                   Program Studi
                 </span>
-                <span className="font-bold text-gray-800">{selectedItem.jurusan}</span>
+                <span className="font-bold text-gray-800">
+                  {selectedItem.jurusan}
+                </span>
               </div>
               <div>
                 <span className="text-gray-400 font-medium block text-[10px] uppercase">
                   Tahun Lulus
                 </span>
-                <span className="font-mono font-bold text-gray-800">{selectedItem.tahun_lulus}</span>
+                <span className="font-mono font-bold text-gray-800">
+                  {selectedItem.tahun_lulus}
+                </span>
               </div>
               <div className="col-span-2 sm:col-span-3">
                 <span className="text-gray-400 font-medium block text-[10px] uppercase">
                   Perguruan Tinggi / Institusi
                 </span>
-                <span className="font-bold text-gray-900">{selectedItem.nama_institusi}</span>
+                <span className="font-bold text-gray-900">
+                  {selectedItem.nama_institusi}
+                </span>
               </div>
             </div>
 
@@ -452,8 +538,12 @@ export const VerifikasiPendidikan: React.FC = () => {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <FileText className="h-4 w-4 text-[#ba191d] shrink-0" />
                     <div className="truncate">
-                      <p className="font-bold text-gray-900">Scan Ijazah / SKL</p>
-                      <p className="text-[10px] text-gray-400 truncate">Klik untuk membuka file</p>
+                      <p className="font-bold text-gray-900">
+                        Scan Ijazah / SKL
+                      </p>
+                      <p className="text-[10px] text-gray-400 truncate">
+                        Klik untuk membuka file
+                      </p>
                     </div>
                   </div>
                   <ExternalLink className="h-3.5 w-3.5 text-gray-400 shrink-0 ml-2" />
@@ -469,8 +559,12 @@ export const VerifikasiPendidikan: React.FC = () => {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <ShieldCheck className="h-4 w-4 text-blue-600 shrink-0" />
                     <div className="truncate">
-                      <p className="font-bold text-gray-900">Surat Pengesahan BKN</p>
-                      <p className="text-[10px] text-gray-400 truncate">Pencantuman Gelar BKN</p>
+                      <p className="font-bold text-gray-900">
+                        Surat Pengesahan BKN
+                      </p>
+                      <p className="text-[10px] text-gray-400 truncate">
+                        Pencantuman Gelar BKN
+                      </p>
                     </div>
                   </div>
                   <ExternalLink className="h-3.5 w-3.5 text-gray-400 shrink-0 ml-2" />
@@ -485,9 +579,9 @@ export const VerifikasiPendidikan: React.FC = () => {
                 <span>Dampak Persetujuan (Formula Booster +25%):</span>
               </div>
               <p className="text-xs text-emerald-700 leading-relaxed">
-                Jika disetujui, pegawai akan mendapat bonus{' '}
-                <strong>+25% dari Kebutuhan AK Kenaikan Pangkat</strong> jenjang saat ini, dan
-                pendidikan terakhir otomatis ter-update ke{' '}
+                Jika disetujui, pegawai akan mendapat bonus{" "}
+                <strong>+25% dari Kebutuhan AK Kenaikan Pangkat</strong> jenjang
+                saat ini, dan pendidikan terakhir otomatis ter-update ke{" "}
                 <strong>{selectedItem.jenjang_pendidikan}</strong>.
               </p>
             </div>
@@ -495,12 +589,14 @@ export const VerifikasiPendidikan: React.FC = () => {
             {/* Input Catatan Verifikator */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-700 block">
-                Catatan Verifikasi{' '}
-                {selectedItem.status === 'DIAJUKAN' && (
-                  <span className="text-gray-400 font-normal">(Wajib jika menolak)</span>
+                Catatan Verifikasi{" "}
+                {selectedItem.status === "DIAJUKAN" && (
+                  <span className="text-gray-400 font-normal">
+                    (Wajib jika menolak)
+                  </span>
                 )}
               </label>
-              {selectedItem.status === 'DIAJUKAN' ? (
+              {selectedItem.status === "DIAJUKAN" ? (
                 <textarea
                   rows={3}
                   value={catatan}
@@ -510,10 +606,11 @@ export const VerifikasiPendidikan: React.FC = () => {
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-700">
-                  {selectedItem.catatan_verifikasi || 'Tidak ada catatan tambahan.'}
+                  {selectedItem.catatan_verifikasi ||
+                    "Tidak ada catatan tambahan."}
                   {selectedItem.verifikator && (
                     <p className="text-[10px] text-gray-400 mt-1">
-                      Diverifikasi oleh: {selectedItem.verifikator.name} ·{' '}
+                      Diverifikasi oleh: {selectedItem.verifikator.name} ·{" "}
                       {selectedItem.diverifikasi_pada}
                     </p>
                   )}
@@ -524,5 +621,5 @@ export const VerifikasiPendidikan: React.FC = () => {
         </Modal>
       )}
     </div>
-  )
-}
+  );
+};

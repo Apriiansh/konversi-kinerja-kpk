@@ -71,10 +71,18 @@ export async function downloadRekapitulasiXlsx(tahun?: number): Promise<void> {
 export interface RingkasanStatistik {
   total_pegawai: number
   per_jenjang: Record<string, number>
+  statistik_tahun?: {
+    tahun: number
+    total_rekap: number
+    total_ak_kumulatif: number
+    layak_pangkat: number
+    layak_jenjang: number
+    belum_cukup: number
+  }
 }
 
-export async function getRingkasan(): Promise<RingkasanStatistik> {
-  const response = await api.get('/rekapitulasi/ringkasan')
+export async function getRingkasan(tahun?: number): Promise<RingkasanStatistik> {
+  const response = await api.get('/rekapitulasi/ringkasan', { params: { tahun } })
   return response.data.data
 }
 

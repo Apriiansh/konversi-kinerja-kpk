@@ -454,7 +454,7 @@ export default function PegawaiDashboard() {
                 Email
               </p>
 
-              <p className="text-xs sm:text-sm text-slate-600 font-medium truncate max-w-[200px] sm:max-w-xs">
+              <p className="text-xs sm:text-sm text-slate-600 font-medium truncate max-w-50 sm:max-w-xs">
                 {email}
               </p>
             </div>
@@ -675,7 +675,7 @@ export default function PegawaiDashboard() {
         </div>
 
         {/* Status */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#991b1b] to-[#b71c1c] p-4 text-white shadow-xs">
+        <div className="relative overflow-hidden rounded-xl bg-linear-to-r from-[#991b1b] to-[#b71c1c] p-4 text-white shadow-xs">
           <svg
             className="absolute bottom-0 right-0 w-32 h-12 text-white/10 pointer-events-none"
             viewBox="0 0 120 40"

@@ -4,7 +4,7 @@ import type { UserPayload } from '../api/auth'
 export interface AuthContextValue {
   user: UserPayload | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<UserPayload>
   logout: () => Promise<void>
 }
 

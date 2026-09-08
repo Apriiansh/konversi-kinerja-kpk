@@ -63,7 +63,6 @@ const ASAL_JABATAN_OPTIONS = [
 
 // Warna brand institusi — konsisten dipakai lewat token di bawah, bukan hex tersebar
 const BRAND = '#ba191d'
-const BRAND_DARK = '#8f1215'
 
 // ─── Tipe Bantuan (interop dengan response /pegawai biasa) ───────────────
 type PegawaiSearchItem = {
@@ -125,7 +124,7 @@ function formatRumusRill(rumus: string | undefined, predikat?: PredikatKinerja):
   for (const c of candidates) {
     const escaped = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const regex = new RegExp(`(?<!\\d)${escaped}(?!\\d)`, 'g')
-    const result = rumus.replace(regex, percentText)
+    const result: string = rumus.replace(regex, percentText)
     if (result !== rumus) return result
   }
   return rumus

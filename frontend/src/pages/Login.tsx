@@ -17,8 +17,8 @@ export default function Login() {
     setError('')
     setSubmitting(true)
     try {
-      await login(email, password)
-      navigate('/', { replace: true })
+      const u = await login(email, password)
+      navigate(u.role === 'ADMIN' ? '/admin' : '/', { replace: true })
     } catch (err: unknown) {
       const msg = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
       const errors = msg.response?.data?.errors
