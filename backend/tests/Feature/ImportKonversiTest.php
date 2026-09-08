@@ -160,6 +160,47 @@ class ImportKonversiTest extends TestCase
         $this->assertEqualsWithDelta(16.77, (float) $budi['kelayakan']['carry_over'], 0.01);
     }
 
+    public function test_preview_import_promosi_iii_b_ke_ahli_muda_menggunakan_target_jenjang(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        $row = [
+            '199503012025031002',
+            'Siti Promosi',
+            'siti@kpk.go.id',
+            'III/b',
+            'PENGAWAS',
+            'Ahli Muda',
+            'S1',
+            '',
+            '0',
+            '0',
+            '10.00',
+            '2025',
+            '',
+            '0',
+            '',
+            '0',
+            '',
+            '0',
+            '',
+            '0',
+            '',
+        ];
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $this->createCsvFile([$row]),
+        ]);
+
+        $response->assertOk();
+        $item = $response->json('data.data.0');
+
+        $this->assertEquals(85.00, (float) $item['ak_kumulatif']);
+        $this->assertEquals('BELUM_CUKUP', $item['kelayakan']['status']);
+        $this->assertEquals(100.00, (float) $item['kelayakan']['target_jenjang']);
+        $this->assertEquals(15.00, (float) $item['kelayakan']['kurang_ak']);
+    }
+
     public function test_eksekusi_import_menyimpan_data_lengkap_ke_database(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN', 'name' => 'Admin Kepegawaian']);

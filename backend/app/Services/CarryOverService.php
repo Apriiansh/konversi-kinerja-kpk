@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Pegawai;
-use App\Models\PenetapanAK;
+use App\Models\MasterJenjangJabatan;
 
 class CarryOverService
 {
@@ -17,30 +17,53 @@ class CarryOverService
      *
      * @param Pegawai $pegawai
      * @param float $akKumulatif
+     * @param MasterJenjangJabatan|null $targetJenjang Jenjang tujuan import, jika berbeda dari jenjang asal
      * @return array
      */
-    public function evaluasiKelayakan(Pegawai $pegawai, float $akKumulatif): array
+    public function evaluasiKelayakan(
+        Pegawai $pegawai,
+        float $akKumulatif,
+        ?MasterJenjangJabatan $targetJenjang = null
+    ): array
     {
         $pegawai->loadMissing(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan']);
         $jenjang = $pegawai->effectiveJenjang();
+        $jenjangAsal = $pegawai->pangkatGolongan?->jenjangJabatan;
+        $isKenaikanJenjang = $targetJenjang
+            && $jenjangAsal
+            && $targetJenjang->id !== $jenjangAsal->id;
+        $jenisTarget = $isKenaikanJenjang ? 'JENJANG' : 'PANGKAT';
 
-        $targetKp = (float) ($jenjang->kebutuhan_ak_kp ?? 50.0);
-        $targetJenjang = (float) ($jenjang->kebutuhan_ak_jenjang ?? 100.0);
+        $targetKp = (float) ($jenjangAsal?->kebutuhan_ak_kp ?? $jenjang->kebutuhan_ak_kp ?? 50.0);
+        $targetJenjangAk = (float) ($jenjangAsal?->kebutuhan_ak_jenjang ?? $jenjang->kebutuhan_ak_jenjang ?? 100.0);
 
         $status = 'BELUM_CUKUP';
-        $badgeLabel = 'BELUM CUKUP AK';
+        $badgeLabel = 'BELUM CUKUP AK UNTUK NAIK JENJANG';
         $badgeColor = 'warning'; // or red/orange in UI
         $carryOver = 0.0;
         $keterangan = '';
         $selisih = 0.0;
 
-        // Cek kelayakan naik jenjang terlebih dahulu jika berlaku
-        if ($targetJenjang < 9999 && $akKumulatif >= $targetJenjang) {
+        // Saat target jenjang diisi dan berbeda dari jenjang asal, hanya promosi yang dinilai.
+        if ($isKenaikanJenjang && $targetJenjangAk < 9999 && $akKumulatif >= $targetJenjangAk) {
             $status = 'LAYAK_JENJANG';
             $badgeLabel = 'LAYAK NAIK JENJANG';
             $badgeColor = 'success';
             $carryOver = 0.0; // Hangus sesuai regulasi
-            $keterangan = "Selamat! Pegawai telah memenuhi syarat AK untuk Kenaikan Jenjang Jabatan (Target: {$targetJenjang} AK). Sisa kelebihan AK direset ke 0 (hangus).";
+            $keterangan = "Selamat! Pegawai telah memenuhi syarat AK untuk Kenaikan Jenjang Jabatan (Target: {$targetJenjangAk} AK). Sisa kelebihan AK direset ke 0 (hangus).";
+        } elseif ($isKenaikanJenjang) {
+            $status = 'BELUM_CUKUP';
+            $badgeLabel = 'BELUM CUKUP AK UNTUK NAIK JENJANG';
+            $badgeColor = 'secondary';
+            $selisih = round($targetJenjangAk - $akKumulatif, 2);
+            $carryOver = round($akKumulatif, 2);
+            $keterangan = "Angka Kredit belum mencukupi untuk Kenaikan Jenjang Jabatan. Kurang {$selisih} AK dari target {$targetJenjangAk} AK. Seluruh saldo {$carryOver} AK disimpan untuk tahun depan.";
+        } elseif ($targetJenjangAk < 9999 && $akKumulatif >= $targetJenjangAk) {
+            $status = 'LAYAK_JENJANG';
+            $badgeLabel = 'LAYAK NAIK JENJANG';
+            $badgeColor = 'success';
+            $carryOver = 0.0; // Hangus sesuai regulasi
+            $keterangan = "Selamat! Pegawai telah memenuhi syarat AK untuk Kenaikan Jenjang Jabatan (Target: {$targetJenjangAk} AK). Sisa kelebihan AK direset ke 0 (hangus).";
         } elseif ($akKumulatif >= $targetKp) {
             $status = 'LAYAK_PANGKAT';
             $badgeLabel = 'LAYAK NAIK PANGKAT';
@@ -49,7 +72,7 @@ class CarryOverService
             $keterangan = "Selamat! Pegawai telah memenuhi syarat AK untuk Kenaikan Pangkat (Target: {$targetKp} AK). Sisa tabungan AK sebesar {$carryOver} AK akan dibawa ke periode berikutnya.";
         } else {
             $status = 'BELUM_CUKUP';
-            $badgeLabel = 'BELUM CUKUP AK';
+            $badgeLabel = 'BELUM CUKUP AK UNTUK NAIK PANGKAT';
             $badgeColor = 'secondary';
             $selisih = round($targetKp - $akKumulatif, 3);
             $carryOver = round($akKumulatif, 3); // Dibawa utuh karena belum naik pangkat
@@ -61,7 +84,8 @@ class CarryOverService
             'badge_label'     => $badgeLabel,
             'badge_color'     => $badgeColor,
             'target_kp'       => $targetKp,
-            'target_jenjang'  => $targetJenjang,
+            'target_jenjang'  => $targetJenjangAk,
+            'jenis_target'    => $jenisTarget,
             'ak_kumulatif'    => $akKumulatif,
             'carry_over'      => $carryOver,
             'kurang_ak'       => $selisih,

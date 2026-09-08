@@ -724,7 +724,31 @@ class ImportKonversiService
 
             // Jenjang efektif = jenjang tujuan bila diisi, selain itu jenjang golongan.
             $jenjang = $targetJenjang ?: $pangkat->jenjangJabatan;
+            $jenjangAsal = $pangkat->jenjangJabatan;
             $koefisienTahunan = (float) $jenjang->koefisien_tahunan;
+
+            // A crossing grade boundary is a promotion to the next functional level.
+            $golonganBerikutnya = [
+                'iii/a' => 'III/b',
+                'iii/b' => 'III/c',
+                'iii/c' => 'III/d',
+                'iii/d' => 'IV/a',
+                'iv/a' => 'IV/b',
+                'iv/b' => 'IV/c',
+                'iv/c' => 'IV/d',
+                'iv/d' => 'IV/e',
+            ];
+            $nextPangkat = $pangkatMap->get($golonganBerikutnya[strtolower($pangkat->golongan)] ?? '');
+            $targetEvaluasiJenjang = $targetJenjang;
+            if (
+                $nextPangkat
+                && $jenjangAsal
+                && $nextPangkat->jenjangJabatan
+                && $nextPangkat->jenjangJabatan->id !== $jenjangAsal->id
+                && (!$targetJenjang || $targetJenjang->id === $jenjangAsal->id)
+            ) {
+                $targetEvaluasiJenjang = $nextPangkat->jenjangJabatan;
+            }
 
             // Penyesuaian Perpindahan Jabatan (PerBKN No. 3/2023 Lampiran II Angka 3)
             $penyesuaian = $this->hitungKonversi->resolveMismatchPenyesuaian($asalJabatan, $pangkat->golongan, $jenjang);
@@ -837,7 +861,8 @@ class ImportKonversiService
                 $akParsial = round($akDasar + $akPakPelantikan + $akHistoris + $sumTersimpan + $akQ, 3);
                 $kelayakanParsial = $this->carryOverService->evaluasiKelayakan(
                     new Pegawai(['pangkat_golongan_id' => $pangkat->id]),
-                    $akParsial
+                    $akParsial,
+                    $targetEvaluasiJenjang
                 );
 
                 if ($kelayakanParsial['status'] === 'LAYAK_PANGKAT') {
@@ -944,7 +969,8 @@ class ImportKonversiService
             $akKumulatifTw3 = round($akDasar + $akPakPelantikan + $akHistoris + $sumAkPeriodikTw1_3 + $akBooster, 3);
             $kelayakanTw3 = $this->carryOverService->evaluasiKelayakan(
                 new Pegawai(['pangkat_golongan_id' => $pangkat->id]),
-                $akKumulatifTw3
+                $akKumulatifTw3,
+                $targetEvaluasiJenjang
             );
 
             // ── Penentuan Metode Kalkulasi AK Baru Akhir Tahun ────────────────
@@ -968,7 +994,8 @@ class ImportKonversiService
             // Evaluasi Badge Kelayakan
             $kelayakan = $this->carryOverService->evaluasiKelayakan(
                 new Pegawai(['pangkat_golongan_id' => $pangkat->id]),
-                $akKumulatif
+                $akKumulatif,
+                $targetEvaluasiJenjang
             );
 
             if ($kelayakan['status'] === 'LAYAK_PANGKAT') {
@@ -1009,6 +1036,7 @@ class ImportKonversiService
                     'catatan'        => $kelayakan['catatan'],
                     'target_kp'      => $kelayakan['target_kp'],
                     'target_jenjang' => $kelayakan['target_jenjang'],
+                    'jenis_target'  => $kelayakan['jenis_target'],
                     'next_jenjang'   => $this->getNextJenjangName($jenjang->nama),
                 ],
                 'triwulan'          => $triwulanData,

@@ -36,6 +36,7 @@ export interface KelayakanInfo {
   status: StatusKelayakan
   badge_label: string
   badge_color: string
+  jenis_target?: 'PANGKAT' | 'JENJANG'
   target_kp?: number
   target_jenjang?: number
   carry_over: number

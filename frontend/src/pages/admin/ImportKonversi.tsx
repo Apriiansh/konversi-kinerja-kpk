@@ -725,7 +725,16 @@ export const ImportKonversi: React.FC = () => {
                           </td>
                           <td className="py-3 px-3.5 text-center">
                             {item.kelayakan?.status && (
-                              <StatusBadge status={item.kelayakan.status} />
+                              <>
+                                <StatusBadge status={item.kelayakan.status} />
+                                {item.kelayakan.status === "BELUM_CUKUP" && (
+                                  <span className="mt-1 block text-[10px] font-bold leading-tight text-amber-800">
+                                    {item.kelayakan.jenis_target === "JENJANG"
+                                      ? "Belum cukup AK untuk naik jenjang"
+                                      : "Belum cukup AK untuk naik pangkat"}
+                                  </span>
+                                )}
+                              </>
                             )}
                           </td>
                           <td className="py-3 px-3.5 text-center">
