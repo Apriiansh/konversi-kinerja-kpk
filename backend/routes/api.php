@@ -31,11 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user()->load('pegawai.pangkatGolongan.jenjangJabatan', 'pegawai.jenjangJabatan');
     });
 
-    // Evaluasi Kinerja (Penetapan Predikat & Kunci Kinerja)
+    // Evaluasi Kinerja (Penetapan Predikat Kinerja)
     Route::get('/evaluasi', [EvaluasiKinerjaController::class, 'index']);
     Route::post('/evaluasi', [EvaluasiKinerjaController::class, 'store']);
     Route::post('/evaluasi/simulasi', [EvaluasiKinerjaController::class, 'simulasi']); // Preview hitung AK tanpa simpan
-    Route::post('/evaluasi/{id}/lock', [EvaluasiKinerjaController::class, 'lock']);
 
     // CRUD Evaluasi
     Route::get('evaluasi/context/{pegawaiId}/{tahun}', [EvaluasiKinerjaController::class, 'context'])->whereNumber('tahun');
@@ -104,6 +103,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/rekapitulasi/{pegawaiId}/{tahun}/live', [RekapitulasiController::class, 'showLive'])->whereNumber('tahun');
     Route::get('/rekapitulasi/{pegawaiId}/{tahun}', [RekapitulasiController::class, 'show'])->whereNumber('tahun');
     Route::post('/rekapitulasi/{pegawaiId}/{tahun}/finalisasi', [RekapitulasiController::class, 'finalisasi'])->whereNumber('tahun');
+    Route::post('/rekapitulasi/{pegawaiId}/{tahun}/lock', [RekapitulasiController::class, 'lock'])->whereNumber('tahun');
+    Route::post('/rekapitulasi/{pegawaiId}/{tahun}/unlock', [RekapitulasiController::class, 'unlock'])->whereNumber('tahun');
     Route::post('/rekapitulasi/{pegawaiId}/pak-pelantikan', [RekapitulasiController::class, 'simpanPakPelantikan']);
     Route::post('/rekapitulasi/{pegawaiId}/saldo-historis', [RekapitulasiController::class, 'simpanSaldoHistoris']);
 

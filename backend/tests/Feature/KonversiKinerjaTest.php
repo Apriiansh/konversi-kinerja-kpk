@@ -67,14 +67,31 @@ class KonversiKinerjaTest extends TestCase
 
         $evaluasiId = $response->json('data.id');
 
-        // 2. Kunci Predikat (Lock Predicate)
-        $lockResponse = $this->actingAs($userPegawai, 'sanctum')->postJson("/api/evaluasi/{$evaluasiId}/lock");
+        // Draft penetapan AK tahun 2024 (prasyarat year-lock)
+        PenetapanAK::create([
+            'pegawai_id'   => $pegawai->id,
+            'tahun'        => 2024,
+            'ak_dasar'     => 0,
+            'ak_lama'      => 100,
+            'ak_kumulatif' => 118.75,
+        ]);
+
+        // 2. Kunci Tahun (Year-Lock) oleh Admin — blokir semua edit evaluasi
+        $lockResponse = $this->actingAs($admin, 'sanctum')->postJson("/api/rekapitulasi/{$pegawai->id}/2024/lock");
         $lockResponse->assertStatus(200);
         $this->assertTrue($lockResponse->json('data.is_locked'));
 
+        // Setelah terkunci, update evaluasi ditolak
+        $updateBlocked = $this->actingAs($admin, 'sanctum')->putJson("/api/evaluasi/{$evaluasiId}", [
+            'predikat_id'  => $predikatSangatBaik->id,
+            'jumlah_bulan' => 3,
+        ]);
+        $updateBlocked->assertStatus(422);
+        $this->assertStringContainsString('terkunci', $updateBlocked->json('message'));
+
         // Cek database audit trail tercatat
         $this->assertDatabaseHas('riwayat_aktivitas', [
-            'modul' => 'EVALUASI_KINERJA',
+            'modul' => 'PENETAPAN_AK',
             'aksi'  => 'LOCK',
         ]);
     }
@@ -166,7 +183,7 @@ class KonversiKinerjaTest extends TestCase
             'masa_kerja_bulan' => 5,
         ]);
         $pakResponse->assertOk();
-        $this->assertEquals(42.71, (float) $pakResponse->json('data.penetapan.ak_pak_pelantikan'));
+        $this->assertEquals(42.708, (float) $pakResponse->json('data.penetapan.ak_pak_pelantikan'));
 
         // 2. Simpan Saldo Historis Kepegawaian: 10.00 AK
         $saldoResponse = $this->actingAs($admin, 'sanctum')->postJson("/api/rekapitulasi/{$pegawai->id}/saldo-historis", [
@@ -204,7 +221,7 @@ class KonversiKinerjaTest extends TestCase
             'predikat_id'  => $predikatSangatBaik->id,
         ]);
 
-        // TW4 (3 bln, Baik - Jangkar): 3.13 AK
+        // TW4 (3 bln, Baik - Tahunan): 3.13 AK
         $this->actingAs($admin, 'sanctum')->postJson('/api/evaluasi', [
             'pegawai_id'   => $pegawai->id,
             'tahun'        => 2025,
@@ -223,19 +240,19 @@ class KonversiKinerjaTest extends TestCase
         $finalisasiResponse->assertOk();
 
         // Verifikasi Hasil Tahun 1:
-        // AK Baru (10 bulan * 1.0 * 12.5 / 12) = 10.42 AK
-        // Total Kumulatif: 10.00 (historis) + 42.71 (PAK) + 10.42 (AK Baru) + 12.50 (Booster) = 75.63 AK
-        $this->assertEquals(10.42, (float) $finalisasiResponse->json('data.penetapan.ak_baru'));
-        $this->assertEquals(75.63, (float) $finalisasiResponse->json('data.penetapan.ak_kumulatif'));
+        // TW3 sudah LAYAK (akKumulatifTw3 ~76 AK > 50) → Formula A periodik: sum TW1..TW4 = 14.06 AK
+        // Total Kumulatif: 10.00 (historis) + 42.708 (PAK) + 14.06 (AK Baru) + 12.50 (Booster) = 79.27 AK (rounded)
+        $this->assertEquals(14.06, (float) $finalisasiResponse->json('data.penetapan.ak_baru'));
+        $this->assertEquals(79.27, (float) $finalisasiResponse->json('data.penetapan.ak_kumulatif'));
         $this->assertEquals('LAYAK_PANGKAT', $finalisasiResponse->json('data.kelayakan.status'));
         $this->assertEquals('LAYAK NAIK PANGKAT', $finalisasiResponse->json('data.kelayakan.badge_label'));
-        $this->assertEquals(25.63, (float) $finalisasiResponse->json('data.kelayakan.carry_over'));
+        $this->assertEquals(29.27, (float) $finalisasiResponse->json('data.kelayakan.carry_over'));
 
         // 6. Verifikasi carry-over otomatis tersedia di Tahun 2 (2026)
         $penetapanTahun2 = \App\Models\PenetapanAK::where('pegawai_id', $pegawai->id)->where('tahun', 2026)->first();
         $this->assertNotNull($penetapanTahun2);
-        $this->assertEquals(25.63, (float) $penetapanTahun2->ak_lama);
-        $this->assertEquals(25.63, (float) $penetapanTahun2->ak_kumulatif);
+        $this->assertEquals(29.27, (float) $penetapanTahun2->ak_lama);
+        $this->assertEquals(29.27, (float) $penetapanTahun2->ak_kumulatif);
 
         // 7. Simulasi Kinerja Tahun 2 (2026): 12 bulan penuh, TW4 Sangat Baik -> AK Baru = 18.75 AK
         $this->actingAs($admin, 'sanctum')->postJson('/api/evaluasi', [
@@ -249,13 +266,13 @@ class KonversiKinerjaTest extends TestCase
         $finalisasiTahun2 = $this->actingAs($admin, 'sanctum')->postJson("/api/rekapitulasi/{$pegawai->id}/2026/finalisasi");
         $finalisasiTahun2->assertOk();
 
-        // Total Kumulatif Tahun 2: 25.63 (carry over) + 18.75 (AK baru) = 44.38 AK
-        // Target KP III/b -> III/c adalah 50 AK -> Kurang 5.62 AK -> Status: BELUM CUKUP AK
+        // Total Kumulatif Tahun 2: 29.27 (carry over) + 18.75 (AK baru) = 48.02 AK
+        // Target KP III/b -> III/c adalah 50 AK -> Kurang 1.98 AK -> Status: BELUM CUKUP AK
         $this->assertEquals(18.75, (float) $finalisasiTahun2->json('data.penetapan.ak_baru'));
-        $this->assertEquals(44.38, (float) $finalisasiTahun2->json('data.penetapan.ak_kumulatif'));
+        $this->assertEquals(48.02, (float) $finalisasiTahun2->json('data.penetapan.ak_kumulatif'));
         $this->assertEquals('BELUM_CUKUP', $finalisasiTahun2->json('data.kelayakan.status'));
         $this->assertEquals('BELUM CUKUP AK', $finalisasiTahun2->json('data.kelayakan.badge_label'));
-        $this->assertEquals(44.38, (float) $finalisasiTahun2->json('data.kelayakan.carry_over'));
+        $this->assertEquals(48.02, (float) $finalisasiTahun2->json('data.kelayakan.carry_over'));
     }
 
     public function test_promosi_naik_jenjang_sisa_ak_hangus_carry_over_nol(): void

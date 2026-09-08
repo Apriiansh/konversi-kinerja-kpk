@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph Akhir_Tahun ["2. Akhir Tahun (TW4) - Penutupan Buku"]
-        Q4["TW4 (Okt-Des)\nPenilaian Kinerja TW4 (Jangkar / Anchor)"]
+        Q4["TW4 (Okt-Des)\nPenilaian Kinerja TW4 (Tahunan)"]
         Norm["Formula B: Normalisasi Retrospektif\nAK Baru = (Bulan Aktif / 12) × Predikat TW4 × Koefisien"]
         Total["Hitung Total AK Kumulatif:\nSaldo Awal + AK Baru + Booster Ijazah + PAK Pelantikan"]
     end
@@ -44,9 +44,9 @@ Ini adalah alur untuk pegawai yang belum memenuhi target angka kredit:
 1. **TW1 – TW3 (Monitoring Periodik)**:
    - Atasan memberikan predikat kinerja per triwulan.
    - Sistem mencatat angka kredit periodik (Formula A) untuk keperluan monitoring dashboard.
-2. **TW4 (Jangkar Evaluasi Tahunan)**:
+2. **TW4 (Evaluasi Tahunan)**:
    - Atasan menetapkan predikat kinerja TW4 (misal: *Baik* = 100%).
-   - Sistem menjalankan **Formula B (TW4 Anchor)**: seluruh kinerja 12 bulan dihitung rata memakai predikat TW4.
+   - Sistem menjalankan **Formula B (Predikat Tahunan)**: seluruh kinerja 12 bulan dihitung rata memakai predikat TW4.
    - $\text{AK Baru} = \frac{12}{12} \times 100\% \times \text{Koefisien}$.
 3. **Pengecekan Kelayakan**:
    - Total AK Kumulatif dihitung ($\text{Saldo Awal} + \text{AK Baru}$).

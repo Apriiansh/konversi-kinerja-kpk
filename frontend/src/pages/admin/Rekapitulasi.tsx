@@ -8,12 +8,15 @@ import {
   TrendingUp,
   ShieldCheck,
   Lock,
+  LockOpen,
 } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
 import {
   getRekapitulasiList,
   getRekapitulasiDetail,
   finalizePak,
+  lockPak,
+  unlockPak,
   downloadRekapitulasiXlsx,
 } from '../../api/rekapitulasi'
 import {
@@ -43,6 +46,7 @@ export const Rekapitulasi: React.FC = () => {
 
   const [selectedDetail, setSelectedDetail] = useState<RekapDetailData | null>(null)
   const [finalizing, setFinalizing] = useState<boolean>(false)
+  const [togglingLock, setTogglingLock] = useState<boolean>(false)
 
   const fetchData = async () => {
     setLoading(true)
@@ -85,6 +89,24 @@ export const Rekapitulasi: React.FC = () => {
       setErrorMessage(err.response?.data?.message || 'Gagal memfinalisasi PAK.')
     } finally {
       setFinalizing(false)
+    }
+  }
+
+  const handleToggleLock = async (pegawaiId: string, tahun: number, currentlyLocked: boolean) => {
+    if (!isAdmin) return
+    setTogglingLock(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const res = currentlyLocked ? await unlockPak(pegawaiId, tahun) : await lockPak(pegawaiId, tahun)
+      setSuccessMessage(res.message || `Tahun ${tahun} ${currentlyLocked ? 'dibuka kuncinya' : 'dikunci'}.`)
+      const updatedDetail = await getRekapitulasiDetail(pegawaiId, tahun)
+      setSelectedDetail(updatedDetail)
+      fetchData()
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'Gagal mengubah status kunci tahun PAK.')
+    } finally {
+      setTogglingLock(false)
     }
   }
 
@@ -224,9 +246,16 @@ export const Rekapitulasi: React.FC = () => {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
                       <td className="py-3 px-3.5">
-                        <span className="inline-flex rounded-md bg-gray-100 px-2 py-0.5 font-mono font-extrabold text-gray-700">
-                          {item.tahun}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex rounded-md bg-gray-100 px-2 py-0.5 font-mono font-extrabold text-gray-700">
+                            {item.tahun}
+                          </span>
+                          {item.is_locked && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[9px] font-extrabold uppercase" title="Tahun terkunci">
+                              <Lock className="h-2.5 w-2.5" /> Kunci
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-3.5">
                         <p className="font-extrabold text-gray-900 text-xs">
@@ -309,24 +338,60 @@ export const Rekapitulasi: React.FC = () => {
         footer={
           selectedDetail && (
             <>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                <span>
-                  Status Penetapan:{' '}
-                  <strong>{selectedDetail.is_final ? 'Final & Terkunci' : 'Draft Berjalan'}</strong>
-                </span>
+              <div className="flex items-center gap-2 text-xs">
+                {selectedDetail.is_locked ? (
+                  <>
+                    <Lock className="h-4 w-4 text-emerald-600" />
+                    <span className="text-gray-500">
+                      Status Penetapan:{' '}
+                      <strong className="text-emerald-700">Terkunci</strong>
+                      {selectedDetail.locked_at && (
+                        <span className="text-gray-400"> · {new Date(selectedDetail.locked_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4 text-amber-500" />
+                    <span className="text-gray-500">
+                      Status Penetapan:{' '}
+                      <strong>{selectedDetail.is_final ? 'Final (belum dikunci)' : 'Draft Berjalan'}</strong>
+                    </span>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="secondary" onClick={() => setSelectedDetail(null)}>
                   Tutup
                 </Button>
-                {isAdmin && !selectedDetail.is_final && (
+                {isAdmin && (
+                  <Button
+                    variant={selectedDetail.is_locked ? 'secondary' : 'primary'}
+                    onClick={() => handleToggleLock(selectedDetail.pegawai.id, selectedDetail.tahun, !!selectedDetail.is_locked)}
+                    loading={togglingLock}
+                    disabled={togglingLock}
+                    icon={!togglingLock ? (
+                      selectedDetail.is_locked ? (
+                        <LockOpen className="h-3.5 w-3.5" />
+                      ) : (
+                        <Lock className="h-3.5 w-3.5" />
+                      )
+                    ) : undefined}
+                  >
+                    {togglingLock
+                      ? 'Memproses...'
+                      : selectedDetail.is_locked
+                        ? 'Buka Kunci Tahun'
+                        : 'Kunci Tahun'}
+                  </Button>
+                )}
+                {isAdmin && !selectedDetail.is_locked && (
                   <Button
                     variant="primary"
                     onClick={() => handleFinalize(selectedDetail.pegawai.id, selectedDetail.tahun)}
                     loading={finalizing}
                     disabled={finalizing}
-                    icon={!finalizing ? <Lock className="h-3.5 w-3.5" /> : undefined}
+                    icon={!finalizing ? <ShieldCheck className="h-3.5 w-3.5" /> : undefined}
                   >
                     {finalizing ? 'Memfinalisasi...' : 'Finalisasi PAK Tahun Ini'}
                   </Button>
@@ -446,19 +511,19 @@ export const Rekapitulasi: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 {[1, 2, 3, 4].map((qNum) => {
                   const qData = selectedDetail.triwulan[qNum]
-                  const isAnchor = qNum === 4
+                  const isTahunan = qNum === 4
                   return (
                     <div
                       key={qNum}
                       className={`p-3.5 rounded-xl border transition-all ${
-                        isAnchor ? 'border-primary/60 bg-secondary/30 ring-1 ring-primary/20' : 'border-gray-200 bg-white'
+                        isTahunan ? 'border-primary/60 bg-secondary/30 ring-1 ring-primary/20' : 'border-gray-200 bg-white'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs font-extrabold">
-                        <span className={isAnchor ? 'text-primary' : 'text-gray-800'}>
+                        <span className={isTahunan ? 'text-primary' : 'text-gray-800'}>
                           Triwulan {qNum}
                         </span>
-                        {isAnchor && (
+                        {isTahunan && (
                           <span className="text-[9px] font-black uppercase text-primary bg-secondary px-1.5 py-0.5 rounded">
                             Acuan Tahunan
                           </span>

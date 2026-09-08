@@ -9,7 +9,6 @@ use App\Models\MasterPredikatKinerja;
 use App\Models\Notifikasi;
 use App\Models\Pegawai;
 use App\Models\PenetapanAK;
-use App\Models\PengajuanPendidikan;
 use App\Models\User;
 use App\Support\XlsxWriter;
 use Carbon\Carbon;
@@ -46,14 +45,12 @@ class ImportKonversiService
             [
                 'nip', 'nama_lengkap', 'email', 'golongan', 'asal_jabatan', 'jenjang_jabatan',
                 'pendidikan_terakhir', 'tmt_jabatan', 'masa_kerja_tahun', 'masa_kerja_bulan',
-                'saldo_historis', 'tahun', 'tw1_predikat', 'tw2_predikat', 'tw3_predikat',
-                'tw4_predikat', 'klaim_ijazah_baru',
+                'saldo_historis', 'Predikat Kinerja Pegawai (PKP)',
             ],
             [
                 '199503012025031001', 'Budi Santoso, S.T', 'budi.santoso@kpk.go.id',
                 'III/a', 'PELAKSANA', 'Ahli Pertama', 'S1', '2025-03-01', '3', '5',
-                '10.00', '2025', 'Sangat Baik', 'Sangat Baik', 'Sangat Baik',
-                'Baik', 'S1',
+                '10.00', 'Baik',
             ],
         ];
 
@@ -108,16 +105,16 @@ class ImportKonversiService
         'masa_kerja_tahun'    => ['masa_kerja_tahun', 'mk_tahun', 'masa kerja tahun', 'mk tahun'],
         'masa_kerja_bulan'    => ['masa_kerja_bulan', 'mk_bulan', 'masa kerja bulan', 'mk bulan'],
         'saldo_historis'      => ['saldo_historis', 'saldo', 'historis', 'saldo historis'],
-        'tahun'               => ['tahun', 'year', 'periode', 'tahun evaluasi'],
-        'tw1_predikat'        => ['tw1_predikat', 'tw_1_predikat', 'predikat_tw1', 'predikat tw1', 'tw1 predikat'],
-        'tw1_bulan'           => ['tw1_bulan', 'tw_1_bulan', 'bulan_tw1', 'bulan tw1', 'tw1 bulan'],
-        'tw2_predikat'        => ['tw2_predikat', 'tw_2_predikat', 'predikat_tw2', 'predikat tw2', 'tw2 predikat'],
-        'tw2_bulan'           => ['tw2_bulan', 'tw_2_bulan', 'bulan_tw2', 'bulan tw2', 'tw2 bulan'],
-        'tw3_predikat'        => ['tw3_predikat', 'tw_3_predikat', 'predikat_tw3', 'predikat tw3', 'tw3 predikat'],
-        'tw3_bulan'           => ['tw3_bulan', 'tw_3_bulan', 'bulan_tw3', 'bulan tw3', 'tw3 bulan'],
-        'tw4_predikat'        => ['tw4_predikat', 'tw_4_predikat', 'predikat_tw4', 'predikat tw4', 'tw4 predikat'],
-        'tw4_bulan'           => ['tw4_bulan', 'tw_4_bulan', 'bulan_tw4', 'bulan tw4', 'tw4 bulan'],
-        'klaim_ijazah_baru'   => ['klaim_ijazah_baru', 'ijazah', 'klaim_ijazah', 'klaim ijazah', 'klaim ijazah baru'],
+        // Kolom tunggal Predikat Kinerja Pegawai (PKP). Di mode Triwulan = PKP triwulan
+        // terpilih; di mode Tahunan = predikat acuan tahunan. Alias lawas tw4_* tetap
+        // dipetakan ke sini demi kompatibilitas file lama.
+        'pkp'                 => ['pkp', 'predikat', 'predikat_kinerja', 'predikat_kinerja_pegawai', 'predikat kinerja pegawai',
+                                  'tw4_predikat', 'tw_4_predikat', 'predikat_tw4', 'predikat tw4', 'tw4 predikat',
+                                  'pkp_tahunan', 'predikat_tahunan', 'predikat tahunan'],
+        // Rincian opsional TW1-TW3 untuk mode Tahunan (file lawas twX_predikat tetap terbaca).
+        'pkp_tw1'             => ['pkp_tw1', 'tw1_predikat', 'tw_1_predikat', 'predikat_tw1', 'predikat tw1', 'tw1 predikat'],
+        'pkp_tw2'             => ['pkp_tw2', 'tw2_predikat', 'tw_2_predikat', 'predikat_tw2', 'predikat tw2', 'tw2 predikat'],
+        'pkp_tw3'             => ['pkp_tw3', 'tw3_predikat', 'tw_3_predikat', 'predikat_tw3', 'predikat tw3', 'tw3 predikat'],
     ];
 
     /**
@@ -138,8 +135,11 @@ class ImportKonversiService
 
         return array_map(function ($raw) use ($aliasMap) {
             $clean = trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', strtolower($raw)));
+            // Buang grup kurung agar "Predikat Kinerja Pegawai (PKP)" -> predikat_kinerja_pegawai
+            $clean = trim(preg_replace('/\([^)]*\)/', '', $clean));
             $underscored = preg_replace('/[\s\-]+/', '_', $clean);
-            return $aliasMap[$underscored] ?? $aliasMap[$clean] ?? $clean;
+            $underscored = trim($underscored, '_');
+            return $aliasMap[$underscored] ?? $aliasMap[$clean] ?? $underscored;
         }, $rawHeaders);
     }
 
@@ -162,7 +162,9 @@ class ImportKonversiService
         $score = 0;
         foreach ($rawRow as $raw) {
             $clean = trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', strtolower($raw)));
+            $clean = trim(preg_replace('/\([^)]*\)/', '', $clean));
             $underscored = preg_replace('/[\s\-]+/', '_', $clean);
+            $underscored = trim($underscored, '_');
             if (isset($aliasMap[$underscored]) || isset($aliasMap[$clean])) {
                 $score++;
             }
@@ -565,6 +567,23 @@ class ImportKonversiService
      * @param int         $tahun tahun evaluasi.
      * @return array{0:int,1:int,2:int,3:int}|null [tw1, tw2, tw3, tw4] atau null bila TMT absen/tidak valid.
      */
+    /**
+     * True bila TMT jabatan berada pada tahun setelah tahun evaluasi
+     * (pegawai belum aktif sama sekali di tahun tersebut).
+     */
+    protected function isTmtSetelahTahun(?string $tmt, int $tahun): bool
+    {
+        $tmt = trim((string) $tmt);
+        if ($tmt === '') {
+            return false;
+        }
+        try {
+            return (int) Carbon::parse($tmt)->year > $tahun;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     protected function hitungBulanAktifDariTmt(?string $tmt, int $tahun): ?array
     {
         if (empty($tmt)) {
@@ -607,10 +626,15 @@ class ImportKonversiService
      * Lakukan simulasi / preview hasil kalkulasi tanpa menyimpan ke database (Dry Run).
      *
      * @param UploadedFile|string $file
+     * @param bool $buatAkun
+     * @param int $triwulan 1-3 = import triwulan terpisah (satu kolom PKP),
+     *                       4 = mode Tahunan (TW4 sebagai acuan tahunan).
      * @return array
      */
-    public function previewImport($file, bool $buatAkun = true): array
+    public function previewImport($file, bool $buatAkun = true, int $triwulan = 4, int $tahun = 0): array
     {
+        $triwulan = in_array($triwulan, [1, 2, 3, 4], true) ? $triwulan : 4;
+        $tahun = $tahun >= 2020 ? $tahun : (int) date('Y');
         $rawRows = $this->parseFile($file);
         $pangkatMap = MasterPangkatGolongan::with('jenjangJabatan')->get()->keyBy(fn ($item) => strtolower($item->golongan));
         $predikatMap = MasterPredikatKinerja::all()->keyBy(fn ($item) => strtolower($item->nama));
@@ -659,7 +683,7 @@ class ImportKonversiService
                 $errors[] = "Golongan '" . ($row['golongan'] ?? '') . "' tidak valid.";
             }
 
-            $tahun = (int) ($row['tahun'] ?? date('Y'));
+            // Tahun evaluasi diambil dari selector UI (param), bukan kolom file
             if ($tahun < 2020) {
                 $errors[] = 'Tahun evaluasi minimal 2020.';
             }
@@ -734,25 +758,156 @@ class ImportKonversiService
             // Saldo Historis
             $akHistoris = (float) ($row['saldo_historis'] ?? 0);
 
-            // Kinerja Triwulanan
+            // TMT jabatan pada tahun setelah tahun evaluasi => baris ditolak secara tegas.
+            if ($this->isTmtSetelahTahun($row['tmt_jabatan'] ?? null, $tahun)) {
+                $totalError++;
+                $previewData[] = [
+                    'baris'     => $rowNumber,
+                    'is_valid'  => false,
+                    'errors'    => ["TMT jabatan ({$row['tmt_jabatan']}) berada setelah tahun evaluasi {$tahun}."],
+                    'raw_data'  => $row,
+                ];
+                continue;
+            }
+
+            // Auto-cut bulan aktif murni dari TMT jabatan (kolom twX_bulan dihapus).
+            // Tanpa TMT yang valid: tiap triwulan dihitung penuh 3 bulan.
+            $bulanAuto = $this->hitungBulanAktifDariTmt($row['tmt_jabatan'] ?? null, $tahun);
+            $bulanQuarter = static fn (int $q): int => $bulanAuto[$q - 1] ?? 3;
+
+            // ── Mode Triwulan 1–3: satu kolom PKP untuk quarter terpilih (Formula A) ──
+            if ($triwulan !== 4) {
+                $q = $triwulan;
+                $pName = trim((string) ($row['pkp'] ?? ''));
+                if ($pName === '') {
+                    $totalError++;
+                    $previewData[] = [
+                        'baris'     => $rowNumber,
+                        'is_valid'  => false,
+                        'errors'    => ["Kolom PKP wajib diisi untuk import Triwulan {$q}."],
+                        'raw_data'  => $row,
+                    ];
+                    continue;
+                }
+                $predikatObj = $predikatMap->get(strtolower($pName));
+                if (!$predikatObj) {
+                    $totalError++;
+                    $previewData[] = [
+                        'baris'     => $rowNumber,
+                        'is_valid'  => false,
+                        'errors'    => ["Predikat '{$pName}' tidak valid. Gunakan: " . implode(', ', $predikatMap->pluck('nama')->all()) . '.'],
+                        'raw_data'  => $row,
+                    ];
+                    continue;
+                }
+
+                $persen = (float) $predikatObj->persentase_konversi;
+                $qBulan = $bulanQuarter($q);
+                $akQ = $qBulan > 0 ? round(($qBulan / 12) * $persen * $koefisienTahunan, 3) : 0.0;
+
+                // Proyeksi disetahunkan (Formula B dengan PKP ini sebagai acuan tahunan)
+                $totalBulanSetahun = array_sum($bulanAuto ?? [3, 3, 3, 3]);
+                $proyeksi = round(($totalBulanSetahun / 12) * $persen * $koefisienTahunan, 3);
+
+                // Kumulatif parsial: saldo + quarter yang sudah tersimpan di DB
+                // (kecuali quarter ini) + quarter baru, lalu cek kelayakan.
+                $triwulanTersimpan = [];
+                $sumTersimpan = 0.0;
+                $pegawaiExisting = Pegawai::where('nip', $row['nip'])->first();
+                if ($pegawaiExisting) {
+                    $rowsDb = EvaluasiKinerja::with('predikat')
+                        ->where('pegawai_id', $pegawaiExisting->id)
+                        ->where('tahun', $tahun)->get();
+                    foreach ($rowsDb as $ev) {
+                        $tq = (int) $ev->triwulan;
+                        if ($tq < 1 || $tq > 4) {
+                            continue;
+                        }
+                        $triwulanTersimpan["tw{$tq}"] = [
+                            'predikat'     => $ev->predikat?->nama ?? '-',
+                            'jumlah_bulan' => (int) $ev->jumlah_bulan,
+                            'angka_kredit' => (float) $ev->angka_kredit,
+                        ];
+                        if ($tq !== $q) {
+                            $sumTersimpan += (float) $ev->angka_kredit;
+                        }
+                    }
+                }
+
+                $akParsial = round($akDasar + $akPakPelantikan + $akHistoris + $sumTersimpan + $akQ, 3);
+                $kelayakanParsial = $this->carryOverService->evaluasiKelayakan(
+                    new Pegawai(['pangkat_golongan_id' => $pangkat->id]),
+                    $akParsial
+                );
+
+                if ($kelayakanParsial['status'] === 'LAYAK_PANGKAT') {
+                    $countLayakKp++;
+                } elseif ($kelayakanParsial['status'] === 'LAYAK_JENJANG') {
+                    $countLayakJenjang++;
+                } else {
+                    $countBelumCukup++;
+                }
+
+                $triwulanTersimpan["tw{$q}"] = [
+                    'predikat'     => $predikatObj->nama,
+                    'jumlah_bulan' => $qBulan,
+                    'angka_kredit' => $akQ,
+                ];
+
+                $totalValid++;
+                $previewData[] = [
+                    'baris'                  => $rowNumber,
+                    'is_valid'               => true,
+                    'triwulan_mode'          => true,
+                    'triwulan_ke'            => $q,
+                    'nip'                    => $row['nip'],
+                    'nama_lengkap'           => $row['nama_lengkap'],
+                    'golongan'               => $pangkat->golongan,
+                    'asal_jabatan'           => $asalJabatan,
+                    'jenjang'                => $jenjang->nama,
+                    'tahun'                  => $tahun,
+                    'ak_dasar'               => $akDasar,
+                    'ak_pak_pelantikan'      => $akPakPelantikan,
+                    'ak_historis'            => $akHistoris,
+                    'pkp'                    => $predikatObj->nama,
+                    'jumlah_bulan'           => $qBulan,
+                    'ak_triwulan'            => $akQ,
+                    'total_bulan_aktif'      => $totalBulanSetahun,
+                    'proyeksi_disetahunkan'  => $proyeksi,
+                    'ak_parsial'             => $akParsial,
+                    'metode_kalkulasi'       => 'FORMULA_A_PERIODIK',
+                    'kelayakan'              => [
+                        'status'         => $kelayakanParsial['status'],
+                        'badge_label'    => $kelayakanParsial['badge_label'],
+                        'badge_color'    => $kelayakanParsial['badge_color'],
+                        'carry_over'     => $kelayakanParsial['carry_over'],
+                        'kurang_ak'      => $kelayakanParsial['kurang_ak'],
+                        'catatan'        => $kelayakanParsial['catatan'],
+                        'target_kp'      => $kelayakanParsial['target_kp'],
+                        'target_jenjang' => $kelayakanParsial['target_jenjang'],
+                        'next_jenjang'   => $this->getNextJenjangName($jenjang->nama),
+                    ],
+                    'triwulan'               => $triwulanTersimpan,
+                    'raw_data'               => $row,
+                ];
+                continue;
+            }
+
+            // ── Mode Tahunan (TW4 acuan): TW1–TW3 dihitung per triwulan, TW4 acuan tahunan ──
             $triwulanData = [];
             $totalBulanAktif = 0;
             $predikatTw4Persen = 1.0;
             $predikatTw4Nama = 'Baik';
 
-            // Auto-cut bulan aktif dari TMT jabatan (menang atas kolom tw{n}_bulan bila TMT valid)
-            $bulanAuto = $this->hitungBulanAktifDariTmt($row['tmt_jabatan'] ?? null, $tahun);
-
             foreach (range(1, 4) as $q) {
-                $pName = $row["tw{$q}_predikat"] ?? null;
-                if ($bulanAuto !== null) {
-                    $pBulan = $bulanAuto[$q - 1];
-                } else {
-                    $pBulan = (int) ($row["tw{$q}_bulan"] ?? ($pName ? 3 : 0));
-                }
+                // TW4 memakai kolom tunggal PKP; TW1–TW3 dari rincian opsional pkp_twX.
+                $pName = $q === 4
+                    ? ($row['pkp'] ?? $row['pkp_tw4'] ?? null)
+                    : ($row["pkp_tw{$q}"] ?? null);
+                $predikatObj = $pName ? $predikatMap->get(strtolower(trim((string) $pName))) : null;
+                $pBulan = $predikatObj ? $bulanQuarter($q) : 0;
 
                 $akQ = 0.0;
-                $predikatObj = $pName ? $predikatMap->get(strtolower($pName)) : null;
                 if ($predikatObj && $pBulan > 0) {
                     $persen = (float) $predikatObj->persentase_konversi;
                     $akQ = round(($pBulan / 12) * $persen * $koefisienTahunan, 3);
@@ -771,13 +926,9 @@ class ImportKonversiService
                 ];
             }
 
-            // Booster Ijazah (+25% dari Kebutuhan AK KP Jenjang)
+            // Booster ijazah TIDAK diproses lewat import.
+            // Klaim pendidikan hanya melalui alur verifikasi Pengajuan Pendidikan.
             $akBooster = 0.0;
-            $rawKlaim = strtoupper(trim((string) ($row['klaim_ijazah_baru'] ?? '')));
-            $isKlaimIjazah = in_array($rawKlaim, ['YA', 'Y', 'TRUE', '1', 'D3', 'D-3', 'D4', 'D-IV', 'S1', 'S-1', 'S2', 'S-2', 'S3', 'S-3']);
-            if ($isKlaimIjazah) {
-                $akBooster = round(0.25 * (float) $jenjang->kebutuhan_ak_kp, 3);
-            }
 
             // Jika tanpa TMT dan tw4 tidak diisi, ambil default 12 bulan
             if ($bulanAuto === null && $totalBulanAktif === 0) {
@@ -807,7 +958,7 @@ class ImportKonversiService
                 $akBaru = round($sumAkPeriodikFull, 3);
                 $metodeKalkulasi = 'FORMULA_A_PERIODIK';
             } else {
-                // Formula B (TW4 Anchor Tahunan)
+                // Formula B (Predikat Tahunan Tahunan)
                 $akBaru = round(($totalBulanAktif / 12) * $predikatTw4Persen * $koefisienTahunan, 3);
             }
 
@@ -861,6 +1012,7 @@ class ImportKonversiService
                     'next_jenjang'   => $this->getNextJenjangName($jenjang->nama),
                 ],
                 'triwulan'          => $triwulanData,
+                'raw_data'          => $row,
             ];
         }
 
@@ -880,13 +1032,20 @@ class ImportKonversiService
     /**
      * Eksekusi import massal & auto-konversi ke database secara atomik.
      *
+     * Mode Triwulan 1–3 hanya menyimpan baris evaluasi quarter terpilih
+     * (tanpa finalisasi PenetapanAK / carry-over / booster / penguncian).
+     * Mode Tahunan (4) menjalankan alur finalisasi penuh seperti sebelumnya.
+     *
      * @param UploadedFile|string $file
      * @param User $admin
+     * @param int $triwulan
      * @return array
      */
-    public function executeImport($file, User $admin, bool $buatAkun = true): array
+    public function executeImport($file, User $admin, bool $buatAkun = true, int $triwulan = 4, int $tahun = 0): array
     {
-        $preview = $this->previewImport($file);
+        $triwulan = in_array($triwulan, [1, 2, 3, 4], true) ? $triwulan : 4;
+        $tahun = $tahun >= 2020 ? $tahun : (int) date('Y');
+        $preview = $this->previewImport($file, $buatAkun, $triwulan, $tahun);
         if ($preview['total_error'] > 0 && $preview['total_valid'] === 0) {
             throw new \InvalidArgumentException('Seluruh baris file tidak valid. Periksa format data Anda.');
         }
@@ -896,7 +1055,9 @@ class ImportKonversiService
 
         $importedPegawai = [];
 
-        DB::transaction(function () use ($preview, $pangkatMap, $predikatMap, $admin, $buatAkun, &$importedPegawai) {
+        $labelTriwulan = $triwulan === 4 ? 'Tahunan (TW4)' : "Triwulan {$triwulan}";
+
+        DB::transaction(function () use ($preview, $pangkatMap, $predikatMap, $admin, $buatAkun, $labelTriwulan, &$importedPegawai) {
             foreach ($preview['data'] as $item) {
                 if (!$item['is_valid']) {
                     continue;
@@ -946,7 +1107,55 @@ class ImportKonversiService
 
                 $tahun = $item['tahun'];
 
-                // 3. Simpan Evaluasi Kinerja TW1 – TW4
+                // Year-Lock guard: jika tahun penetapan AK pegawai ini terkunci,
+                // lewati baris (data tidak boleh diubah lewat import).
+                $tahunTerkunci = (bool) PenetapanAK::where('pegawai_id', $pegawai->id)
+                    ->where('tahun', $tahun)
+                    ->value('is_locked');
+                if ($tahunTerkunci) {
+                    $importedPegawai[] = [
+                        'nip'          => $pegawai->nip,
+                        'nama_lengkap' => $pegawai->nama_lengkap,
+                        'tahun'        => $tahun,
+                        'ak_triwulan'  => 0,
+                        'badge_label'  => 'SKIPPED_TERKUNCI',
+                        'catatan'      => "Tahun {$tahun} sudah terkunci.",
+                    ];
+                    continue;
+                }
+
+                // Mode Triwulan: simpan hanya baris quarter terpilih (tanpa penguncian,
+                // tanpa finalisasi PenetapanAK / carry-over / booster / notifikasi).
+                if (($item['triwulan_mode'] ?? false) === true) {
+                    $q = (int) ($item['triwulan_ke'] ?? $triwulan);
+                    $predObj = $predikatMap->get(strtolower($item['pkp'] ?? ''));
+                    if ($predObj) {
+                        EvaluasiKinerja::updateOrCreate(
+                            [
+                                'pegawai_id' => $pegawai->id,
+                                'tahun'      => $tahun,
+                                'triwulan'   => $q,
+                            ],
+                            [
+                                'periode_bulan' => $q * 3,
+                                'jumlah_bulan'  => $item['jumlah_bulan'],
+                                'predikat_id'   => $predObj->id,
+                                'angka_kredit'  => $item['ak_triwulan'],
+                            ]
+                        );
+                    }
+
+                    $importedPegawai[] = [
+                        'nip'          => $pegawai->nip,
+                        'nama_lengkap' => $pegawai->nama_lengkap,
+                        'triwulan'     => $q,
+                        'ak_triwulan'  => $item['ak_triwulan'],
+                        'badge_label'  => $item['kelayakan']['badge_label'],
+                    ];
+                    continue;
+                }
+
+                // 3. Simpan Evaluasi Kinerja TW1 – TW4 (mode Tahunan)
                 foreach (range(1, 4) as $q) {
                     $twInfo = $item['triwulan']["tw{$q}"];
                     $predName = $twInfo['predikat'];
@@ -966,39 +1175,14 @@ class ImportKonversiService
                                     'jumlah_bulan'  => $pBulan,
                                     'predikat_id'   => $predObj->id,
                                     'angka_kredit'  => $twInfo['angka_kredit'],
-                                    'is_locked'     => true,
                                 ]
                             );
                         }
                     }
                 }
 
-                // 4. Proses Booster Ijazah jika ada klaim
-                $akBooster = $item['ak_booster'];
-                $klaimIjazah = strtoupper(trim($item['raw_data']['klaim_ijazah_baru'] ?? ''));
-                if ($akBooster > 0 && !empty($klaimIjazah)) {
-                    PengajuanPendidikan::firstOrCreate(
-                        [
-                            'pegawai_id'         => $pegawai->id,
-                            'jenjang_pendidikan' => $klaimIjazah,
-                        ],
-                        [
-                            'program_studi'      => 'Pendidikan Terkait Penugasan',
-                            'jurusan'            => 'Pendidikan Terkait Penugasan',
-                            'nama_institusi'     => 'Institusi Terakreditasi',
-                            'tahun_lulus'        => $tahun,
-                            'file_ijazah'        => 'import_auto_generated.pdf',
-                            'file_bukti_bkn'     => 'import_bkn_approval.pdf',
-                            'status'             => 'DISETUJUI',
-                            'catatan_verifikasi' => "Disetujui otomatis melalui Import Konversi Kinerja. Bonus +{$akBooster} AK.",
-                            'ak_bonus'           => $akBooster,
-                            'diverifikasi_oleh'  => $admin->id,
-                            'diverifikasi_pada'  => now(),
-                        ]
-                    );
-
-                    $pegawai->update(['pendidikan_terakhir' => $klaimIjazah]);
-                }
+                // 4. Booster ijazah tidak diproses lewat import
+                // (hanya via verifikasi Pengajuan Pendidikan).
 
                 // 5. Simpan & Finalisasi PenetapanAK Tahun Ini
                 $kelayakan = $item['kelayakan'];
@@ -1013,7 +1197,7 @@ class ImportKonversiService
                         'ak_historis'       => $item['ak_historis'],
                         'ak_lama'           => 0,
                         'ak_baru'           => $item['ak_baru_tahunan'],
-                        'ak_booster'        => $akBooster,
+                        'ak_booster'        => $item['ak_booster'],
                         'ak_carry_over'     => 0,
                         'ak_kumulatif'      => $item['ak_kumulatif'],
                         'status_kelayakan'  => $kelayakan['status'],
@@ -1065,12 +1249,13 @@ class ImportKonversiService
             $this->auditTrail->log(
                 'IMPORT_KONVERSI',
                 'BULK_IMPORT',
-                "Admin {$admin->name} berhasil mengimpor & mengonversi " . count($importedPegawai) . " data pegawai."
+                "Admin {$admin->name} berhasil mengimpor & mengonversi " . count($importedPegawai) . " data pegawai ({$labelTriwulan})."
             );
         });
 
         return [
-            'message'          => 'Import dan konversi kinerja massal berhasil dieksekusi.',
+            'message'          => "Import dan konversi kinerja massal ({$labelTriwulan}) berhasil dieksekusi.",
+            'triwulan'         => $triwulan,
             'total_diproses'   => count($importedPegawai),
             'ringkasan_badge'  => $preview['ringkasan_badge'],
             'data_pegawai'     => $importedPegawai,

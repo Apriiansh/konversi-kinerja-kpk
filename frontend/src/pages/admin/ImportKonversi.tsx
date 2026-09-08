@@ -38,6 +38,17 @@ import axios from "axios";
 export const ImportKonversi: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const currendDate = new Date();
+  const currentYear = new Date().getFullYear();
+  const currentTriwulan = Math.ceil((currendDate.getMonth() + 1) / 3);
+  // 1-3 = import triwulan terpisah (satu kolom PKP), 4 = mode Tahunan (TW4 acuan)
+  const [triwulan, setTriwulan] = useState<number>(currentTriwulan);
+  const [tahun, setTahun] = useState<number>(currentYear);
+  const TAHUN_OPTIONS = Array.from(
+    { length: 11 },
+    (_, i) => currentYear - 5 + i,
+  ); // 5 thn lalu s.d. 5 thn depan
+  const TAHUN_MIN = 2020;
   const [loadingPreview, setLoadingPreview] = useState<boolean>(false);
   const [loadingProcess, setLoadingProcess] = useState<boolean>(false);
   const [previewResult, setPreviewResult] =
@@ -55,13 +66,22 @@ export const ImportKonversi: React.FC = () => {
   );
 
   type Triwulan = {
-    tw1?:TriwulanRincianItem
-    tw2?:TriwulanRincianItem
-    tw3?:TriwulanRincianItem
-    tw4?:TriwulanRincianItem
-  }
+    tw1?: TriwulanRincianItem;
+    tw2?: TriwulanRincianItem;
+    tw3?: TriwulanRincianItem;
+    tw4?: TriwulanRincianItem;
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const TRI_WULAN_OPTIONS = [
+    { value: 1, label: "TW 1", desc: "Jan–Mar" },
+    { value: 2, label: "TW 2", desc: "Apr–Jun" },
+    { value: 3, label: "TW 3", desc: "Jul–Sep" },
+    { value: 4, label: "TW 4 — Tahunan", desc: "Setahun penuh" },
+  ];
+
+  const isModeTahunan = triwulan === 4;
 
   const handleFileProcess = async (file: File) => {
     setSelectedFile(file);
@@ -70,7 +90,7 @@ export const ImportKonversi: React.FC = () => {
     setLoadingPreview(true);
 
     try {
-      const result = await previewImportFile(file, buatAkun);
+      const result = await previewImportFile(file, buatAkun, triwulan, tahun);
       setPreviewResult(result);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -122,7 +142,12 @@ export const ImportKonversi: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      const res = await processImportFile(selectedFile, buatAkun);
+      const res = await processImportFile(
+        selectedFile,
+        buatAkun,
+        triwulan,
+        tahun,
+      );
       setSuccessMessage(
         res.message ||
           `Berhasil mengimpor dan mengonversi ${res.total_diproses} data pegawai ke dalam sistem.`,
@@ -151,6 +176,20 @@ export const ImportKonversi: React.FC = () => {
     setFilterStatus("ALL");
     setInspectItem(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleTriwulanChange = (value: number) => {
+    if (value === triwulan) return;
+    setTriwulan(value);
+    // Hasil preview terikat mode triwulan — reset agar tidak tercampur
+    handleReset();
+  };
+
+  const handleTahunChange = (value: number) => {
+    if (value === tahun || value < TAHUN_MIN || value > 2100) return;
+    setTahun(value);
+    // Preview terikat tahun — reset agar tidak tercampur
+    handleReset();
   };
 
   const filteredData = useMemo(() => {
@@ -248,6 +287,95 @@ export const ImportKonversi: React.FC = () => {
         />
       )}
 
+      {/* 2b. Pilih Periode Import */}
+      <Card className="p-4 sm:p-5">
+        <div className="flex flex-col gap-4">
+          {/* Baris atas: label + selector tahun (fleksibel) */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-extrabold text-gray-900">
+                Periode Import
+              </p>
+              <p className="text-[11px] font-medium text-gray-500 mt-0.5">
+                Pilih tahun evaluasi dan triwulan. TW 1–3 satu kolom PKP; TW 4 —
+                Tahunan setahun penuh + finalisasi. Kolom tahun tidak lagi diisi
+                di file.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 sm:ml-auto shrink-0">
+              <label
+                htmlFor="import-tahun-select"
+                className="text-[11px] font-extrabold text-gray-700 whitespace-nowrap"
+              >
+                Tahun
+              </label>
+              <select
+                id="import-tahun-select"
+                value={tahun}
+                onChange={(e) => handleTahunChange(Number(e.target.value))}
+                className="min-w-[110px] rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              >
+                {TAHUN_OPTIONS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <span className="hidden sm:inline text-[10px] font-bold text-gray-400 whitespace-nowrap">
+                File tanpa kolom tahun
+              </span>
+            </div>
+          </div>
+          {/* Baris bawah: pills triwulan — wrap fleksibel di mobile */}
+          <div
+            className="flex flex-wrap items-center gap-1.5"
+            role="radiogroup"
+            aria-label="Pilih periode import"
+          >
+            {TRI_WULAN_OPTIONS.map((opt) => {
+              const active = triwulan === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => handleTriwulanChange(opt.value)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
+                    active
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-primary/40 hover:text-primary"
+                  }`}
+                >
+                  {opt.label}
+                  <span
+                    className={`block text-[9px] font-bold ${
+                      active ? "text-white/70" : "text-gray-400"
+                    }`}
+                  >
+                    {opt.desc}
+                  </span>
+                </button>
+              );
+            })}
+            <span className="ml-1 inline-flex items-center rounded-full bg-secondary border border-primary/15 px-2.5 py-1 text-[10px] font-extrabold text-primary">
+              {tahun} · {isModeTahunan ? "Tahunan" : `TW ${triwulan}`}
+            </span>
+          </div>
+        </div>
+        {!isModeTahunan ? (
+          <p className="mt-3 rounded-xl bg-secondary/60 border border-primary/15 px-3.5 py-2.5 text-[11px] font-semibold text-primary">
+            Mode TW {triwulan} tahun {tahun}: file cukup berisi satu kolom
+            “Predikat Kinerja Pegawai (PKP)”.
+          </p>
+        ) : (
+          <p className="mt-3 rounded-xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-[11px] font-semibold text-gray-600">
+            Mode Tahunan {tahun}: kolom “Predikat Kinerja Pegawai (PKP)” menjadi
+            acuan tahunan. Rincian TW 1–TW 3 diabaikan.
+          </p>
+        )}
+      </Card>
+
       {/* 3. Drag & Drop Upload Zone */}
       <Card className="p-5 sm:p-6">
         <input
@@ -298,8 +426,8 @@ export const ImportKonversi: React.FC = () => {
               Sinkronisasi Otomatis NIP
             </span>
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
-              <ShieldCheck className="h-3 w-3 text-primary" /> Penetapan
-              Kinerja Tahunan
+              <ShieldCheck className="h-3 w-3 text-primary" /> Penetapan Kinerja
+              Tahunan
             </span>
             <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-gray-700">
               <Award className="h-3 w-3 text-blue-600" /> Evaluasi Kelayakan
@@ -381,11 +509,14 @@ export const ImportKonversi: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs font-extrabold text-gray-900">
-                  Pratinjau Hasil Konversi Siap Diterapkan
+                  {isModeTahunan
+                    ? "Pratinjau Hasil Konversi Siap Diterapkan"
+                    : `Pratinjau Import TW ${triwulan} Siap Diterapkan`}
                 </p>
                 <p className="text-[11px] font-medium text-gray-500">
-                  Periksa hasil perhitungan di bawah. Klik tombol "Bedah Nilai"
-                  pada baris untuk melihat transparansi asal angka kredit.
+                  {isModeTahunan
+                    ? 'Periksa hasil perhitungan di bawah. Klik tombol "Bedah Nilai" pada baris untuk melihat transparansi asal angka kredit.'
+                    : `Hanya baris TW ${triwulan} yang akan disimpan. Penetapan tahunan dilakukan di mode TW 4 — Tahunan.`}
                 </p>
               </div>
             </div>
@@ -458,10 +589,13 @@ export const ImportKonversi: React.FC = () => {
                     <th className="py-3 px-3.5">Pegawai (NIP & Nama)</th>
                     <th className="py-3 px-3.5">Pangkat / Golongan</th>
                     <th className="py-3 px-3.5">Saldo Awal (Modal)</th>
-                    <th className="py-3 px-3.5">Kinerja Triwulanan</th>
-                    <th className="py-3 px-3.5">Kinerja Tahunan</th>
+                    <th className="py-3 px-3.5">
+                      {isModeTahunan
+                        ? "Kinerja Triwulanan"
+                        : `PKP TW ${triwulan}`}
+                    </th>
                     <th className="py-3 px-3.5 font-black text-gray-900">
-                      Total AK Kumulatif
+                      Total AK
                     </th>
                     <th className="py-3 px-3.5 text-center">
                       Status Kelayakan
@@ -473,7 +607,7 @@ export const ImportKonversi: React.FC = () => {
                   {filteredData.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={8}
                         className="py-12 text-center text-gray-400 text-xs"
                       >
                         <FileSpreadsheet className="h-8 w-8 mx-auto text-gray-300 mb-2" />
@@ -497,9 +631,7 @@ export const ImportKonversi: React.FC = () => {
                         <tr
                           key={item.baris}
                           className={`transition-colors ${
-                            item.is_valid
-                              ? "hover:bg-gray-50/80"
-                              : "bg-error/5"
+                            item.is_valid ? "hover:bg-gray-50/80" : "bg-error/5"
                           }`}
                         >
                           <td className="py-3 px-3.5 font-mono font-bold text-gray-400">
@@ -546,48 +678,48 @@ export const ImportKonversi: React.FC = () => {
                             )}
                             <div>{saldoAwalTotal.toFixed(3)} AK</div>
                           </td>
-                          <td className="py-3 px-3.5">
-                            <div className="flex items-center gap-1">
-                              {["tw1", "tw2", "tw3", "tw4"].map((qKey, idx) => {
-                                const q = (item.triwulan)?.[qKey as keyof Triwulan];
-                                const qNum = idx + 1;
-                                const isAnchor = qNum === 4;
-                                return (
-                                  <span
-                                    key={qKey}
-                                    title={`TW${qNum}: ${q?.predikat ?? "-"} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
-                                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                                      isAnchor
-                                        ? "bg-secondary text-primary border-primary/20 font-black"
-                                        : "bg-gray-100 text-gray-600 border-gray-200"
-                                    }`}
-                                  >
-                                    TW{qNum}:{" "}
-                                    {Number(q?.angka_kredit ?? 0).toFixed(3)}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          </td>
-                          <td className="py-3 px-3.5">
-                            <span className="font-mono font-extrabold text-blue-700 text-xs">
-                              {item.ak_baru_tahunan
-                                ? `${item.ak_baru_tahunan.toFixed(3)} AK`
-                                : "0.000 AK"}
-                            </span>
-                            {item.metode_kalkulasi === "FORMULA_A_PERIODIK" ? (
-                              <span className="block mt-0.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                Periodik (Layak TW3)
+<td className="py-3 px-3.5">
+                            {item.triwulan_mode ? (
+                              <span
+                                title={`TW${item.triwulan_ke}: ${item.pkp ?? "-"} (${item.jumlah_bulan ?? 0} bln = ${Number(item.ak_triwulan ?? 0).toFixed(3)} AK)`}
+                                className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-black border bg-secondary text-primary border-primary/20"
+                              >
+                                TW{item.triwulan_ke}:{" "}
+                                {Number(item.ak_triwulan ?? 0).toFixed(3)}
                               </span>
                             ) : (
-                              <p className="text-[10px] font-medium text-gray-400">
-                                TW4: {item.predikat_tw4} (
-                                {item.total_bulan_aktif} bln)
-                              </p>
+                              <div className="flex items-center gap-1">
+                                {["tw1", "tw2", "tw3", "tw4"].map(
+                                  (qKey, idx) => {
+                                    const q =
+                                      item.triwulan?.[qKey as keyof Triwulan];
+                                    const qNum = idx + 1;
+                                    const isTahunan = qNum === 4;
+                                    return (
+                                      <span
+                                        key={qKey}
+                                        title={`TW${qNum}: ${q?.predikat ?? "-"} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                          isTahunan
+                                            ? "bg-secondary text-primary border-primary/20 font-black"
+                                            : "bg-gray-100 text-gray-600 border-gray-200"
+                                        }`}
+                                      >
+                                        TW{qNum}:{" "}
+                                        {Number(q?.angka_kredit ?? 0).toFixed(
+                                          3,
+                                        )}
+                                      </span>
+                                    );
+                                  },
+                                )}
+                              </div>
                             )}
                           </td>
                           <td className="py-3 px-3.5 font-mono font-black text-gray-900 text-sm">
-                            {item.ak_kumulatif
+                            {item.triwulan_mode
+                              ? `${Number(item.ak_parsial ?? 0).toFixed(3)} AK`
+                              : item.ak_kumulatif
                               ? `${item.ak_kumulatif.toFixed(3)} AK`
                               : "0.000 AK"}
                           </td>
@@ -625,7 +757,9 @@ export const ImportKonversi: React.FC = () => {
         onClose={() => setInspectItem(null)}
         title={
           inspectItem
-            ? `Bedah Perhitungan Angka Kredit: ${inspectItem.nama_lengkap}`
+            ? inspectItem.triwulan_mode
+              ? `Bedah Perhitungan TW${inspectItem.triwulan_ke}: ${inspectItem.nama_lengkap}`
+              : `Bedah Perhitungan Angka Kredit: ${inspectItem.nama_lengkap}`
             : ""
         }
         subtitle={
@@ -663,7 +797,9 @@ export const ImportKonversi: React.FC = () => {
             {/* Kotak Komposisi Penjumlahan Angka Kredit */}
             <div className="space-y-2">
               <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
-                1. Komposisi Perolehan Total Angka Kredit (AK):
+                {inspectItem.triwulan_mode
+                  ? `1. Komposisi Parsial s/d TW${inspectItem.triwulan_ke}:`
+                  : "1. Komposisi Perolehan Total Angka Kredit (AK):"}
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
@@ -696,37 +832,75 @@ export const ImportKonversi: React.FC = () => {
                     Tabungan lampau
                   </span>
                 </div>
-                <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-center">
-                  <span className="text-[10px] uppercase font-bold text-blue-700 block">
-                    Kinerja Tahunan
-                  </span>
-                  <span className="font-mono font-black text-blue-800 text-sm mt-0.5 block">
-                    {(inspectItem.ak_baru_tahunan ?? 0).toFixed(3)}
-                  </span>
-                  <span className="text-[9px] text-blue-600 block">
-                    Tahun berjalan
-                  </span>
-                </div>
-                <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-center">
-                  <span className="text-[10px] uppercase font-bold text-emerald-700 block">
-                    Pendidikan (+25%)
-                  </span>
-                  <span className="font-mono font-black text-emerald-800 text-sm mt-0.5 block">
-                    +{(inspectItem.ak_booster ?? 0).toFixed(3)}
-                  </span>
-                  <span className="text-[9px] text-emerald-600 block">
-                    Klaim Ijazah Sah
-                  </span>
-                </div>
+                {inspectItem.triwulan_mode ? (
+                  <>
+                    <div className="p-3 bg-secondary/60 border border-primary/20 rounded-xl text-center">
+                      <span className="text-[10px] uppercase font-bold text-primary block">
+                        AK TW{inspectItem.triwulan_ke} ({inspectItem.pkp ?? "-"}
+                        )
+                      </span>
+                      <span className="font-mono font-black text-primary text-sm mt-0.5 block">
+                        {(inspectItem.ak_triwulan ?? 0).toFixed(3)}
+                      </span>
+                      <span className="text-[9px] text-primary/70 block">
+                        {/* Formula A: (bulan/12) × %PKP × koefisien */}
+                        {inspectItem.jumlah_bulan ?? 0} bulan aktif
+                      </span>
+                    </div>
+                    <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-center">
+                      <span className="text-[10px] uppercase font-bold text-blue-700 block">
+                        Proyeksi Tahunan
+                      </span>
+                      <span className="font-mono font-black text-blue-800 text-sm mt-0.5 block">
+                        {(inspectItem.proyeksi_disetahunkan ?? 0).toFixed(3)}
+                      </span>
+                      <span className="text-[9px] text-blue-600 block">
+                        {/* Formula B dengan PKP sebagai acuan tahunan */}
+                        Acuan PKP tahunan
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-center">
+                      <span className="text-[10px] uppercase font-bold text-blue-700 block">
+                        Kinerja Tahunan
+                      </span>
+                      <span className="font-mono font-black text-blue-800 text-sm mt-0.5 block">
+                        {(inspectItem.ak_baru_tahunan ?? 0).toFixed(3)}
+                      </span>
+                      <span className="text-[9px] text-blue-600 block">
+                        Tahun berjalan
+                      </span>
+                    </div>
+                    <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-center">
+                      <span className="text-[10px] uppercase font-bold text-emerald-700 block">
+                        Pendidikan (+25%)
+                      </span>
+                      <span className="font-mono font-black text-emerald-800 text-sm mt-0.5 block">
+                        +{(inspectItem.ak_booster ?? 0).toFixed(3)}
+                      </span>
+                      <span className="text-[9px] text-emerald-600 block">
+                        Klaim Ijazah Sah
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="p-3 bg-linear-to-br from-primary-dark to-primary text-white rounded-xl text-center shadow-xs">
                   <span className="text-[10px] uppercase font-bold text-white/70 block">
-                    Total AK Kumulatif
+                    {inspectItem.triwulan_mode
+                      ? `Kumulatif Parsial TW${inspectItem.triwulan_ke}`
+                      : "Total AK Kumulatif"}
                   </span>
                   <span className="font-mono font-black text-white text-base mt-0.5 block">
-                    {(inspectItem.ak_kumulatif ?? 0).toFixed(3)}
+                    {inspectItem.triwulan_mode
+                      ? (inspectItem.ak_parsial ?? 0).toFixed(3)
+                      : (inspectItem.ak_kumulatif ?? 0).toFixed(3)}
                   </span>
                   <span className="text-[9px] text-white/60 block">
-                    Total Modal Sah
+                    {inspectItem.triwulan_mode
+                      ? "Saldo + TW tercatat + TW baru"
+                      : "Total Modal Sah"}
                   </span>
                 </div>
               </div>
@@ -761,7 +935,9 @@ export const ImportKonversi: React.FC = () => {
                 </div>
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
                   <span className="text-gray-500 font-bold block text-[11px]">
-                    Deposit Carry-Over Tahun Depan:
+                    {inspectItem.triwulan_mode
+                      ? "Sisa Proyeksi (Info, belum final):"
+                      : "Deposit Carry-Over Tahun Depan:"}
                   </span>
                   <span className="font-mono font-extrabold text-emerald-700 text-sm">
                     +{(inspectItem.kelayakan?.carry_over ?? 0).toFixed(3)} AK
@@ -773,33 +949,61 @@ export const ImportKonversi: React.FC = () => {
             {/* Kotak Rincian Evaluasi Triwulanan */}
             <div className="space-y-2">
               <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
-                3. Rincian Capaian Kinerja Triwulanan (TW1 – TW4):
+                {inspectItem.triwulan_mode
+                  ? `3. Rincian TW${inspectItem.triwulan_ke}:`
+                  : "3. Rincian Capaian Kinerja Triwulanan (TW1 – TW4):"}
               </h4>
-              <div className="grid grid-cols-4 gap-2 text-center font-mono">
-                {(["tw1", "tw2", "tw3", "tw4"] as (keyof Triwulan)[]).map((qKey, idx) => {
-                  const q = (inspectItem.triwulan)?.[qKey];
-                  const qNum = idx + 1;
-                  return (
-                    <div
-                      key={qKey}
-                      className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg"
-                    >
-                      <span className="font-sans text-[10px] font-bold text-gray-500 block">
-                        TW{qNum}
-                      </span>
-                      <span className="font-extrabold text-gray-900 text-xs block mt-0.5">
-                        {q?.predikat ?? "-"}
-                      </span>
-                      <span className="text-[10px] font-bold text-blue-700 block">
-                        {Number(q?.angka_kredit ?? 0).toFixed(3)} AK
-                      </span>
-                      <span className="font-sans text-[9px] text-gray-400 block">
-                        {q?.jumlah_bulan ?? 0} bln
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {inspectItem.triwulan_mode ? (
+                <div className="p-3.5 bg-secondary/40 border border-primary/20 rounded-xl text-xs">
+                  <div className="flex items-center justify-between font-extrabold text-gray-900">
+                    <span>
+                      PKP TW{inspectItem.triwulan_ke}: {inspectItem.pkp ?? "-"}
+                    </span>
+                    <span className="font-mono text-primary">
+                      {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
+                    </span>
+                  </div>
+                  {/* Rumus: (bulan/12) × %PKP × koefisien tahunan */}
+                  <p className="mt-1.5 text-[11px] font-semibold text-gray-600">
+                    PKP {inspectItem.pkp ?? "-"} selama{" "}
+                    {inspectItem.jumlah_bulan ?? 0} bulan ={" "}
+                    {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-blue-700">
+                    Proyeksi tahunan:{" "}
+                    {(inspectItem.proyeksi_disetahunkan ?? 0).toFixed(3)} AK (
+                    {inspectItem.total_bulan_aktif ?? 0} bln aktif setahun)
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-2 text-center font-mono">
+                  {(["tw1", "tw2", "tw3", "tw4"] as (keyof Triwulan)[]).map(
+                    (qKey, idx) => {
+                      const q = inspectItem.triwulan?.[qKey];
+                      const qNum = idx + 1;
+                      return (
+                        <div
+                          key={qKey}
+                          className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg"
+                        >
+                          <span className="font-sans text-[10px] font-bold text-gray-500 block">
+                            TW{qNum}
+                          </span>
+                          <span className="font-extrabold text-gray-900 text-xs block mt-0.5">
+                            {q?.predikat ?? "-"}
+                          </span>
+                          <span className="text-[10px] font-bold text-blue-700 block">
+                            {Number(q?.angka_kredit ?? 0).toFixed(3)} AK
+                          </span>
+                          <span className="font-sans text-[9px] text-gray-400 block">
+                            {q?.jumlah_bulan ?? 0} bln
+                          </span>
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -180,6 +180,9 @@ class RekapitulasiController extends Controller
                 'ak_kumulatif_live' => $liveKumulatif,
                 'ak_kumulatif_efektif' => $kumulatifForKelayakan,
                 'is_final'          => $isFinal,
+                'is_locked'         => (bool) $penetapan->is_locked,
+                'locked_by'         => $penetapan->lockedBy?->name,
+                'locked_at'         => $penetapan->locked_at?->toIso8601String(),
                 'kelayakan'         => [
                     'status'         => $kelayakan['status'],
                     'badge_label'    => $kelayakan['badge_label'],
@@ -265,6 +268,9 @@ class RekapitulasiController extends Controller
                 'ak_carry_over'     => (float) ($penetapan?->ak_carry_over ?? 0),
                 'ak_kumulatif'      => $akKumulatif,
                 'is_final'          => (bool) ($penetapan?->is_final ?? false),
+                'is_locked'         => (bool) ($penetapan?->is_locked ?? false),
+                'locked_by'         => $penetapan?->lockedBy?->name,
+                'locked_at'         => $penetapan?->locked_at?->toIso8601String(),
                 'kelayakan'         => [
                     'status'         => $kelayakan['status'],
                     'badge_label'    => $kelayakan['badge_label'],
@@ -315,7 +321,6 @@ class RekapitulasiController extends Controller
                     'periode_bulan'=> $e->periode_bulan,
                     'predikat'     => $e->predikat?->nama,
                     'angka_kredit' => $e->angka_kredit,
-                    'is_locked'    => $e->is_locked,
                 ])->values(),
             ];
         }
@@ -324,7 +329,7 @@ class RekapitulasiController extends Controller
     }
 
     /**
-     * Finalisasi Akhir Tahun KPK: Menjalankan Formula B (TW4 Anchor) & penetapan status kelayakan.
+     * Finalisasi Akhir Tahun KPK: Menjalankan Formula B (Predikat Tahunan) & penetapan status kelayakan.
      */
     public function finalisasi(Request $request, string $pegawaiId, int $tahun): JsonResponse
     {
@@ -332,6 +337,10 @@ class RekapitulasiController extends Controller
 
         if ($user->role !== 'ADMIN') {
             return response()->json(['message' => 'Hanya Admin Kepegawaian yang berhak memfinalisasi PAK.'], 403);
+        }
+
+        if ($this->isTahunTerkunci($pegawaiId, $tahun)) {
+            return response()->json(['message' => "Tahun {$tahun} sudah terkunci. Buka kunci terlebih dahulu untuk mengubah data."], 422);
         }
 
         $validated = $request->validate([
@@ -554,5 +563,98 @@ class RekapitulasiController extends Controller
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Kunci tahun penetapan AK — semua edit (evaluasi, import, finalisasi) diblokir.
+     * Auto-dipanggil saat finalisasi TW4, atau manual oleh Admin.
+     */
+    public function lock(Request $request, string $pegawaiId, int $tahun): JsonResponse
+    {
+        if ($request->user()->role !== 'ADMIN') {
+            return response()->json(['message' => 'Hanya Admin yang dapat mengunci tahun PAK.'], 403);
+        }
+
+        $penetapan = PenetapanAK::where('pegawai_id', $pegawaiId)->where('tahun', $tahun)->first();
+        if (!$penetapan) {
+            return response()->json(['message' => 'Penetapan AK belum ada.'], 404);
+        }
+
+        $penetapan->update([
+            'is_locked' => true,
+            'locked_by' => $request->user()->id,
+            'locked_at' => now(),
+        ]);
+
+        $this->auditTrail->log(
+            'PENETAPAN_AK',
+            'LOCK',
+            "Mengunci tahun {$tahun} PAK pegawai ID: {$pegawaiId}.",
+            null,
+            $penetapan->fresh()->toArray()
+        );
+
+        return response()->json([
+            'message' => "Tahun {$tahun} berhasil dikunci.",
+            'data'    => $this->mapLockStatus($penetapan->fresh()),
+        ]);
+    }
+
+    /**
+     * Buka kunci tahun penetapan AK (kembali editable).
+     */
+    public function unlock(Request $request, string $pegawaiId, int $tahun): JsonResponse
+    {
+        if ($request->user()->role !== 'ADMIN') {
+            return response()->json(['message' => 'Hanya Admin yang dapat membuka kunci tahun PAK.'], 403);
+        }
+
+        $penetapan = PenetapanAK::where('pegawai_id', $pegawaiId)->where('tahun', $tahun)->first();
+        if (!$penetapan) {
+            return response()->json(['message' => 'Penetapan AK belum ada.'], 404);
+        }
+
+        $penetapan->update([
+            'is_locked' => false,
+            'locked_by' => null,
+            'locked_at' => null,
+        ]);
+
+        $this->auditTrail->log(
+            'PENETAPAN_AK',
+            'UNLOCK',
+            "Membuka kunci tahun {$tahun} PAK pegawai ID: {$pegawaiId}.",
+            null,
+            $penetapan->fresh()->toArray()
+        );
+
+        return response()->json([
+            'message' => "Kunci tahun {$tahun} berhasil dibuka.",
+            'data'    => $this->mapLockStatus($penetapan->fresh()),
+        ]);
+    }
+
+    /**
+     * Cek apakah tahun penetapan AK pegawai sedang terkunci.
+     */
+    protected function isTahunTerkunci(string $pegawaiId, int $tahun): bool
+    {
+        return (bool) PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->value('is_locked');
+    }
+
+    /**
+     * Map status lock yang ringkas untuk respons API.
+     */
+    protected function mapLockStatus(PenetapanAK $penetapan): array
+    {
+        return [
+            'pegawai_id' => $penetapan->pegawai_id,
+            'tahun'      => $penetapan->tahun,
+            'is_locked'  => (bool) $penetapan->is_locked,
+            'locked_by'  => $penetapan->lockedBy?->name,
+            'locked_at'  => $penetapan->locked_at?->toIso8601String(),
+        ];
     }
 }

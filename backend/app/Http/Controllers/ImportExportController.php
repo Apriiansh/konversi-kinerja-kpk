@@ -45,12 +45,16 @@ class ImportExportController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240', // Maks 10MB
+            'triwulan' => 'nullable|integer|min:1|max:4',
+            'tahun' => 'nullable|integer|min:2020|max:2100',
         ]);
 
         $buatAkun = (bool) $request->input('buat_akun', true);
+        $triwulan = (int) $request->input('triwulan', 4);
+        $tahun = (int) $request->input('tahun', date('Y'));
 
         try {
-            $hasil = $this->importService->previewImport($request->file('file'), $buatAkun);
+            $hasil = $this->importService->previewImport($request->file('file'), $buatAkun, $triwulan, $tahun);
 
             return response()->json([
                 'message' => 'Preview hasil konversi import berhasil diproses.',
@@ -74,12 +78,16 @@ class ImportExportController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
+            'triwulan' => 'nullable|integer|min:1|max:4',
+            'tahun' => 'nullable|integer|min:2020|max:2100',
         ]);
 
         $buatAkun = (bool) $request->input('buat_akun', true);
+        $triwulan = (int) $request->input('triwulan', 4);
+        $tahun = (int) $request->input('tahun', date('Y'));
 
         try {
-            $hasil = $this->importService->executeImport($request->file('file'), $request->user(), $buatAkun);
+            $hasil = $this->importService->executeImport($request->file('file'), $request->user(), $buatAkun, $triwulan, $tahun);
 
             return response()->json([
                 'message' => $hasil['message'],

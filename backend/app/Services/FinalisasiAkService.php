@@ -27,7 +27,7 @@ class FinalisasiAkService
 
     /**
      * Finalisasi Angka Kredit Tahunan Pegawai.
-     * Mengkalkulasi Formula B (TW4 Anchor), mengakumulasi Booster Ijazah, PAK Pelantikan,
+     * Mengkalkulasi Formula B (Predikat Tahunan), mengakumulasi Booster Ijazah, PAK Pelantikan,
      * menentukan badge status kelayakan KP/Jenjang, dan menyiapkan carry-over ke tahun depan.
      *
      * @param string $pegawaiId
@@ -43,6 +43,14 @@ class FinalisasiAkService
         ?string $predikatTw4Id = null
     ): PenetapanAK {
         $pegawai = Pegawai::with(['pangkatGolongan.jenjangJabatan', 'jenjangJabatan', 'user'])->findOrFail($pegawaiId);
+
+        $sudahTerkunci = (bool) PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->value('is_locked');
+
+        if ($sudahTerkunci) {
+            throw new \RuntimeException("Tahun {$tahun} sudah terkunci. Finalisasi dibatalkan.");
+        }
 
         return DB::transaction(function () use ($pegawai, $tahun, $admin, $predikatTw4Id) {
             // 1. Ambil atau inisialisasi record PenetapanAK tahun ini
@@ -106,7 +114,8 @@ class FinalisasiAkService
             // 5. Evaluasi Status Kelayakan & Hitung Carry-Over
             $kelayakan = $this->carryOverService->evaluasiKelayakan($pegawai, $akKumulatif);
 
-            // 6. Update penetapan_ak tahun ini menjadi FINAL
+            // 6. Update penetapan_ak tahun ini menjadi FINAL + terkunci (Year-Lock)
+            $lockedBy = $admin ? $admin->id : (auth()->id() ?? null);
             $penetapan->update([
                 'ak_baru'           => $akBaru,
                 'ak_booster'        => $akBooster,
@@ -114,6 +123,9 @@ class FinalisasiAkService
                 'status_kelayakan'  => $kelayakan['status'],
                 'catatan_kelayakan' => $kelayakan['catatan'],
                 'is_final'          => true,
+                'is_locked'         => true,
+                'locked_by'         => $lockedBy,
+                'locked_at'         => now(),
             ]);
 
             // 7. Siapkan / Update record PenetapanAK tahun berikutnya (Tahun + 1) dengan saldo carry-over

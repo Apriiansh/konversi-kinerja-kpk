@@ -274,7 +274,7 @@ export default function PenilaianTriwulan() {
           const badge = getPredikatBadge(predikat)
           const akVal = q.data?.ak_total ?? rincian?.angka_kredit ?? 0
           const hasEvaluasi = Boolean(predikat)
-          const isLocked = rincian?.is_locked ?? false
+          const isLocked = pakData?.is_locked ?? false
 
           return (
             <div
@@ -370,7 +370,7 @@ export default function PenilaianTriwulan() {
                 const badge = getPredikatBadge(predikat)
                 const akVal = q.data?.ak_total ?? rincian?.angka_kredit ?? 0
                 const hasEvaluasi = Boolean(predikat)
-                const isLocked = rincian?.is_locked ?? false
+                const isLocked = pakData?.is_locked ?? false
                 const durasi = q.data?.jumlah_bulan ?? rincian?.jumlah_bulan ?? 3
 
                 return (

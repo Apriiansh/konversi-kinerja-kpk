@@ -57,13 +57,16 @@ class RiwayatAktivitasController extends Controller
                 $predikatNama = $ev->predikat?->nama ?? 'Selesai Dievaluasi';
                 $ak = (float) $ev->angka_kredit;
 
+                $tahunTerkunci = (bool) \App\Models\PenetapanAK::where('pegawai_id', $pegawaiId)
+                    ->where('tahun', $ev->tahun)
+                    ->value('is_locked');
                 $aktivitasList->push([
                     'id'           => 'eval-' . $ev->id,
                     'judul'        => $twLabel,
                     'keterangan'   => "Evaluasi Kinerja Periodik ({$predikatNama})",
                     'angka_kredit' => $ak > 0 ? '+' . number_format($ak, 3, ',', '.') . ' AK' : '0 AK',
-                    'badge'        => $ev->is_locked ? 'Final' : 'Draft',
-                    'badge_color'  => $ev->is_locked ? 'green' : 'amber',
+                    'badge'        => $tahunTerkunci ? 'Final' : 'Draft',
+                    'badge_color'  => $tahunTerkunci ? 'green' : 'amber',
                     'created_at'   => $ev->created_at?->toISOString() ?? now()->toISOString(),
                 ]);
             }

@@ -23,10 +23,13 @@ export async function downloadImportTemplate(): Promise<void> {
 }
 
 // 2. Dry-Run / Preview (Instantly count without saving to database)
-export async function previewImportFile(file: File, buatAkun: boolean = true): Promise<ImportPreviewResponse> {
+// triwulan: 1-3 = import triwulan terpisah (satu kolom PKP), 4 = mode Tahunan
+export async function previewImportFile(file: File, buatAkun: boolean = true, triwulan: number = 4, tahun: number = new Date().getFullYear()): Promise<ImportPreviewResponse> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('buat_akun', buatAkun ? '1' : '0')
+  formData.append('triwulan', String(triwulan))
+  formData.append('tahun', String(tahun))
 
   const response = await api.post('/import/preview', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -35,10 +38,12 @@ export async function previewImportFile(file: File, buatAkun: boolean = true): P
 }
 
 // 3. Execute mass import (saved to databae)
-export async function processImportFile(file: File, buatAkun: boolean = true): Promise<{ message: string; total_diproses: number }> {
+export async function processImportFile(file: File, buatAkun: boolean = true, triwulan: number = 4, tahun: number = new Date().getFullYear()): Promise<{ message: string; total_diproses: number; triwulan?: number }> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('buat_akun', buatAkun ? '1' : '0')
+  formData.append('triwulan', String(triwulan))
+  formData.append('tahun', String(tahun))
 
   const response = await api.post('/import/proses', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

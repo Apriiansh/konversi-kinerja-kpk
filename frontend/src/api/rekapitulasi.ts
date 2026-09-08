@@ -47,6 +47,32 @@ export async function finalizePak(
   return response.data
 }
 
+// 3b. Kunci tahun PAK (Year-Lock) — block semua edit
+export async function lockPak(
+  pegawaiId: string,
+  tahun: number
+): Promise<{ message: string; data: LockStatus }> {
+  const response = await api.post(`/rekapitulasi/${pegawaiId}/${tahun}/lock`)
+  return response.data
+}
+
+// 3c. Buka kunci tahun PAK (Year-Unlock) — kembali editable
+export async function unlockPak(
+  pegawaiId: string,
+  tahun: number
+): Promise<{ message: string; data: LockStatus }> {
+  const response = await api.post(`/rekapitulasi/${pegawaiId}/${tahun}/unlock`)
+  return response.data
+}
+
+export interface LockStatus {
+  pegawai_id: string
+  tahun: number
+  is_locked: boolean
+  locked_by?: string
+  locked_at?: string
+}
+
 // 4. Download rekapitulasi XLSX export
 export async function downloadRekapitulasiXlsx(tahun?: number): Promise<void> {
   const params = tahun ? { tahun } : {}
@@ -100,7 +126,6 @@ export interface TriwulanData {
     periode_bulan: number
     predikat?: string
     angka_kredit: number
-    is_locked: boolean
   }>
 }
 
@@ -129,6 +154,9 @@ export interface DetailPakResponse {
     ak_carry_over: number
     ak_kumulatif: number
     is_final: boolean
+    is_locked: boolean
+    locked_by?: string
+    locked_at?: string
     kelayakan: {
       status: string
       badge_label: string

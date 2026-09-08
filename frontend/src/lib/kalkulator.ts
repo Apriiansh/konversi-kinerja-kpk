@@ -39,8 +39,8 @@ export interface TriwulanRincian {
   predikat: string
   persentase: number
   akPeriodik: number
-  isAnchor: boolean
-  akAnchor: number
+  isTahunan: boolean
+  akTahunan: number
 }
 
 export interface HasilKalkulasi {
@@ -232,8 +232,8 @@ export function hitungKalkulator(input: KalkulatorInput): HasilKalkulasi {
       predikat: p,
       persentase,
       akPeriodik,
-      isAnchor: tw === 4,
-      akAnchor: tw === 4 ? akBaru : 0,
+      isTahunan: tw === 4,
+      akTahunan: tw === 4 ? akBaru : 0,
     }
   })
 

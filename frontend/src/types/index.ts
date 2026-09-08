@@ -88,6 +88,9 @@ export interface PenetapanAKItem {
   status_kelayakan?: StatusKelayakan
   catatan_kelayakan?: string
   is_final: boolean
+  is_locked?: boolean
+  locked_by?: string
+  locked_at?: string
   badge_label?: string
   badge_color?: string
   target_kp?: number
@@ -118,7 +121,6 @@ export interface TriwulanRincianItem {
   periode_bulan: number
   predikat: string
   angka_kredit: number
-  is_locked: boolean
 }
 
 export interface TriwulanBlock {
@@ -148,6 +150,9 @@ export interface RekapDetailData {
   ak_carry_over: number
   ak_kumulatif: number
   is_final: boolean
+  is_locked?: boolean
+  locked_by?: string
+  locked_at?: string
   kelayakan: KelayakanInfo
   triwulan: Record<number, TriwulanBlock>
   sum_ak_periodik: number
@@ -174,6 +179,14 @@ export interface PreviewPegawaiItem {
   ak_baru_tahunan?: number
   ak_booster?: number
   ak_kumulatif?: number
+  // Mode import per-triwulan (triwulan 1–3): satu kolom PKP
+  triwulan_mode?: boolean
+  triwulan_ke?: number
+  pkp?: string
+  jumlah_bulan?: number
+  ak_triwulan?: number
+  proyeksi_disetahunkan?: number
+  ak_parsial?: number
   kelayakan?: KelayakanInfo
   triwulan?: {
     tw1: { predikat: string; jumlah_bulan: number; angka_kredit: number }

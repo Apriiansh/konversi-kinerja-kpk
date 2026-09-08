@@ -60,7 +60,7 @@ class HitungKonversiService
 
     /**
      * Formula B: Normalisasi Akhir Tahun KPK (Jika Belum Naik Jabatan).
-     * Predikat TW4 bertindak sebagai jangkar (anchor) retrospektif untuk menyetahunkan perolehan AK tahun berjalan.
+     * Predikat TW4 bertindak sebagai tahunan retrospektif untuk menyetahunkan perolehan AK tahun berjalan.
      * Rumus: (Total Bulan Aktif / 12) x Persentase Predikat TW4 x Koefisien Tahunan
      *
      * @param string $pegawaiId
@@ -124,7 +124,7 @@ class HitungKonversiService
 
         return [
             'total_bulan_aktif'   => $totalBulanAktif,
-            'predikat_anchor'     => $predikat->nama,
+            'predikat_tahunan'    => $predikat->nama,
             'persentase_predikat' => $persentaseKonversi,
             'koefisien_tahunan'   => $koefisienTahunan,
             'ak_baru'             => $akBaru,

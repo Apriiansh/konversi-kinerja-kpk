@@ -576,7 +576,7 @@ export const VerifikasiPendidikan: React.FC = () => {
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5 space-y-1">
               <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-xs">
                 <Award className="h-4 w-4 text-emerald-600" />
-                <span>Dampak Persetujuan (Formula Booster +25%):</span>
+                <span>Dampak Persetujuan (+25%):</span>
               </div>
               <p className="text-xs text-emerald-700 leading-relaxed">
                 Jika disetujui, pegawai akan mendapat bonus{" "}

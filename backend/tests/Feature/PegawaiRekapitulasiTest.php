@@ -97,7 +97,6 @@ class PegawaiRekapitulasiTest extends TestCase
             'periode_bulan'     => 2,
             'predikat_id'       => $predikatBaik->id,
             'angka_kredit'      => 2.08,
-            'is_locked'         => true,
         ]);
 
         $response = $this->actingAs($user, 'sanctum')->getJson("/api/rekapitulasi/{$pegawai->id}/2024");
@@ -105,7 +104,8 @@ class PegawaiRekapitulasiTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('data.tahun', 2024);
         $this->assertEquals(100, (float) $response->json('data.ak_lama'));
-        $this->assertEquals(25, (float) $response->json('data.ak_baru'));
+        // Saat is_final = false, ak_baru bersifat live = sum evaluasi (2.08), bukan nilai stored 25
+        $this->assertEquals(2.08, (float) $response->json('data.ak_baru'));
         $this->assertEquals(2.08, (float) $response->json('data.total_ak_baru'));
         $this->assertCount(1, $response->json('data.triwulan.1.rincian'));
         $this->assertEquals(2.08, (float) $response->json('data.triwulan.1.ak_total'));

@@ -21,7 +21,6 @@ class EvaluasiKinerja extends Model
         'jumlah_bulan',
         'predikat_id',
         'angka_kredit',
-        'is_locked',
     ];
 
     protected function casts(): array
@@ -31,7 +30,6 @@ class EvaluasiKinerja extends Model
             'periode_bulan' => 'integer',
             'jumlah_bulan' => 'integer',
             'angka_kredit' => 'decimal:3',
-            'is_locked' => 'boolean',
         ];
     }
 

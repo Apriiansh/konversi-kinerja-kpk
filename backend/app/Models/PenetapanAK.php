@@ -26,6 +26,9 @@ class PenetapanAK extends Model
         'status_kelayakan',
         'catatan_kelayakan',
         'is_final',
+        'is_locked',
+        'locked_by',
+        'locked_at',
     ];
 
     protected function casts(): array
@@ -41,11 +44,18 @@ class PenetapanAK extends Model
             'ak_carry_over' => 'decimal:3',
             'ak_kumulatif' => 'decimal:3',
             'is_final' => 'boolean',
+            'is_locked' => 'boolean',
+            'locked_at' => 'datetime',
         ];
     }
 
     public function pegawai(): BelongsTo
     {
         return $this->belongsTo(Pegawai::class, 'pegawai_id');
+    }
+
+    public function lockedBy(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'locked_by');
     }
 }

@@ -80,9 +80,9 @@ Setelah finalisasi akhir tahun, sistem mengevaluasi total AK kumulatif terhadap 
 
 ```mermaid
 flowchart TD
-    A["TW1, TW2, TW3\nInput Predikat Periodik (Formula A)"] --> B["TW4 (Akhir Tahun)\nPenetapan Predikat TW4 (Jangkar)"]
+    A["TW1, TW2, TW3\nInput Predikat Periodik (Formula A)"] --> B["TW4 (Akhir Tahun)\nPenetapan Predikat TW4 (Tahunan)"]
     B --> C["Admin Menekan Finalisasi PAK"]
-    C --> D["Eksekusi Formula B (TW4 Anchor)"]
+    C --> D["Eksekusi Formula B (Predikat Tahunan)"]
     D --> E["Evaluasi Badge: [LAYAK KP] / [LAYAK JENJANG] / [BELUM CUKUP]"]
     E --> F["Siapkan Saldo Carry-Over ke Tahun Berikutnya (1 Jan)"]
     F --> G["Kirim Notifikasi Resmi ke Akun Pegawai"]
@@ -103,7 +103,7 @@ flowchart TD
    - Jika NIP baru $\rightarrow$ Buat akun login & profil kepegawaian otomatis.
    - Jika NIP lama $\rightarrow$ Update mutasi data pangkat/pendidikan tanpa menghapus riwayat lama.
 3. **Auto-Konversi Instan**:
-   - Memproses PAK Pelantikan, evaluasi TW1–TW4, Formula B TW4 Anchor, Booster, dan penetapan status badge dalam satu transaksi database (`DB::transaction`).
+   - Memproses PAK Pelantikan, evaluasi TW1–TW4, Formula B Predikat Tahunan, Booster, dan penetapan status badge dalam satu transaksi database (`DB::transaction`).
 
 ---
 
@@ -169,7 +169,7 @@ Berikut adalah hasil replikasi matematis studi kasus resmi UAT KPK (`simulasi_ko
 ### Tahun 1 (2025) – Golongan III/a (TMT Maret 2025, Klaim Ijazah S1)
 *   **PAK Pelantikan (3 Thn 5 Bln)**: `42.71 AK`
 *   **Saldo Historis**: `10.00 AK`
-*   **Kinerja Triwulanan**: TW1–TW3 *Sangat Baik*, TW4 *Baik (Jangkar)* $\rightarrow$ Aktif 10 bulan.
+*   **Kinerja Triwulanan**: TW1–TW3 *Sangat Baik*, TW4 *Baik (Tahunan)* $\rightarrow$ Aktif 10 bulan.
 *   **AK Baru Tahunan (Formula B)**: $\frac{10}{12} \times 1.0 \times 12.5 = \mathbf{10.42\text{ AK}}$
 *   **Booster Ijazah S1**: $25\% \times 50 = \mathbf{12.50\text{ AK}}$
 *   **Total AK Kumulatif**: $10.00 + 42.71 + 10.42 + 12.50 = \mathbf{75.63\text{ AK}}$
@@ -178,7 +178,7 @@ Berikut adalah hasil replikasi matematis studi kasus resmi UAT KPK (`simulasi_ko
 
 ### Tahun 2 (2026) – Golongan Baru III/b (Aktif 12 Bulan Penuh)
 *   **Saldo Awal (Carry-Over)**: `25.63 AK`
-*   **Kinerja Triwulanan**: TW1–TW3 *Baik*, TW4 *Sangat Baik (Jangkar)* $\rightarrow$ Aktif 12 bulan.
+*   **Kinerja Triwulanan**: TW1–TW3 *Baik*, TW4 *Sangat Baik (Tahunan)* $\rightarrow$ Aktif 12 bulan.
 *   **AK Baru Tahunan (Formula B)**: $\frac{12}{12} \times 1.5 \times 12.5 = \mathbf{18.75\text{ AK}}$
 *   **Total AK Kumulatif**: $25.63 + 18.75 = \mathbf{44.38\text{ AK}}$
 *   **Keputusan**: **`[BELUM CUKUP AK]`** (Target KP III/b $\rightarrow$ III/c butuh 50 AK, kurang `5.62 AK`).

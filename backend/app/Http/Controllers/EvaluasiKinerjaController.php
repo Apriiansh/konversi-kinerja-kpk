@@ -65,6 +65,10 @@ class EvaluasiKinerjaController extends Controller
             'predikat_id'   => 'required|uuid|exists:master_predikat_kinerja,id',
         ]);
 
+        if ($this->isTahunTerkunci($validated['pegawai_id'], (int) $validated['tahun'])) {
+            return response()->json(['message' => 'Tahun sudah terkunci. Evaluasi tidak dapat disimpan.'], 422);
+        }
+
         // Default jumlah_bulan & triwulan jika salah satu diisi
         $triwulan = $validated['triwulan'] ?? (isset($validated['periode_bulan']) ? (int) ceil($validated['periode_bulan'] / 3) : 1);
         $jumlahBulan = $validated['jumlah_bulan'] ?? ($validated['periode_bulan'] ?? 3);
@@ -90,7 +94,6 @@ class EvaluasiKinerjaController extends Controller
                 'jumlah_bulan'      => $jumlahBulan,
                 'predikat_id'       => $validated['predikat_id'],
                 'angka_kredit'      => $angkaKredit,
-                'is_locked'         => false,
             ]);
 
             $this->auditTrail->log(
@@ -111,34 +114,6 @@ class EvaluasiKinerjaController extends Controller
             'message' => 'Evaluasi Kinerja berhasil disimpan.',
             'data'    => $evaluasi->load('predikat'),
         ], 201);
-    }
-
-    /**
-     * Kunci (lock) predikat evaluasi kinerja — tidak bisa diubah setelahnya.
-     */
-    public function lock(string $id): JsonResponse
-    {
-        $evaluasi = EvaluasiKinerja::findOrFail($id);
-
-        if ($evaluasi->is_locked) {
-            return response()->json(['message' => 'Data sudah terkunci sebelumnya.'], 400);
-        }
-
-        $dataSebelumnya = $evaluasi->toArray();
-        $evaluasi->update(['is_locked' => true]);
-
-        $this->auditTrail->log(
-            'EVALUASI_KINERJA',
-            'LOCK',
-            "Mengunci evaluasi kinerja ID: {$id}",
-            $dataSebelumnya,
-            $evaluasi->fresh()->toArray()
-        );
-
-        return response()->json([
-            'message' => 'Data evaluasi berhasil dikunci. Predikat tidak dapat diubah.',
-            'data'    => $evaluasi,
-        ]);
     }
 
     /**
@@ -168,14 +143,14 @@ class EvaluasiKinerjaController extends Controller
             $hasilTahunan = $this->konversiService->hitungAkTahunan($pegawai->id, $tahun, $validated['predikat_id']);
 
             return response()->json([
-                'message' => 'Hasil simulasi konversi Angka Kredit Tahunan (Formula B - TW4 Anchor).',
+                'message' => 'Hasil simulasi konversi Angka Kredit Tahunan (Formula B - Predikat Tahunan).',
                 'data'    => [
                     'pegawai'                   => $pegawai->nama_lengkap,
                     'jenjang'                   => $jenjang->nama,
                     'golongan'                  => $pangkat->golongan,
                     'koefisien_tahunan'         => $jenjang->koefisien_tahunan,
                     'total_bulan_aktif'         => $hasilTahunan['total_bulan_aktif'],
-                    'predikat_anchor'           => $hasilTahunan['predikat_anchor'],
+                    'predikat_tahunan'          => $hasilTahunan['predikat_tahunan'],
                     'angka_kredit'              => $hasilTahunan['ak_baru'],
                     'rumus'                     => $hasilTahunan['rumus'],
                     'kebutuhan_ak_kp'           => $jenjang->kebutuhan_ak_kp,
@@ -227,15 +202,15 @@ class EvaluasiKinerjaController extends Controller
     }
 
     /**
-     * Update predikat evaluasi kinerja (hanya jika belum dikunci).
+     * Update predikat evaluasi kinerja (ditolak jika tahun terkunci).
      * AK akan dihitung ulang secara otomatis.
      */
     public function update(Request $request, string $id): JsonResponse
     {
         $evaluasi = EvaluasiKinerja::findOrFail($id);
 
-        if ($evaluasi->is_locked) {
-            return response()->json(['message' => 'Evaluasi sudah dikunci dan tidak dapat diubah.'], 422);
+        if ($this->isTahunTerkunci($evaluasi->pegawai_id, (int) $evaluasi->tahun)) {
+            return response()->json(['message' => 'Tahun sudah terkunci. Evaluasi tidak dapat diubah.'], 422);
         }
 
         $validated = $request->validate([
@@ -276,14 +251,14 @@ class EvaluasiKinerjaController extends Controller
     }
 
     /**
-     * Hapus evaluasi kinerja (hanya jika belum dikunci).
+     * Hapus evaluasi kinerja (ditolak jika tahun terkunci).
      */
     public function destroy(string $id): JsonResponse
     {
         $evaluasi = EvaluasiKinerja::findOrFail($id);
 
-        if ($evaluasi->is_locked) {
-            return response()->json(['message' => 'Evaluasi sudah dikunci dan tidak dapat dihapus.'], 422);
+        if ($this->isTahunTerkunci($evaluasi->pegawai_id, (int) $evaluasi->tahun)) {
+            return response()->json(['message' => 'Tahun sudah terkunci. Evaluasi tidak dapat dihapus.'], 422);
         }
 
         $pegawaiId = $evaluasi->pegawai_id;
@@ -388,9 +363,9 @@ class EvaluasiKinerjaController extends Controller
                     'predikat_id'  => $e->predikat_id,
                     'predikat'     => $e->predikat?->nama,
                     'angka_kredit' => (float) $e->angka_kredit,
-                    'is_locked'    => $e->is_locked,
                 ]),
                 'penetapan_is_final' => (bool) $penetapan?->is_final,
+                'penetapan_is_locked' => (bool) $penetapan?->is_locked,
             ],
         ]);
     }
@@ -434,6 +409,16 @@ class EvaluasiKinerjaController extends Controller
         }
 
         return $bulan;
+    }
+
+    /**
+     * Cek apakah tahun penetapan AK pegawai sedang terkunci.
+     */
+    protected function isTahunTerkunci(string $pegawaiId, int $tahun): bool
+    {
+        return (bool) PenetapanAK::where('pegawai_id', $pegawaiId)
+            ->where('tahun', $tahun)
+            ->value('is_locked');
     }
 
     /**

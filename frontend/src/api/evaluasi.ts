@@ -18,10 +18,10 @@ export interface EvaluasiContextData {
       predikat_id: string;
       predikat: string;
       angka_kredit: number;
-      is_locked: boolean;
     }
   >;
   penetapan_is_final: boolean;
+  penetapan_is_locked: boolean;
 }
 
 export interface SimulasiResult {
@@ -33,7 +33,7 @@ export interface SimulasiResult {
   total_bulan_aktif?: number;
   angka_kredit: number;
   rumus: string;
-  predikat_anchor?: string;
+  predikat_tahunan?: string;
   kebutuhan_ak_kp: number;
   kebutuhan_ak_naik_jenjang: number;
 }
@@ -80,11 +80,6 @@ export async function deleteEvaluasi(id: string) {
   await api.delete(`/evaluasi/${id}`);
 }
 
-export async function lockEvaluasi(id: string) {
-  const { data } = await api.post(`/evaluasi/${id}/lock`);
-  return data.data;
-}
-
 // periodic simulation (no save)
 export async function simulasiPeriodic(payload: {
   pegawai_id: string;
@@ -98,7 +93,7 @@ export async function simulasiPeriodic(payload: {
   return data.data;
 }
 
-// Yearning anjai (anchor tw4)
+// Simulasi tahunan (predikat TW4 sebagai acuan)
 export async function simulasiTahunan(payload: {
   pegawai_id: string;
   predikat_id: string;

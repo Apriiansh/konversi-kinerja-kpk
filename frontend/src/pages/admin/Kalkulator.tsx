@@ -74,7 +74,7 @@ export const Kalkulator: React.FC = () => {
   const [predikatTw1, setPredikatTw1] = useState<number>(1.0)
   const [predikatTw2, setPredikatTw2] = useState<number>(1.0)
   const [predikatTw3, setPredikatTw3] = useState<number>(1.0)
-  const [predikatTw4, setPredikatTw4] = useState<number>(1.0) // Anchor Retrospektif
+  const [predikatTw4, setPredikatTw4] = useState<number>(1.0) // Tahunan Retrospektif
 
   // Booster Ijazah (+25%)
   const [hasBooster, setHasBooster] = useState<boolean>(false)
@@ -121,7 +121,7 @@ export const Kalkulator: React.FC = () => {
   const periodikTw2 = useMemo(() => Number(((3 / 12) * predikatTw2 * config.koefisien).toFixed(2)), [predikatTw2, config.koefisien])
   const periodikTw3 = useMemo(() => Number(((3 / 12) * predikatTw3 * config.koefisien).toFixed(2)), [predikatTw3, config.koefisien])
 
-  // 3. Hitung AK Baru Tahunan (Formula B - TW4 Anchor Retrospektif)
+  // 3. Hitung AK Baru Tahunan (Formula B - Predikat Tahunan Retrospektif)
   const akBaruTahunan = useMemo(() => {
     const hasil = (bulanAktif / 12) * predikatTw4 * config.koefisien
     return Number(hasil.toFixed(2))

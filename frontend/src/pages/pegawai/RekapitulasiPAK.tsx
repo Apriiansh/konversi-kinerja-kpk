@@ -255,7 +255,7 @@ export default function RekapitulasiPAK() {
               const pred = d?.rincian?.[0]?.predikat ?? '-'
               return (
                 <div key={q} className={`p-3 rounded-xl border text-center ${q===4 ? 'border-primary/20 bg-secondary/40' : 'border-slate-200 bg-slate-50/50'}`}>
-                  <p className={`text-[10px] font-bold uppercase ${q===4 ? 'text-primary' : 'text-slate-500'}`}>TW{q} {q===4 ? '• Jangkar' : ''}</p>
+                  <p className={`text-[10px] font-bold uppercase ${q===4 ? 'text-primary' : 'text-slate-500'}`}>TW{q} {q===4 ? '• Tahunan' : ''}</p>
                   <p className="font-mono font-bold text-slate-900 mt-1">{ak.toFixed(2)} AK</p>
                   <p className="text-[10px] text-slate-500 truncate" title={pred}>{pred}</p>
                 </div>

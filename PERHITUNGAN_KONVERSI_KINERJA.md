@@ -180,7 +180,7 @@ Bagaimanakah database merekam data transaksional multi-tahun untuk Sdr. Budi? Be
 
 #### **Tahun 1 (2025) - Golongan III/a (Pelantikan Tengah Tahun, TMT Maret)**
 * **Bulan Aktif:** 10 Bulan (Maret - Desember).
-* **Predikat TW4 (Jangkar):** Baik (100%).
+* **Predikat TW4 (Tahunan):** Baik (100%).
 * **Klaim Booster Ijazah:** Ya (S1 Baru).
 * **Data Database `PenetapanAK` 2025:**
   * `akLama` = **10.00** (Input saldo historis bawaan).
@@ -192,7 +192,7 @@ Bagaimanakah database merekam data transaksional multi-tahun untuk Sdr. Budi? Be
 
 #### **Tahun 2 (2026) - Golongan III/b (Aktif Penuh 12 Bulan)**
 * **Bulan Aktif:** 12 Bulan.
-* **Predikat TW4 (Jangkar):** Sangat Baik (150%).
+* **Predikat TW4 (Tahunan):** Sangat Baik (150%).
 * **Klaim Booster:** Tidak (0).
 * **Data Database `PenetapanAK` 2026:**
   * `akLama` = **25.63** (Otomatis mengambil sisa tabungan tahun 2025).

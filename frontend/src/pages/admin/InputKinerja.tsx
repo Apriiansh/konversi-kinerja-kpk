@@ -18,7 +18,7 @@ import {
   Check,
   Sparkles,
   Clock,
-  LockOpen,
+  AlertTriangle,
   X,
 } from 'lucide-react'
 import {
@@ -26,7 +26,6 @@ import {
   createEvaluasi,
   updateEvaluasi,
   deleteEvaluasi,
-  lockEvaluasi,
   simulasiPeriodic,
   simulasiTahunan,
   type EvaluasiContextData,
@@ -45,12 +44,15 @@ import {
 } from '../../components/ui'
 import type { MasterDataResponse, PredikatKinerja, AkDasar } from '../../types'
 
+// Brand accent: teal utama tema (--color-primary). Nilai literal untuk inline style.
+const BRAND = '#0b484d'
+
 // ─── Konstanta Metadata Triwulan ─────────────────────────────────────────
 const TW_META = [
   { tw: 1, label: 'TW 1', range: 'Jan – Mar' },
   { tw: 2, label: 'TW 2', range: 'Apr – Jun' },
   { tw: 3, label: 'TW 3', range: 'Jul – Sep' },
-  { tw: 4, label: 'TW 4', range: 'Okt – Des', anchor: true },
+  { tw: 4, label: 'TW 4', range: 'Okt – Des', tahunan: true },
 ]
 
 const ASAL_JABATAN_OPTIONS = [
@@ -60,9 +62,6 @@ const ASAL_JABATAN_OPTIONS = [
   { value: 'ADMINISTRATOR', label: 'Administrator' },
   { value: 'PENGANGKATAN_PERTAMA', label: 'Pengangkatan Pertama' },
 ]
-
-// Warna brand institusi — konsisten dipakai lewat token di bawah, bukan hex tersebar
-const BRAND = '#0b484d'
 
 // ─── Tipe Bantuan (interop dengan response /pegawai biasa) ───────────────
 type PegawaiSearchItem = {
@@ -79,7 +78,6 @@ interface EvaluasiEntry {
   predikat_id: string
   predikat: string
   angka_kredit: number
-  is_locked: boolean
 }
 
 // Shape respons error dari backend (Laravel validation / exception)
@@ -113,23 +111,6 @@ function formatPersen(decimal: number | string): string {
 
 // Rumus mentah dari backend biasanya menyisipkan angka desimal predikat apa adanya
 // (mis. "... x 1.5 x ..."), bukan bentuk persen. Fungsi ini mencari angka desimal
-// milik predikat yang sedang dipilih dan menggantinya jadi "150%" agar mudah dibaca,
-// tanpa menyentuh angka lain (bulan aktif, koefisien, hasil akhir) di rumus tersebut.
-function formatRumusRill(rumus: string | undefined, predikat?: PredikatKinerja): string | undefined {
-  if (!rumus || !predikat) return rumus
-  const decimal = Number(predikat.persentase_konversi)
-  if (!Number.isFinite(decimal)) return rumus
-  const percentText = formatPersen(decimal)
-  const candidates = [decimal.toFixed(3), decimal.toFixed(2), decimal.toFixed(1), decimal.toString()]
-  for (const c of candidates) {
-    const escaped = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const regex = new RegExp(`(?<!\\d)${escaped}(?!\\d)`, 'g')
-    const result: string = rumus.replace(regex, percentText)
-    if (result !== rumus) return result
-  }
-  return rumus
-}
-
 export const InputKinerja: React.FC = () => {
   const currentYear = new Date().getFullYear()
   const [tahun, setTahun] = useState<number>(currentYear)
@@ -330,6 +311,8 @@ export const InputKinerja: React.FC = () => {
   const isTwUnlocked = (tw: number) =>
     tw === 1 || !!evalByTw[tw - 1] || (context?.bulan_per_tw?.[tw - 1] ?? 3) === 0
 
+  const isTahunTerkunci = context?.penetapan_is_locked ?? false
+
   const sumPeriodik = useMemo(
     () =>
       Object.values(evalByTw)
@@ -406,6 +389,10 @@ export const InputKinerja: React.FC = () => {
   // ── Simpan / Update evaluasi TW ──
   const handleSaveTw = async () => {
     if (!pegawaiId || !context || !draft.predikatId) return
+    if (isTahunTerkunci) {
+      setErrorMessage(`Tahun ${tahun} sudah terkunci. Data tidak dapat diubah.`)
+      return
+    }
     const existing = evalByTw[activeTw]
     const isTw4 = activeTw === 4
     const formulaPeriodik = isTw4 ? sudahLayakSebelumTw4 : true
@@ -418,7 +405,7 @@ export const InputKinerja: React.FC = () => {
     setErrorMessage(null)
     try {
 
-      if (existing && !existing.is_locked) {
+      if (existing) {
         await updateEvaluasi(existing.id, { predikat_id: draft.predikatId, jumlah_bulan: jumlahBulan })
         setSuccessMessage(`Predikat TW${activeTw} berhasil diperbarui.`)
       } else {
@@ -451,7 +438,10 @@ export const InputKinerja: React.FC = () => {
   }
 
   const handleDeleteTw = async (e: EvaluasiEntry) => {
-    if (e.is_locked) return
+    if (isTahunTerkunci) {
+      setErrorMessage(`Tahun ${tahun} sudah terkunci. Data tidak dapat dihapus.`)
+      return
+    }
     setErrorMessage(null)
     try {
       await deleteEvaluasi(e.id)
@@ -462,20 +452,13 @@ export const InputKinerja: React.FC = () => {
     }
   }
 
-  const handleLockTw = async (e: EvaluasiEntry) => {
-    setErrorMessage(null)
-    try {
-      await lockEvaluasi(e.id)
-      setSuccessMessage(`Evaluasi TW${e.triwulan} berhasil dikunci.`)
-      if (pegawaiId) await loadContext(pegawaiId, tahun)
-    } catch (err) {
-      setErrorMessage(getApiErrorMessage(err, 'Gagal mengunci evaluasi.'))
-    }
-  }
-
   // ── Finalisasi PAK ──
   const handleFinalize = async () => {
     if (!pegawaiId || !evalByTw[4]) return
+    if (isTahunTerkunci) {
+      setErrorMessage(`Tahun ${tahun} sudah terkunci. Finalisasi dibatalkan.`)
+      return
+    }
     setFinalizing(true)
     setErrorMessage(null)
     try {
@@ -560,7 +543,7 @@ export const InputKinerja: React.FC = () => {
                   fillFormPegawai(false)
                 }
               }}
-              className="h-4 w-4 rounded border-slate-300 text-[--brand] focus:ring-[--brand] cursor-pointer"
+              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
               style={{ accentColor: BRAND }}
             />
             <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Buat pegawai baru</span>
@@ -589,7 +572,7 @@ export const InputKinerja: React.FC = () => {
                       className="w-full text-left px-4 py-3.5 hover:bg-secondary/60 transition-colors cursor-pointer group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-[--brand]" style={{ ['--brand' as any]: BRAND }}>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-primary">
                           <UserRound className="h-4.5 w-4.5" />
                         </div>
                         <div className="min-w-0">
@@ -819,22 +802,20 @@ export const InputKinerja: React.FC = () => {
                     onClick={() => handleSelectTw(m.tw)}
                     className="relative flex flex-col items-center gap-1 rounded-2xl border py-3.5 px-2 text-center transition-colors cursor-pointer"
                     style={{
-                      borderColor: isActive ? BRAND : m.anchor ? '#a9cfcf' : '#e2e8f0',
-                      backgroundColor: isActive ? '#eef5f5' : m.anchor ? '#f2f8f8' : '#f8fafc',
+                      borderColor: isActive ? BRAND : m.tahunan ? '#a9cfcf' : '#e2e8f0',
+                      backgroundColor: isActive ? '#eef5f5' : m.tahunan ? '#f2f8f8' : '#f8fafc',
                     }}
                   >
                     <span className="flex items-center gap-1.5 text-sm font-bold" style={{ color: isActive ? BRAND : unlocked ? '#334155' : '#cbd5e1' }}>
                       {m.label}
-                      {existing && (
-                        <CheckCircle2 className="h-3.5 w-3.5" style={{ color: existing.is_locked ? '#10b981' : '#3b82f6' }} />
-                      )}
+                      {existing && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                       {!unlocked && <Lock className="h-3 w-3 text-slate-300" />}
                     </span>
                     <span className="text-[11px] font-medium text-slate-400">{m.range}</span>
                     <span className="font-mono text-xs font-bold text-slate-700 whitespace-nowrap">
                       {bulan}&nbsp;bln aktif{existing && <> · <span style={{ color: BRAND }}>{existing.angka_kredit.toFixed(3)} AK</span></>}
                     </span>
-                    {m.anchor && (
+                    {m.tahunan && (
                       <span
                         className="mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
                         style={{ color: BRAND, backgroundColor: '#e3efef' }}
@@ -872,15 +853,9 @@ export const InputKinerja: React.FC = () => {
           <span className="text-base font-bold text-slate-900">Triwulan {activeTw}</span>
           {context && context.tw_aktif === activeTw && <Badge variant="default">TW Aktif</Badge>}
           {existing ? (
-            existing.is_locked ? (
-              <Badge variant="success" icon={<Lock className="h-3 w-3" />}>
-                Terkunci
-              </Badge>
-            ) : (
-              <Badge variant="info" icon={<Pencil className="h-3 w-3" />}>
-                Sudah diisi
-              </Badge>
-            )
+            <Badge variant="info" icon={<Pencil className="h-3 w-3" />}>
+              Sudah diisi
+            </Badge>
           ) : (
             <Badge variant="warning" icon={<Clock className="h-3 w-3" />}>
               Belum diisi
@@ -888,22 +863,9 @@ export const InputKinerja: React.FC = () => {
           )}
         </div>
 
-        {existing?.is_locked ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-3.5">
-            {[['Predikat', existing.predikat], ['Jumlah Bulan Aktif', `${existing.jumlah_bulan} bln`], ['AK Triwulan', `${existing.angka_kredit.toFixed(3)} AK`]].map(
-              ([k, v], i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-600 text-sm">{k}</span>
-                  <span className={`font-mono ${k === 'AK Triwulan' ? 'font-extrabold text-emerald-700 text-base' : 'font-bold text-slate-900 text-sm'}`}>
-                    {v}
-                  </span>
-                </div>
-              ),
-            )}
-          </div>
-        ) : bulanAktif === 0 ? (
+        {bulanAktif === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-8 text-center">
-            <LockOpen className="h-6 w-6 mx-auto text-slate-400 mb-2" />
+            <Calendar className="h-6 w-6 mx-auto text-slate-400 mb-2" />
             <p className="text-sm font-bold text-slate-600">TW{activeTw} tidak memiliki bulan aktif</p>
             <p className="text-xs text-slate-400 mt-1.5 max-w-sm mx-auto">
               Berdasarkan TMT jabatan pegawai, masa kerja belum dimulai pada triwulan ini. Nilai AK otomatis 0.
@@ -948,7 +910,7 @@ export const InputKinerja: React.FC = () => {
                   <span className="text-xs font-bold text-sky-700 flex items-center gap-1.5">
                     <Sparkles className="h-4 w-4" /> Preview kalkulasi realtime
                     <span className="ml-1 rounded-full bg-sky-100 text-sky-700 px-2 py-0.5 text-[10px] font-extrabold tracking-wide">
-                      Formula A · Periodik
+                      Nilai Triwulan
                     </span>
                   </span>
                   <span className="font-mono font-extrabold text-lg" style={{ color: BRAND }}>+{sim.angka_kredit.toFixed(3)} AK</span>
@@ -961,7 +923,8 @@ export const InputKinerja: React.FC = () => {
                     </span>
                   </div>
                 )}
-                <p className="text-xs font-mono text-slate-600 bg-white border border-sky-100 rounded-lg p-2.5">{formatRumusRill(sim.rumus, selectedPredikat)}</p>
+                {/* Rumus hanya di comment: (bulan/12) × %PKP × koefisien (Formula A) */}
+                <p className="text-xs text-slate-600 bg-white border border-sky-100 rounded-lg p-2.5">Perolehan TW{activeTw}: <strong className="font-mono text-slate-900">+{sim.angka_kredit.toFixed(3)} AK</strong> dari PKP {selectedPredikat?.nama ?? '-'} selama {jumlahBulanTw(activeTw)} bulan.</p>
                 <p className="text-[11px] text-slate-500">
                   Nilai TW{activeTw} ini akan <strong className="text-slate-700">ditambahkan</strong> ke AK kumulatif — bukan menggantikan triwulan lain.
                 </p>
@@ -999,8 +962,8 @@ export const InputKinerja: React.FC = () => {
           </>
         )}
 
-        {/* Baris aksi untuk data tersimpan yang belum terkunci */}
-        {existing && !existing.is_locked && (
+        {/* Baris aksi untuk data tersimpan */}
+        {existing && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="text-sm">
               <span className="font-bold text-slate-600">Tersimpan: </span>
@@ -1009,15 +972,16 @@ export const InputKinerja: React.FC = () => {
               <span className="font-mono font-extrabold" style={{ color: BRAND }}>{existing.angka_kredit.toFixed(3)} AK</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => handleEditTw(existing)}>
-                Edit
-              </Button>
-              <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-error" />} onClick={() => handleDeleteTw(existing)}>
-                Hapus
-              </Button>
-              <Button variant="primary" size="sm" icon={<Lock className="h-3.5 w-3.5" />} onClick={() => handleLockTw(existing)}>
-                Kunci
-              </Button>
+              {!isTahunTerkunci && (
+                <>
+                  <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => handleEditTw(existing)}>
+                    Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-error" />} onClick={() => handleDeleteTw(existing)}>
+                    Hapus
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -1052,13 +1016,26 @@ export const InputKinerja: React.FC = () => {
               PAK Final
             </Badge>
           )}
+          {isTahunTerkunci && (
+            <Badge variant="success" icon={<Lock className="h-3 w-3" />}>
+              Tahun Terkunci
+            </Badge>
+          )}
         </div>
 
         {/* Peringatan jika TW sebelumnya belum lengkap */}
         {!tw1to3Complete && (
           <div className="flex items-center gap-2.5 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3.5 text-sm font-semibold text-amber-800">
-            <LockOpen className="h-4 w-4 text-amber-500 shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
             Lengkapi TW1–TW3 terlebih dahulu sebelum finalisasi TW4.
+          </div>
+        )}
+
+        {/* Banner tahun terkunci */}
+        {isTahunTerkunci && (
+          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-300 bg-slate-100/70 px-4 py-3.5 text-sm font-semibold text-slate-700">
+            <Lock className="h-4 w-4 text-slate-500 shrink-0" />
+            Tahun {tahun} terkunci. Data hanya dapat dilihat; buka kunci di modul Rekapitulasi jika ingin mengubah.
           </div>
         )}
 
@@ -1101,23 +1078,24 @@ export const InputKinerja: React.FC = () => {
                 sudahLayak ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
               }`}
             >
-              {sudahLayak ? 'Formula A · Periodik' : 'Formula B · Disetahunkan (TW4 Anchor)'}
+              {sudahLayak ? 'Nilai triwulan' : 'Nilai tahunan'}
             </span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
             {sudahLayak
-              ? 'AK kumulatif sudah melewati target pada TW3. TW4 dihitung periodik seperti biasa & ditambahkan ke subtotal TW1–TW3.'
-              : 'AK kumulatif belum mencapai target sampai TW3. Predikat TW4 menjadi acuan retrospektif untuk satu tahun penuh — (Total bulan aktif / 12) × % TW4 × koefisien — dan hasilnya menggantikan subtotal periodik TW1–TW3, bukan menambahnya.'}
+              ? 'AK kumulatif sudah melewati target pada TW3. TW4 dihitung seperti triwulan biasa & ditambahkan ke subtotal TW1–TW3.'
+              : 'AK kumulatif belum mencapai target sampai TW3. Predikat TW4 menjadi acuan untuk satu tahun penuh dan hasilnya menggantikan subtotal TW1–TW3, bukan menambahnya.'}
           </p>
         </div>
 
         {/* Form predikat TW4 */}
-        {!tw4?.is_locked && (
+        {!isTahunTerkunci && (
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-600 block">Predikat TW4 (acuan tahunan)</label>
             <select
               value={draft.predikatId}
               onChange={(e) => setDraft((d) => ({ ...d, predikatId: e.target.value }))}
+              disabled={isTahunTerkunci}
               className="w-full text-sm font-bold px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 transition-shadow"
               style={{ ['--tw-ring-color' as any]: '#bcd9d9' }}
             >
@@ -1150,7 +1128,8 @@ export const InputKinerja: React.FC = () => {
                   </span>
                 </div>
               )}
-              {sim && <p className="text-xs font-mono text-slate-600 bg-white border border-sky-100 rounded-lg p-2.5">{formatRumusRill(sim.rumus, selectedPredikat)}</p>}
+              {/* Rumus hanya di comment: (bulan/12) × %PKP × koefisien */}
+              {sim && <p className="text-xs text-slate-600 bg-white border border-sky-100 rounded-lg p-2.5">Perolehan TW4: <strong className="font-mono text-slate-900">+{sim.angka_kredit.toFixed(3)} AK</strong> dari PKP {selectedPredikat?.nama ?? '-'}.</p>}
               <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-slate-600 pt-1">
                 <span>
                   Subtotal TW1–TW3: <strong className="font-mono text-slate-900">{sumPeriodik.toFixed(3)} AK</strong>
@@ -1162,13 +1141,13 @@ export const InputKinerja: React.FC = () => {
               </div>
             </div>
           ) : (
-            // ── Formula B: TW4 anchor, menggantikan subtotal periodik ────────
+            // ── Formula B: predikat tahunan, menggantikan subtotal periodik ────────
             <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
                   <TrendingUp className="h-4 w-4" /> Preview total akhir
                   <span className="ml-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-extrabold tracking-wide">
-                    Formula B · Disetahunkan
+                    Nilai Tahunan
                   </span>
                 </span>
                 <span className="font-mono font-extrabold text-lg" style={{ color: BRAND }}>{totalAkhir.toFixed(3)} AK</span>
@@ -1181,20 +1160,21 @@ export const InputKinerja: React.FC = () => {
                   </span>
                 </div>
               )}
-              {sim && <p className="text-xs font-mono text-slate-600 bg-white border border-amber-100 rounded-lg p-2.5">{formatRumusRill(sim.rumus, selectedPredikat)}</p>}
+              {/* Rumus hanya di comment: (total bulan aktif/12) × %PKP TW4 × koefisien */}
+              {sim && <p className="text-xs text-slate-600 bg-white border border-amber-100 rounded-lg p-2.5">AK tahunan: <strong className="font-mono text-slate-900">{akAkhir.toFixed(3)} AK</strong> dari PKP {selectedPredikat?.nama ?? '-'} selama {sim.total_bulan_aktif ?? 0} bulan aktif.</p>}
               <div className="flex items-center justify-between gap-3 rounded-xl bg-white border border-amber-100 px-3.5 py-2.5">
                 <span className="text-xs font-semibold text-slate-400 line-through decoration-slate-300">
                   Subtotal periodik TW1–TW3: {sumPeriodik.toFixed(3)} AK <span className="not-italic">(diabaikan)</span>
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 rounded-xl bg-white border border-amber-200 px-3.5 py-2.5">
-                <span className="text-xs font-bold text-slate-700">AK tahunan (disetahunkan, dipakai)</span>
+                <span className="text-xs font-bold text-slate-700">AK tahunan (dipakai)</span>
                 <span className="font-mono font-extrabold text-slate-900">{akAkhir.toFixed(3)} AK</span>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-slate-600 pt-1">
-                {sim?.predikat_anchor && (
+                {sim?.predikat_tahunan && (
                   <span>
-                    Predikat acuan TW4 (sistem): <strong className="font-mono text-slate-900">{sim.predikat_anchor}</strong>
+                    Predikat tahunan (sistem): <strong className="font-mono text-slate-900">{sim.predikat_tahunan}</strong>
                   </span>
                 )}
                 {sim?.total_bulan_aktif && (
@@ -1210,7 +1190,7 @@ export const InputKinerja: React.FC = () => {
 
         {/* Aksi */}
         <div className="flex flex-wrap gap-2.5 justify-end items-center pt-4 border-t border-slate-100">
-          {(!tw4 || !tw4.is_locked) && (
+          {!isTahunTerkunci && (
             <Button
               variant="primary"
               onClick={handleSaveTw}
@@ -1221,7 +1201,7 @@ export const InputKinerja: React.FC = () => {
               {tw4 ? 'Perbarui TW4' : 'Simpan TW4'}
             </Button>
           )}
-          {tw4 && !tw4.is_locked && (
+          {tw4 && !isTahunTerkunci && (
             <>
               <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => handleEditTw(tw4)}>
                 Edit
@@ -1229,19 +1209,22 @@ export const InputKinerja: React.FC = () => {
               <Button variant="ghost" size="sm" icon={<Trash2 className="h-3.5 w-3.5 text-error" />} onClick={() => handleDeleteTw(tw4)}>
                 Hapus
               </Button>
-              <Button variant="primary" size="sm" icon={<Lock className="h-3.5 w-3.5" />} onClick={() => handleLockTw(tw4)}>
-                Kunci TW4
-              </Button>
             </>
           )}
           <Button
             variant="primary"
             onClick={handleFinalize}
             loading={finalizing}
-            disabled={!tw4 || isFinal || !tw1to3Complete}
+            disabled={!tw4 || isFinal || !tw1to3Complete || isTahunTerkunci}
             icon={!finalizing ? <ShieldCheck className="h-4 w-4" /> : undefined}
           >
-            {isFinal ? 'PAK sudah final' : !tw4 ? 'Isi TW4 untuk finalisasi' : 'Finalisasi & tetapkan PAK'}
+            {isTahunTerkunci
+              ? 'Tahun sudah terkunci'
+              : isFinal
+                ? 'PAK sudah final'
+                : !tw4
+                  ? 'Isi TW4 untuk finalisasi'
+                  : 'Finalisasi & tetapkan PAK'}
           </Button>
         </div>
       </div>

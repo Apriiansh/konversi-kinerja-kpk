@@ -35,7 +35,6 @@ class ImportKonversiTest extends TestCase
             'masa_kerja_tahun',
             'masa_kerja_bulan',
             'saldo_historis',
-            'tahun',
             'tw1_predikat',
             'tw1_bulan',
             'tw2_predikat',
@@ -44,7 +43,6 @@ class ImportKonversiTest extends TestCase
             'tw3_bulan',
             'tw4_predikat',
             'tw4_bulan',
-            'klaim_ijazah_baru',
         ];
 
         $output = fopen('php://temp', 'r+');
@@ -125,7 +123,6 @@ class ImportKonversiTest extends TestCase
             '3',
             '5',
             '10.00',
-            '2025',
             'Sangat Baik',
             '1',
             'Sangat Baik',
@@ -134,13 +131,13 @@ class ImportKonversiTest extends TestCase
             '3',
             'Baik',
             '3',
-            'S1',
         ];
 
         $file = $this->createCsvFile([$budiRow]);
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
             'file' => $file,
+            'tahun' => 2025,
         ]);
 
         $response->assertOk();
@@ -151,13 +148,16 @@ class ImportKonversiTest extends TestCase
         $this->assertEquals(1, $data['ringkasan_badge']['layak_pangkat']);
 
         $budi = $data['data'][0];
-        $this->assertEquals(42.71, (float) $budi['ak_pak_pelantikan']);
+        $this->assertEqualsWithDelta(42.71, (float) $budi['ak_pak_pelantikan'], 0.01);
         $this->assertEquals(10.00, (float) $budi['ak_historis']);
-        $this->assertEquals(10.42, (float) $budi['ak_baru_tahunan']); // Formula B
-        $this->assertEquals(12.50, (float) $budi['ak_booster']);       // Booster S1
-        $this->assertEquals(75.63, (float) $budi['ak_kumulatif']);
+        // TW1-3 sudah LAYAK (63.65 AK) -> akumulasi periodik penuh:
+        // 1.563 + 4.688 + 4.688 + 3.125 = 14.064 (tanpa booster: klaim ijazah
+        // hanya via verifikasi Pengajuan Pendidikan, bukan import)
+        $this->assertEquals(14.064, (float) $budi['ak_baru_tahunan']);
+        $this->assertEquals(0.00, (float) $budi['ak_booster']);
+        $this->assertEqualsWithDelta(66.77, (float) $budi['ak_kumulatif'], 0.01);
         $this->assertEquals('LAYAK NAIK PANGKAT', $budi['kelayakan']['badge_label']);
-        $this->assertEquals(25.63, (float) $budi['kelayakan']['carry_over']);
+        $this->assertEqualsWithDelta(16.77, (float) $budi['kelayakan']['carry_over'], 0.01);
     }
 
     public function test_eksekusi_import_menyimpan_data_lengkap_ke_database(): void
@@ -176,7 +176,6 @@ class ImportKonversiTest extends TestCase
             '3',
             '5',
             '10.00',
-            '2025',
             'Sangat Baik',
             '1',
             'Sangat Baik',
@@ -185,13 +184,13 @@ class ImportKonversiTest extends TestCase
             '3',
             'Baik',
             '3',
-            'S1',
         ];
 
         $file = $this->createCsvFile([$budiRow]);
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/proses', [
             'file' => $file,
+            'tahun' => 2025,
         ]);
 
         $response->assertStatus(201);
@@ -209,18 +208,18 @@ class ImportKonversiTest extends TestCase
         $penetapan2025 = PenetapanAK::where('pegawai_id', $pegawai->id)->where('tahun', 2025)->first();
         $this->assertNotNull($penetapan2025);
         $this->assertTrue($penetapan2025->is_final);
-        $this->assertEquals(42.71, (float) $penetapan2025->ak_pak_pelantikan);
+        $this->assertEqualsWithDelta(42.71, (float) $penetapan2025->ak_pak_pelantikan, 0.01);
         $this->assertEquals(10.00, (float) $penetapan2025->ak_historis);
-        $this->assertEquals(10.42, (float) $penetapan2025->ak_baru);
-        $this->assertEquals(12.50, (float) $penetapan2025->ak_booster);
-        $this->assertEquals(75.63, (float) $penetapan2025->ak_kumulatif);
+        $this->assertEquals(14.064, (float) $penetapan2025->ak_baru);
+        $this->assertEquals(0.00, (float) $penetapan2025->ak_booster);
+        $this->assertEqualsWithDelta(66.77, (float) $penetapan2025->ak_kumulatif, 0.01);
         $this->assertEquals('LAYAK_PANGKAT', $penetapan2025->status_kelayakan);
 
         // 4. Verifikasi Saldo Carry-Over Tahun 2026 Otomatis Dibuat
         $penetapan2026 = PenetapanAK::where('pegawai_id', $pegawai->id)->where('tahun', 2026)->first();
         $this->assertNotNull($penetapan2026);
-        $this->assertEquals(25.63, (float) $penetapan2026->ak_lama);
-        $this->assertEquals(25.63, (float) $penetapan2026->ak_kumulatif);
+        $this->assertEqualsWithDelta(16.77, (float) $penetapan2026->ak_lama, 0.01);
+        $this->assertEqualsWithDelta(16.77, (float) $penetapan2026->ak_kumulatif, 0.01);
 
         // 5. Verifikasi Notifikasi Terkirim
         $this->assertDatabaseHas('notifikasi', [
@@ -246,7 +245,6 @@ class ImportKonversiTest extends TestCase
             '3',
             '5',
             '10.00',
-            '2025',
             'Sangat Baik',
             '1',
             'Sangat Baik',
@@ -255,12 +253,11 @@ class ImportKonversiTest extends TestCase
             '3',
             'Baik',
             '3',
-            'S1',
         ];
 
         $file = $this->createCsvFile([$row]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file, 'tahun' => 2025]);
 
         $response->assertOk();
         $data = $response->json('data');
@@ -288,7 +285,6 @@ class ImportKonversiTest extends TestCase
             '10',
             '0',
             '10.00',
-            '2025',
             'Sangat Baik',
             '1',
             'Sangat Baik',
@@ -297,12 +293,11 @@ class ImportKonversiTest extends TestCase
             '3',
             'Baik',
             '3',
-            'S1',
         ];
 
         $file = $this->createCsvFile([$row]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file, 'tahun' => 2025]);
 
         $response->assertOk();
         $data = $response->json('data');
@@ -334,7 +329,6 @@ class ImportKonversiTest extends TestCase
             '10',
             '0',
             '10.00',
-            '2025',
             'Sangat Baik',
             '1',
             'Sangat Baik',
@@ -343,12 +337,11 @@ class ImportKonversiTest extends TestCase
             '3',
             'Baik',
             '3',
-            'S1',
         ];
 
         $file = $this->createCsvFile([$row]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/proses', ['file' => $file]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/proses', ['file' => $file, 'tahun' => 2025]);
 
         $response->assertStatus(201);
         $this->assertEquals(1, $response->json('data.total_diproses'));
@@ -394,24 +387,23 @@ class ImportKonversiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
 
-        // Header menggunakan spasi antar kata, bukan underscore.
+        // Header menggunakan spasi antar kata, bukan underscore. Tahun via selector, bukan kolom.
         $headers = [
             'nip', 'nama lengkap', 'email', 'golongan', 'asal jabatan', 'jenjang jabatan',
             'pendidikan terakhir', 'tmt jabatan', 'masa kerja tahun', 'masa kerja bulan',
-            'saldo historis', 'tahun', 'tw1 predikat', 'tw1 bulan', 'tw2 predikat',
+            'saldo historis', 'tw1 predikat', 'tw1 bulan', 'tw2 predikat',
             'tw2 bulan', 'tw3 predikat', 'tw3 bulan', 'tw4 predikat', 'tw4 bulan',
-            'klaim ijazah baru',
         ];
 
         $row = [
             '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a', 'PELAKSANA',
-            'Ahli Pertama', 'S1', '2025-03-01', '3', '5', '10.00', '2025', 'Sangat Baik', '1',
-            'Sangat Baik', '3', 'Sangat Baik', '3', 'Baik', '3', 'S1',
+            'Ahli Pertama', 'S1', '2025-03-01', '3', '5', '10.00', 'Sangat Baik', '1',
+            'Sangat Baik', '3', 'Sangat Baik', '3', 'Baik', '3',
         ];
 
         $file = $this->createCsvFileWithHeaders($headers, [$row]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file, 'tahun' => 2025]);
 
         $response->assertOk();
         $data = $response->json('data');
@@ -424,23 +416,23 @@ class ImportKonversiTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
 
-        // Header memakai alias singkatan / variasi umum.
+        // Header memakai alias singkatan / variasi umum. Tahun via selector.
         $headers = [
             'NIP', 'Nama', 'Email', 'Pangkat', 'Asal', 'Jenjang',
             'Pendidikan', 'TMT', 'MK Tahun', 'MK Bulan', 'Saldo',
-            'Periode', 'Predikat TW1', 'Bulan TW1', 'Predikat TW2', 'Bulan TW2',
-            'Predikat TW3', 'Bulan TW3', 'Predikat TW4', 'Bulan TW4', 'Ijazah',
+            'Predikat TW1', 'Bulan TW1', 'Predikat TW2', 'Bulan TW2',
+            'Predikat TW3', 'Bulan TW3', 'Predikat TW4', 'Bulan TW4',
         ];
 
         $row = [
             '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a', 'PELAKSANA',
-            'Ahli Pertama', 'S1', '2025-03-01', '3', '5', '10.00', '2025', 'Sangat Baik', '1',
-            'Sangat Baik', '3', 'Sangat Baik', '3', 'Baik', '3', 'S1',
+            'Ahli Pertama', 'S1', '2025-03-01', '3', '5', '10.00', 'Sangat Baik', '1',
+            'Sangat Baik', '3', 'Sangat Baik', '3', 'Baik', '3',
         ];
 
         $file = $this->createCsvFileWithHeaders($headers, [$row]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file, 'tahun' => 2025]);
 
         $response->assertOk();
         $data = $response->json('data');
@@ -449,25 +441,27 @@ class ImportKonversiTest extends TestCase
         $this->assertEquals(0, $data['total_error']);
 
         $pegawai = $data['data'][0];
-        $this->assertEquals('75.63', number_format($pegawai['ak_kumulatif'], 2, '.', ''));
+        // Header alias + TMT-auto: TW1 = 1 bln (TMT Mar), TW2-4 penuh → kelayakan TW3
+        // sudah LAYAK sehingga dipakai akumulasi periodik penuh (tanpa booster).
+        $this->assertEquals('66.77', number_format($pegawai['ak_kumulatif'], 2, '.', ''));
     }
 
     public function test_preview_import_menerima_header_tidak_di_baris_pertama(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
 
-        // Simulasi file dengan judul/meta di atas, header baru muncul di baris berikutnya.
+        // Simulasi file dengan judul/meta di atas, header baru muncul di baris berikutnya. Tahun via selector.
         $content = implode("\n", [
             'DATA KONVERSI KINERJA KPK TAHUN 2025',
             '',
             'Diolah oleh: Bagian Kepegawaian',
-            'nip,nama_lengkap,email,golongan,asal_jabatan,jenjang_jabatan,pendidikan_terakhir,tmt_jabatan,masa_kerja_tahun,masa_kerja_bulan,saldo_historis,tahun,tw1_predikat,tw1_bulan,tw2_predikat,tw2_bulan,tw3_predikat,tw3_bulan,tw4_predikat,tw4_bulan,klaim_ijazah_baru',
-            '199503012025031001,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,2025-03-01,3,5,10.00,2025,Sangat Baik,1,Sangat Baik,3,Sangat Baik,3,Baik,3,S1',
+            'nip,nama_lengkap,email,golongan,asal_jabatan,jenjang_jabatan,pendidikan_terakhir,tmt_jabatan,masa_kerja_tahun,masa_kerja_bulan,saldo_historis,tw1_predikat,tw1_bulan,tw2_predikat,tw2_bulan,tw3_predikat,tw3_bulan,tw4_predikat,tw4_bulan',
+            '199503012025031001,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,2025-03-01,3,5,10.00,Sangat Baik,1,Sangat Baik,3,Sangat Baik,3,Baik,3',
         ]);
 
         $file = UploadedFile::fake()->createWithContent('import_meta.csv', $content);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', ['file' => $file, 'tahun' => 2025]);
 
         $response->assertOk();
         $data = $response->json('data');
@@ -485,7 +479,7 @@ class ImportKonversiTest extends TestCase
         // NIP Excel dirender scientific notation, tanggal format d/m/Y.
         $content = implode("\n", [
             'nip,nama_lengkap,email,golongan,asal_jabatan,jenjang_jabatan,pendidikan_terakhir,tmt_jabatan,masa_kerja_tahun,masa_kerja_bulan,saldo_historis,tahun,tw1_predikat,tw1_bulan,tw2_predikat,tw2_bulan,tw3_predikat,tw3_bulan,tw4_predikat,tw4_bulan,klaim_ijazah_baru',
-            '1.99609E+17,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,01/03/2025,3,5,10.00,2025,Sangat Baik,1,Sangat Baik,3,Sangat Baik,3,Baik,3,S1',
+            '1.99609E+17,Budi Santoso S.T,budi@kpk.go.id,III/a,PELAKSANA,Ahli Pertama,S1,01/03/2025,3,5,10.00,2025,Sangat Baik,1,Sangat Baik,3,Sangat Baik,3,Baik,3',
         ]);
 
         // Verifikasi hasil parsing (NIP + tanggal) langsung lewat service.
@@ -548,5 +542,166 @@ class ImportKonversiTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonPath('message', 'Gagal memproses file: Kolom wajib golongan tidak ditemukan di header. Pastikan header file mengikuti template (nip, nama_lengkap, golongan, dst) dan berada di baris awal.');
+    }
+
+    private function createPkpCsvFile(array $rows): UploadedFile
+    {
+        // Template baru: tanpa kolom tahun, tahun dipilih via selector UI.
+        $headers = [
+            'nip', 'nama_lengkap', 'email', 'golongan', 'asal_jabatan', 'jenjang_jabatan',
+            'pendidikan_terakhir', 'tmt_jabatan', 'masa_kerja_tahun', 'masa_kerja_bulan',
+            'saldo_historis', 'Predikat Kinerja Pegawai (PKP)',
+        ];
+
+        return $this->createCsvFileWithHeaders($headers, $rows);
+    }
+
+    public function test_template_memuat_kolom_tunggal_pkp(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        $response = $this->actingAs($admin, 'sanctum')->get('/api/import/template');
+
+        $response->assertOk();
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'template') . '.xlsx';
+        file_put_contents($tempPath, $response->getContent());
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($tempPath) === true);
+        $shared = $zip->getFromName('xl/sharedStrings.xml') ?: '';
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml') ?: '';
+        $zip->close();
+        @unlink($tempPath);
+
+        $this->assertStringContainsString('PKP', $shared . $sheet);
+        $this->assertStringNotContainsString('tw1_predikat', strtolower($shared . $sheet));
+    }
+
+    public function test_preview_import_triwulan_hanya_hitung_quarter_terpilih(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Tanpa TMT: tiap triwulan penuh 3 bulan. Ahli Pertama koef 12.5, Sangat Baik 150%.
+        $row = [
+            '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a',
+            'JABATAN_FUNGSIONAL', 'Ahli Pertama', 'S1', '', '0', '0', '0',
+            'Sangat Baik',
+        ];
+
+        $file = $this->createPkpCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $file,
+            'triwulan' => 2,
+            'tahun' => 2025,
+        ]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(1, $data['total_valid']);
+        $this->assertEquals(0, $data['total_error']);
+
+        $item = $data['data'][0];
+        $this->assertTrue($item['triwulan_mode']);
+        $this->assertEquals(2, $item['triwulan_ke']);
+        $this->assertEquals('Sangat Baik', $item['pkp']);
+        $this->assertEquals(3, $item['jumlah_bulan']);
+        // Formula A TW2: (3/12) x 150% x 12.5 = 4.688
+        $this->assertEquals(4.688, (float) $item['ak_triwulan']);
+        // Proyeksi disetahunkan: (12/12) x 150% x 12.5 = 18.75
+        $this->assertEquals(18.75, (float) $item['proyeksi_disetahunkan']);
+        $this->assertEquals(4.688, (float) $item['ak_parsial']);
+        $this->assertEquals('FORMULA_A_PERIODIK', $item['metode_kalkulasi']);
+        // Kumulatif parsial 4.688 < target KP 50 -> BELUM_CUKUP, tetap terinfo
+        $this->assertEquals('BELUM_CUKUP', $item['kelayakan']['status']);
+        $this->assertEquals(1, $data['ringkasan_badge']['belum_cukup']);
+    }
+
+    public function test_preview_import_triwulan_menolak_pkp_kosong(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        $row = [
+            '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a',
+            'JABATAN_FUNGSIONAL', 'Ahli Pertama', 'S1', '', '0', '0', '0',
+            '',
+        ];
+
+        $file = $this->createPkpCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $file,
+            'triwulan' => 1,
+            'tahun' => 2025,
+        ]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(0, $data['total_valid']);
+        $this->assertEquals(1, $data['total_error']);
+        $this->assertStringContainsString('PKP', implode(' ', $data['data'][0]['errors']));
+    }
+
+    public function test_preview_import_menolak_tmt_setelah_tahun_evaluasi(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        $row = [
+            '199503012025031001', 'Budi Santoso, S.T', 'budi@kpk.go.id', 'III/a',
+            'JABATAN_FUNGSIONAL', 'Ahli Pertama', 'S1', '2026-01-01', '0', '0', '0',
+            'Baik',
+        ];
+
+        $file = $this->createPkpCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $file,
+            'triwulan' => 4,
+            'tahun' => 2025,
+        ]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(0, $data['total_valid']);
+        $this->assertEquals(1, $data['total_error']);
+        $this->assertStringContainsString('TMT', implode(' ', $data['data'][0]['errors']));
+    }
+
+    public function test_eksekusi_import_triwulan_hanya_menyimpan_baris_quarter(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN', 'name' => 'Admin Kepegawaian']);
+
+        $row = [
+            '199503012025031001', 'Budi Santoso, S.T', 'budi.santoso@kpk.go.id', 'III/a',
+            'JABATAN_FUNGSIONAL', 'Ahli Pertama', 'S1', '', '0', '0', '0',
+            'Sangat Baik',
+        ];
+
+        $file = $this->createPkpCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/proses', [
+            'file' => $file,
+            'triwulan' => 2,
+            'tahun' => 2025,
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertEquals(1, $response->json('data.total_diproses'));
+        $this->assertEquals(2, $response->json('data.triwulan'));
+
+        $pegawai = Pegawai::where('nip', '199503012025031001')->firstOrFail();
+
+        // Hanya 1 baris evaluasi (TW2), tanpa penguncian
+        $this->assertEquals(1, EvaluasiKinerja::where('pegawai_id', $pegawai->id)->where('tahun', 2025)->count());
+        $evaluasi = EvaluasiKinerja::where('pegawai_id', $pegawai->id)->where('tahun', 2025)->firstOrFail();
+        $this->assertEquals(2, (int) $evaluasi->triwulan);
+        $this->assertEquals(4.688, (float) $evaluasi->angka_kredit);
+
+        // Tanpa finalisasi tahunan
+        $this->assertEquals(0, PenetapanAK::where('pegawai_id', $pegawai->id)->count());
     }
 }

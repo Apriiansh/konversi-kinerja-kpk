@@ -167,7 +167,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary-dark"
+                        className="h-full rounded-full bg-linear-to-r from-primary to-primary-dark"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
