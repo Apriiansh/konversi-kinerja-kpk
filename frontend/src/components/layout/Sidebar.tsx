@@ -132,7 +132,7 @@ export default function Sidebar({
   return (
     <aside className="flex h-full w-full flex-col bg-white select-none border-r border-gray-200/80 shadow-xs overflow-hidden">
       {/* Top Banner Header with Red KPK Gradient & Wave Ornament */}
-      <div className="relative bg-linear-to-br from-[#800f13] via-[#ba191d] to-[#9c1317] pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
+      <div className="relative bg-[#0b484d] pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size:12px_12px" />
 
@@ -176,10 +176,10 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Card Summary Section - avatar hilang saat minimize */}
-      <div className={`relative flex flex-col items-center text-center border-b border-gray-100 shrink-0 ${collapsed ? 'hidden' : 'px-5 pt-1 pb-4'}`}>
+      <div className={`relative flex flex-col items-center text-center border-b border-[#0b484d] shrink-0 ${collapsed ? 'hidden' : 'px-5 pt-1 pb-4'}`}>
         {/* User Avatar with Red Glowing Accent & Status Dot */}
         <div className="relative -mt-7 mb-2 z-10">
-          <div className="relative h-16 w-16 rounded-full p-1 bg-white shadow-md ring-2 ring-[#ba191d]/20">
+          <div className="relative h-16 w-16 rounded-full p-1 bg-white shadow-md ring-2 ring-[#0b484d]">
             <div className="flex h-full w-full overflow-hidden rounded-full">
               <img
                 src="/avatar-pegawai.jpg"
@@ -197,7 +197,7 @@ export default function Sidebar({
           <h3 className="text-xs font-black text-gray-900 leading-snug line-clamp-1">
             {displayName}
           </h3>
-          <p className="mt-0.5 text-[11px] font-semibold text-red-700 leading-tight">
+          <p className="mt-0.5 text-[11px] font-semibold text-gray-700 leading-tight">
             {displayJabatan}
           </p>
           <span className="mt-1 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-500">
@@ -220,7 +220,7 @@ export default function Sidebar({
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
               `group relative flex items-center gap-3 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 ${collapsed ? 'justify-center px-2' : 'px-3.5'} ${isActive
-                ? 'bg-linear-to-r from-[#ba191d] to-[#9c1317] text-white shadow-md shadow-red-900/15'
+                ? 'bg-[#0b484d] text-white shadow-md shadow-red-900/15'
                 : 'text-gray-600 hover:bg-red-50/60 hover:text-[#ba191d]'
               }`
             }

@@ -306,7 +306,7 @@ export default function PenilaianTriwulan() {
                   <p className="text-[10px] text-slate-400 font-medium">Perolehan Angka Kredit:</p>
                   <p
                     className={`text-2xl font-extrabold font-mono tracking-tight mt-0.5 ${
-                      hasEvaluasi ? 'text-emerald-600' : 'text-slate-400'
+                      hasEvaluasi ? 'text-emerald-900' : 'text-slate-400'
                     }`}
                   >
                     {loading ? '...' : hasEvaluasi ? `+${akVal.toFixed(4)}` : '0.0000'} AK
