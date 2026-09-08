@@ -366,7 +366,7 @@ export default function PegawaiDashboard() {
             {/* Secondary inner contour wave */}
             <path
               d="M170 400 C90 290 100 170 240 110 L240 400 Z"
-              fill="#a81c24"
+              fill="#0B484D"
             />
 
             {/* White accent contour wave line */}
@@ -386,9 +386,9 @@ export default function PegawaiDashboard() {
                 x2="0%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#d32f2f" />
-                <stop offset="60%" stopColor="#b71c1c" />
-                <stop offset="100%" stopColor="#821319" />
+                <stop offset="0%" stopColor="#103336" />
+                <stop offset="60%" stopColor="#306b71" />
+                <stop offset="100%" stopColor="#0B484D)" />
               </linearGradient>
             </defs>
           </svg>
@@ -398,7 +398,7 @@ export default function PegawaiDashboard() {
         <div className="relative z-10 space-y-5">
           {/* Top Tagline */}
           <div className="flex items-center gap-2.5 text-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#c62828] shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#0B484D] shrink-0" />
 
             <span className="font-bold text-slate-800 tracking-tight">
               Portal Kepegawaian KPK
@@ -417,7 +417,7 @@ export default function PegawaiDashboard() {
               {getGreeting()},
             </p>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#c62828] tracking-tight leading-tight mt-1">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0B484D] tracking-tight leading-tight mt-1">
               {name}
             </h1>
 
@@ -432,7 +432,7 @@ export default function PegawaiDashboard() {
           <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-5 sm:gap-7 rounded-2xl bg-slate-50/90 border border-slate-100 px-5 py-3">
             {/* Status */}
             <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#c62828] shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#0B484D] shrink-0" />
 
               <div>
                 <p className="text-[10px] text-slate-400 font-medium">
@@ -487,7 +487,7 @@ export default function PegawaiDashboard() {
                 Pangkat / Golongan
               </p>
 
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">
+              <p className="text-lg sm:text-xl font-bold text-[#0B484D] mt-1 tracking-tight">
                 {golongan}
               </p>
             </div>
@@ -499,7 +499,7 @@ export default function PegawaiDashboard() {
               </p>
 
               <p
-                className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate"
+                className="text-lg sm:text-xl font-bold text-#0B484D mt-1 tracking-tight truncate"
                 title={jenjang}
               >
                 {jenjang}
@@ -513,7 +513,7 @@ export default function PegawaiDashboard() {
               </p>
 
               <p
-                className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight truncate"
+                className="text-lg sm:text-xl font-bold text-#0B484D mt-1 tracking-tight truncate"
                 title={pendidikan}
               >
                 {pendidikan}
@@ -526,7 +526,7 @@ export default function PegawaiDashboard() {
                 TMT Jabatan
               </p>
 
-              <p className="text-lg sm:text-xl font-bold text-[#c62828] mt-1 tracking-tight">
+              <p className="text-lg sm:text-xl font-bold text-#0B484D mt-1 tracking-tight">
                 {tmt}
               </p>
             </div>

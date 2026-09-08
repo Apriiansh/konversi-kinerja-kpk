@@ -18,7 +18,7 @@
   --color-kpk-dark: var(--kpk-dark);
   --color-kpk-darker: var(--kpk-darker);
   --color-kpk-darkest: var(--kpk-darkest);
-  --font-sans: "Tahoma", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 html,
@@ -28,14 +28,14 @@ body,
 }
 
 * {
-  font-family: 'Tahoma', 'Segoe UI', Geneva, Verdana, sans-serif;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
   margin: 0;
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Tahoma', 'Segoe UI', Geneva, Verdana, sans-serif;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
