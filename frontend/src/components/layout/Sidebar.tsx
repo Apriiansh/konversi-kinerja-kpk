@@ -36,20 +36,11 @@ const PEGAWAI_MENU: MenuItem[] = [
     label: 'Informasi Saldo Awal',
     icon: <i className="fa-solid fa-file-invoice-dollar text-xs w-4 text-center" />,
   },
-  {
-    to: '/penilaian-triwulan',
-    label: 'Penilaian Triwulan',
-    icon: <i className="fa-solid fa-clipboard-check text-xs w-4 text-center" />,
-  },
+  
   {
     to: '/rekapitulasi',
     label: 'Rekapitulasi & PAK',
     icon: <i className="fa-solid fa-file-contract text-xs w-4 text-center" />,
-  },
-  {
-    to: '/pengajuan-pendidikan',
-    label: 'Pengajuan Pendidikan',
-    icon: <i className="fa-solid fa-graduation-cap text-xs w-4 text-center" />,
   },
 ]
 

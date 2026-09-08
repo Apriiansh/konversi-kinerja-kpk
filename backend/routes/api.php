@@ -17,6 +17,8 @@ Route::get('/master-data', [MasterDataController::class, 'index']);
 
 // Public Auth Endpoints
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Fallback untuk unauthenticated request (mencegah error "Route [login] not defined").
 Route::get('/login', function () {

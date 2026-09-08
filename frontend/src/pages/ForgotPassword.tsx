@@ -1,29 +1,27 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/useAuth'
+import { Link } from 'react-router-dom'
+import { forgotPassword } from '../api/auth'
 import './login.css'
 
-export default function Login() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
+export default function ForgotPassword() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
+    setMessage('')
     setSubmitting(true)
     try {
-      await login(email, password)
-      navigate('/', { replace: true })
+      const res = await forgotPassword(email)
+      setMessage(res.message)
     } catch (err: unknown) {
       const msg = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
       const errors = msg.response?.data?.errors
-      const serverMsg = msg.response?.data?.message
-      setError(errors?.email?.[0] ?? serverMsg ?? 'Login gagal. Periksa kembali email dan password.')
+      setError(errors?.email?.[0] ?? msg.response?.data?.message ?? 'Gagal mengirim link reset password.')
     } finally {
       setSubmitting(false)
     }
@@ -42,10 +40,28 @@ export default function Login() {
 
       <form className="login-card" onSubmit={handleSubmit} noValidate>
         <img src="/logo-kpk.png" alt="KPK" className="login-logo" />
-        <h1 className="login-title">Sistem Konversi Kinerja</h1>
-        {/*<span className="login-badge">PerBKN No. 3 Tahun 2023</span>*/}
+        <h1 className="login-title">Lupa Password</h1>
+        <p style={{ fontSize: 12, color: '#6b7280', textAlign: 'center', margin: '6px 0 14px', fontWeight: 500 }}>
+          Masukkan email terdaftar. Kami akan mengirimkan link reset password.
+        </p>
 
         {error && <div className="login-error">{error}</div>}
+        {message && (
+          <div
+            style={{
+              width: '100%',
+              background: '#dcfce7',
+              color: '#166534',
+              padding: '10px 12px',
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              marginBottom: 12,
+            }}
+          >
+            {message}
+          </div>
+        )}
 
         <label className="login-label" htmlFor="email">
           Email
@@ -61,29 +77,15 @@ export default function Login() {
           autoComplete="email"
         />
 
-        <label className="login-label" htmlFor="password">
-          Kata Sandi
-        </label>
-        <input
-          id="password"
-          type="password"
-          className="login-input"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          required
-          autoComplete="current-password"
-        />
-
         <button type="submit" className="login-button" disabled={submitting}>
-          {submitting ? 'Memproses...' : 'Masuk'}
+          {submitting ? 'Mengirim...' : 'Kirim Link Reset'}
         </button>
 
         <Link
-          to="/forgot-password"
-          style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: '#ba191d', textDecoration: 'none' }}
+          to="/login"
+          style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: '#ba191d', textDecoration: 'none' }}
         >
-          Lupa password?
+          ← Kembali ke Login
         </Link>
 
         <p className="login-footer">Konversi Kinerja · ©2026 KPK</p>
