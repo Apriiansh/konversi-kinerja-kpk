@@ -201,6 +201,46 @@ class ImportKonversiTest extends TestCase
         $this->assertEquals(15.00, (float) $item['kelayakan']['kurang_ak']);
     }
 
+    public function test_preview_import_iii_b_dengan_jenjang_aktif_ahli_pertama_tetap_menilai_target_jenjang(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        $row = [
+            '199104042018041004',
+            'Budi',
+            'budi@kpk.go.id',
+            'III/b',
+            'JABATAN_FUNGSIONAL',
+            'Ahli Pertama',
+            'S1',
+            '',
+            '0',
+            '0',
+            '0',
+            '2025',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+        ];
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $this->createCsvFile([$row]),
+        ]);
+
+        $response->assertOk();
+        $item = $response->json('data.data.0');
+
+        $this->assertEquals('BELUM_CUKUP', $item['kelayakan']['status']);
+        $this->assertEquals('JENJANG', $item['kelayakan']['jenis_target']);
+        $this->assertEquals(100.00, (float) $item['kelayakan']['target_jenjang']);
+    }
+
     public function test_eksekusi_import_menyimpan_data_lengkap_ke_database(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN', 'name' => 'Admin Kepegawaian']);

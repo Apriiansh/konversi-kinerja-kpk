@@ -738,7 +738,10 @@ class ImportKonversiService
                 'iv/c' => 'IV/d',
                 'iv/d' => 'IV/e',
             ];
-            $nextPangkat = $pangkatMap->get($golonganBerikutnya[strtolower($pangkat->golongan)] ?? '');
+            $nextGolongan = $golonganBerikutnya[strtolower($pangkat->golongan)] ?? null;
+            $nextPangkat = $nextGolongan
+                ? $pangkatMap->get(strtolower($nextGolongan))
+                : null;
             $targetEvaluasiJenjang = $targetJenjang;
             if (
                 $nextPangkat
@@ -910,6 +913,7 @@ class ImportKonversiService
                         'catatan'        => $kelayakanParsial['catatan'],
                         'target_kp'      => $kelayakanParsial['target_kp'],
                         'target_jenjang' => $kelayakanParsial['target_jenjang'],
+                        'jenis_target'   => $kelayakanParsial['jenis_target'],
                         'next_jenjang'   => $this->getNextJenjangName($jenjang->nama),
                     ],
                     'triwulan'               => $triwulanTersimpan,

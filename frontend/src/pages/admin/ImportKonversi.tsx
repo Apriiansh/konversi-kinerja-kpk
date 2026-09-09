@@ -730,8 +730,8 @@ export const ImportKonversi: React.FC = () => {
                                 {item.kelayakan.status === "BELUM_CUKUP" && (
                                   <span className="mt-1 block text-[10px] font-bold leading-tight text-amber-800">
                                     {item.kelayakan.jenis_target === "JENJANG"
-                                      ? "Belum cukup AK untuk naik jenjang"
-                                      : "Belum cukup AK untuk naik pangkat"}
+                                      ? "untuk naik jenjang"
+                                      : "untuk naik pangkat"}
                                   </span>
                                 )}
                               </>
