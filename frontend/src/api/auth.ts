@@ -44,3 +44,18 @@ export async function logout(): Promise<void> {
     clearToken()
   }
 }
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>('/forgot-password', { email })
+  return data
+}
+
+export async function resetPassword(payload: {
+  token: string
+  email: string
+  password: string
+  password_confirmation: string
+}): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>('/reset-password', payload)
+  return data
+}

@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Main from './components/layout/main'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import { ImportKonversi } from './pages/admin/ImportKonversi'
 import { InputKinerja } from './pages/admin/InputKinerja'
 import { Rekapitulasi } from './pages/admin/Rekapitulasi'
@@ -37,6 +39,8 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Rute Modul Pegawai / Peer */}
         <Route

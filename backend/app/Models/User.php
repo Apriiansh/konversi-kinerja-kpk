@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -54,5 +55,25 @@ class User extends Authenticatable
     public function pegawai(): HasOne
     {
         return $this->hasOne(Pegawai::class, 'user_id');
+    }
+
+    /**
+     * Kirim notifikasi reset password dengan URL frontend (SPA).
+     *
+     * Catatan: konstruktor ResetPasswordNotification menerima TOKEN mentah,
+     * bukan URL. URL kustom diberikan lewat createUrlUsing, karena method
+     * bawaan resetUrl() memanggil route('password.reset') yang tidak ada
+     * di aplikasi API-only ini (menyebabkan 500 "Route [password.reset]
+     * not defined" jika URL dioper sebagai token).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $frontendUrl = rtrim((string) config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173')), '/');
+
+        ResetPasswordNotification::createUrlUsing(
+            fn ($notifiable) => $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode((string) $notifiable->getEmailForPasswordReset())
+        );
+
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

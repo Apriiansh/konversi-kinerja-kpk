@@ -15,8 +15,10 @@ use App\Http\Controllers\RiwayatAktivitasController;
 // Public info master data
 Route::get('/master-data', [MasterDataController::class, 'index']);
 
-// Public Auth Endpoints
+// Public Auth Endpoints (tanpa rate-limit sesuai permintaan: percobaan tidak dibatasi)
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Fallback untuk unauthenticated request (mencegah error "Route [login] not defined").
 Route::get('/login', function () {
