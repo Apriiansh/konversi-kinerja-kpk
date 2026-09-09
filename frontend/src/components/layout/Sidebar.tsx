@@ -36,21 +36,13 @@ const PEGAWAI_MENU: MenuItem[] = [
     label: 'Informasi Saldo Awal',
     icon: <i className="fa-solid fa-file-invoice-dollar text-xs w-4 text-center" />,
   },
-  {
-    to: '/penilaian-triwulan',
-    label: 'Penilaian Triwulan',
-    icon: <i className="fa-solid fa-clipboard-check text-xs w-4 text-center" />,
-  },
+  
   {
     to: '/rekapitulasi',
     label: 'Rekapitulasi & PAK',
     icon: <i className="fa-solid fa-file-contract text-xs w-4 text-center" />,
   },
-  {
-    to: '/pengajuan-pendidikan',
-    label: 'Pengajuan Pendidikan',
-    icon: <i className="fa-solid fa-graduation-cap text-xs w-4 text-center" />,
-  },
+  
 ]
 
 const ADMIN_MENU: MenuItem[] = [
@@ -132,7 +124,7 @@ export default function Sidebar({
   return (
     <aside className="flex h-full w-full flex-col bg-white select-none border-r border-gray-200/80 shadow-xs overflow-hidden">
       {/* Top Banner Header with Red KPK Gradient & Wave Ornament */}
-      <div className="relative bg-[#0b484d] pt-5 pb-8 px-5 text-white overflow-hidden shrink-0">
+      <div className="relative bg-[#0b484d] pt-8 pb-14 px-5 text-white overflow-hidden shrink-0">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size:12px_12px" />
 
@@ -141,33 +133,19 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors lg:hidden cursor-pointer"
+            className="absolute top-3 right-3 flex h-6 w-7 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors lg:hidden cursor-pointer"
             aria-label="Tutup Menu"
           >
             <i className="fa-solid fa-xmark text-sm" />
           </button>
         )}
 
-        {/* KPK Branding */}
-        <div className={`relative z-10 flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-md">
-            <img src="/logo-kpk.png" alt="Logo KPK" className="h-full w-full object-contain" />
-          </div>
-          <div className={collapsed ? 'hidden' : ''}>
-            <h1 className="text-sm font-black tracking-tight leading-tight text-white drop-shadow-xs">
-              Konversi Kinerja
-            </h1>
-            <p className="text-[10px] font-semibold text-red-100/90 tracking-wide uppercase">
-              Komisi Pemberantasan Korupsi
-            </p>
-          </div>
-        </div>
 
         {/* SVG Wave Ornament attached to the bottom edge of the banner */}
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none translate-y-px">
           <svg
             className="w-full h-5 text-white fill-current"
-            viewBox="0 0 500 150"
+            viewBox="0 0 500 50"
             preserveAspectRatio="none"
           >
             <path d="M0,0 C150,90 350,-40 500,40 L500,150 L0,150 Z" />
@@ -178,7 +156,7 @@ export default function Sidebar({
       {/* User Profile Card Summary Section - avatar hilang saat minimize */}
       <div className={`relative flex flex-col items-center text-center border-b border-[#0b484d] shrink-0 ${collapsed ? 'hidden' : 'px-5 pt-1 pb-4'}`}>
         {/* User Avatar with Red Glowing Accent & Status Dot */}
-        <div className="relative -mt-7 mb-2 z-10">
+        <div className="relative -mt-12 mb-3 z-10">
           <div className="relative h-16 w-16 rounded-full p-1 bg-white shadow-md ring-2 ring-[#0b484d]">
             <div className="flex h-full w-full overflow-hidden rounded-full">
               <img
@@ -188,7 +166,6 @@ export default function Sidebar({
               />
             </div>
             {/* Active Online Indicator */}
-            <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
           </div>
         </div>
 
@@ -303,7 +280,6 @@ export default function Sidebar({
                 title="Keluar Sistem"
               >
                 <i className="fa-solid fa-right-from-bracket text-xs" />
-                <span>Keluar</span>
               </motion.button>
             </div>
 
