@@ -59,12 +59,21 @@ class User extends Authenticatable
 
     /**
      * Kirim notifikasi reset password dengan URL frontend (SPA).
+     *
+     * Catatan: konstruktor ResetPasswordNotification menerima TOKEN mentah,
+     * bukan URL. URL kustom diberikan lewat createUrlUsing, karena method
+     * bawaan resetUrl() memanggil route('password.reset') yang tidak ada
+     * di aplikasi API-only ini (menyebabkan 500 "Route [password.reset]
+     * not defined" jika URL dioper sebagai token).
      */
     public function sendPasswordResetNotification($token): void
     {
         $frontendUrl = rtrim((string) config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173')), '/');
-        $url = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode((string) $this->getEmailForPasswordReset());
 
-        $this->notify(new ResetPasswordNotification($url));
+        ResetPasswordNotification::createUrlUsing(
+            fn ($notifiable) => $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode((string) $notifiable->getEmailForPasswordReset())
+        );
+
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

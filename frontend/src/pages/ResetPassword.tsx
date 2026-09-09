@@ -1,50 +1,62 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import './login.css'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  const tokenFromUrl = searchParams.get('token') ?? ''
-  const emailFromUrl = searchParams.get('email') ?? ''
+  // Baca langsung dari URL setiap render agar tidak stale.
+  const token = searchParams.get('token') ?? ''
 
-  const [token] = useState(tokenFromUrl)
-  const [email, setEmail] = useState(emailFromUrl)
+  const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Sinkronkan email jika query URL berubah (mis. user klik link lain).
+  useEffect(() => {
+    const emailParam = searchParams.get('email')
+    if (emailParam) setEmail(emailParam)
+  }, [searchParams])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
     setSuccess('')
-
-    if (password !== passwordConfirmation) {
-      setError('Konfirmasi password tidak cocok.')
-      return
-    }
 
     if (!token) {
       setError('Token reset tidak valid. Silakan minta link baru dari halaman lupa password.')
       return
     }
 
+    if (!email.trim()) {
+      setError('Email wajib diisi.')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Password minimal 8 karakter.')
+      return
+    }
+
+    if (password !== passwordConfirmation) {
+      setError('Konfirmasi password tidak cocok.')
+      return
+    }
+
     setSubmitting(true)
     try {
-      const res = await resetPassword({ token, email, password, password_confirmation: passwordConfirmation })
+      const res = await resetPassword({ token, email: email.trim(), password, password_confirmation: passwordConfirmation })
       setSuccess(res.message)
       setTimeout(() => navigate('/login', { replace: true }), 2000)
     } catch (err: unknown) {
-      const msg = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
-      const errors = msg.response?.data?.errors
-      const firstError =
-        errors?.email?.[0] ?? errors?.token?.[0] ?? errors?.password?.[0] ?? msg.response?.data?.message
-      setError(firstError ?? 'Gagal mereset password. Token mungkin kadaluarsa.')
+      setError(getApiErrorMessage(err, 'Gagal mereset password. Token mungkin kadaluarsa.'))
     } finally {
       setSubmitting(false)
     }

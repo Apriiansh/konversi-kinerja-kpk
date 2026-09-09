@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { forgotPassword } from '../api/auth'
+import { getApiErrorMessage } from '../api/client'
 import './login.css'
 
 export default function ForgotPassword() {
@@ -14,14 +15,17 @@ export default function ForgotPassword() {
     e.preventDefault()
     setError('')
     setMessage('')
+    const trimmed = email.trim()
+    if (!trimmed) {
+      setError('Email wajib diisi.')
+      return
+    }
     setSubmitting(true)
     try {
-      const res = await forgotPassword(email)
+      const res = await forgotPassword(trimmed)
       setMessage(res.message)
     } catch (err: unknown) {
-      const msg = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
-      const errors = msg.response?.data?.errors
-      setError(errors?.email?.[0] ?? msg.response?.data?.message ?? 'Gagal mengirim link reset password.')
+      setError(getApiErrorMessage(err, 'Gagal mengirim link reset password.'))
     } finally {
       setSubmitting(false)
     }
@@ -77,7 +81,7 @@ export default function ForgotPassword() {
           autoComplete="email"
         />
 
-        <button type="submit" className="login-button" disabled={submitting}>
+        <button type="submit" className="login-button" disabled={submitting || !email.trim()}>
           {submitting ? 'Mengirim...' : 'Kirim Link Reset'}
         </button>
 
