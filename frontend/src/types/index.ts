@@ -188,6 +188,10 @@ export interface PreviewPegawaiItem {
   ak_triwulan?: number
   proyeksi_disetahunkan?: number
   ak_parsial?: number
+  // Penanda re-upload: triwulan/tahun ini sudah pernah di-import
+  sudah_ada?: boolean
+  berbeda?: boolean
+  data_sebelumnya?: { predikat: string; jumlah_bulan: number; angka_kredit: number } | null
   kelayakan?: KelayakanInfo
   triwulan?: {
     tw1: { predikat: string; jumlah_bulan: number; angka_kredit: number }

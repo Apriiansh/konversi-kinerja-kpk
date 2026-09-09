@@ -3,6 +3,7 @@ import {
   UploadCloud,
   FileSpreadsheet,
   Award,
+  AlertTriangle,
   GraduationCap,
   Users,
   RefreshCw,
@@ -64,6 +65,9 @@ export const ImportKonversi: React.FC = () => {
   const [inspectItem, setInspectItem] = useState<PreviewPegawaiItem | null>(
     null,
   );
+
+  // Modal Konfirmasi Overwrite (re-upload data yang sudah ada)
+  const [confirmOverwrite, setConfirmOverwrite] = useState<boolean>(false);
 
   type Triwulan = {
     tw1?: TriwulanRincianItem;
@@ -135,7 +139,7 @@ export const ImportKonversi: React.FC = () => {
     }
   };
 
-  const handleProcessImport = async () => {
+  const executeProcessImport = async () => {
     if (!selectedFile) return;
 
     setLoadingProcess(true);
@@ -167,6 +171,23 @@ export const ImportKonversi: React.FC = () => {
     }
   };
 
+  const handleProcessImport = async () => {
+    if (!selectedFile) return;
+
+    // Jika ada baris yang akan menimpa data lama, minta konfirmasi dulu.
+    if (jumlahOverwrite > 0) {
+      setConfirmOverwrite(true);
+      return;
+    }
+
+    await executeProcessImport();
+  };
+
+  const handleConfirmOverwrite = async () => {
+    setConfirmOverwrite(false);
+    await executeProcessImport();
+  };
+
   const handleReset = () => {
     setSelectedFile(null);
     setPreviewResult(null);
@@ -175,6 +196,7 @@ export const ImportKonversi: React.FC = () => {
     setSearchQuery("");
     setFilterStatus("ALL");
     setInspectItem(null);
+    setConfirmOverwrite(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -249,6 +271,16 @@ export const ImportKonversi: React.FC = () => {
     }
     return opts;
   }, [previewResult]);
+
+  // Baris yang akan menimpa data lama (sudah ada di triwulan/tahun ini & berbeda)
+  const listOverwrite = useMemo(() => {
+    if (!previewResult) return [];
+    return previewResult.data.filter(
+      (item) => item.is_valid && item.sudah_ada && item.berbeda,
+    );
+  }, [previewResult]);
+
+  const jumlahOverwrite = listOverwrite.length;
 
   return (
     <div className="space-y-6">
@@ -501,6 +533,17 @@ export const ImportKonversi: React.FC = () => {
             />
           </div>
 
+          {/* Info Overwrite: data triwulan/tahun ini sudah pernah di-upload */}
+          {jumlahOverwrite > 0 && (
+            <Alert
+              variant="warning"
+              title="Perhatian: Beberapa Data Akan Ditimpa"
+              message={`${jumlahOverwrite} baris memiliki data yang sudah tersimpan pada ${
+                isModeTahunan ? "tahun" : `triwulan ini`
+              } namun nilainya berbeda dengan file baru. Baris-baris tersebut akan DITIMPA saat disimpan (lihat label "Overwrite" di tabel). Klik "Terapkan & Simpan ke Database" untuk memprosesnya.`}
+            />
+          )}
+
           {/* Decision Bar */}
           <Card className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -592,7 +635,7 @@ export const ImportKonversi: React.FC = () => {
                     <th className="py-3 px-3.5">
                       {isModeTahunan
                         ? "Kinerja Triwulanan"
-                        : `PKP TW ${triwulan}`}
+                        : `Kinerja Triwulanan (s/d TW ${triwulan})`}
                     </th>
                     <th className="py-3 px-3.5 font-black text-gray-900">
                       Total AK
@@ -680,38 +723,78 @@ export const ImportKonversi: React.FC = () => {
                           </td>
 <td className="py-3 px-3.5">
                             {item.triwulan_mode ? (
-                              <span
-                                title={`TW${item.triwulan_ke}: ${item.pkp ?? "-"} (${item.jumlah_bulan ?? 0} bln = ${Number(item.ak_triwulan ?? 0).toFixed(3)} AK)`}
-                                className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-black border bg-secondary text-primary border-primary/20"
-                              >
-                                TW{item.triwulan_ke}:{" "}
-                                {Number(item.ak_triwulan ?? 0).toFixed(3)}
-                              </span>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1">
+                                  {Object.entries(item.triwulan ?? {})
+                                    .sort(
+                                      ([a], [b]) =>
+                                        Number(a.slice(2)) - Number(b.slice(2)),
+                                    )
+                                    .map(([qKey, q]) => {
+                                      const qNum = Number(qKey.slice(2));
+                                      const isCurrent = qNum === item.triwulan_ke;
+                                      return (
+                                        <span
+                                          key={qKey}
+                                          title={`TW${qNum}: ${q?.predikat ?? "-"} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                            isCurrent
+                                              ? "bg-secondary text-primary border-primary/20 font-black"
+                                              : "bg-gray-100 text-gray-600 border-gray-200"
+                                          }`}
+                                        >
+                                          TW{qNum}:{" "}
+                                          {Number(q?.angka_kredit ?? 0).toFixed(
+                                            3,
+                                          )}
+                                        </span>
+                                      );
+                                    })}
+                                </div>
+                                {item.sudah_ada && item.berbeda && (
+                                  <span
+                                    title={`Data lama TW${item.triwulan_ke}: ${item.data_sebelumnya?.predikat ?? "-"} (${item.data_sebelumnya?.jumlah_bulan ?? 0} bln = ${Number(item.data_sebelumnya?.angka_kredit ?? 0).toFixed(3)} AK)\nFile baru: ${item.pkp ?? "-"} (${item.jumlah_bulan ?? 0} bln = ${Number(item.ak_triwulan ?? 0).toFixed(3)} AK)`}
+                                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-black border bg-amber-50 text-amber-700 border-amber-300"
+                                  >
+                                    <AlertTriangle className="h-3 w-3" />
+                                    Overwrite
+                                  </span>
+                                )}
+                              </div>
                             ) : (
-                              <div className="flex items-center gap-1">
-                                {["tw1", "tw2", "tw3", "tw4"].map(
-                                  (qKey, idx) => {
-                                    const q =
-                                      item.triwulan?.[qKey as keyof Triwulan];
-                                    const qNum = idx + 1;
-                                    const isTahunan = qNum === 4;
-                                    return (
-                                      <span
-                                        key={qKey}
-                                        title={`TW${qNum}: ${q?.predikat ?? "-"} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
-                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                                          isTahunan
-                                            ? "bg-secondary text-primary border-primary/20 font-black"
-                                            : "bg-gray-100 text-gray-600 border-gray-200"
-                                        }`}
-                                      >
-                                        TW{qNum}:{" "}
-                                        {Number(q?.angka_kredit ?? 0).toFixed(
-                                          3,
-                                        )}
-                                      </span>
-                                    );
-                                  },
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1">
+                                  {["tw1", "tw2", "tw3", "tw4"].map(
+                                    (qKey, idx) => {
+                                      const q = item.triwulan?.[
+                                        qKey as keyof Triwulan
+                                      ];
+                                      const qNum = idx + 1;
+                                      const isTahunan = qNum === 4;
+                                      return (
+                                        <span
+                                          key={qKey}
+                                          title={`TW${qNum}: ${q?.predikat ?? "-"} (${q?.jumlah_bulan ?? 0} bln = ${Number(q?.angka_kredit ?? 0).toFixed(3)} AK)`}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                            isTahunan
+                                              ? "bg-secondary text-primary border-primary/20 font-black"
+                                              : "bg-gray-100 text-gray-600 border-gray-200"
+                                          }`}
+                                        >
+                                          TW{qNum}:{" "}
+                                          {Number(q?.angka_kredit ?? 0).toFixed(
+                                            3,
+                                          )}
+                                        </span>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                                {item.sudah_ada && item.berbeda && (
+                                  <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-black border bg-amber-50 text-amber-700 border-amber-300">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    Overwrite
+                                  </span>
                                 )}
                               </div>
                             )}
@@ -963,26 +1046,71 @@ export const ImportKonversi: React.FC = () => {
                   : "3. Rincian Capaian Kinerja Triwulanan (TW1 – TW4):"}
               </h4>
               {inspectItem.triwulan_mode ? (
-                <div className="p-3.5 bg-secondary/40 border border-primary/20 rounded-xl text-xs">
-                  <div className="flex items-center justify-between font-extrabold text-gray-900">
-                    <span>
-                      PKP TW{inspectItem.triwulan_ke}: {inspectItem.pkp ?? "-"}
-                    </span>
-                    <span className="font-mono text-primary">
+                <div className="space-y-2">
+                  {(
+                    Object.entries(
+                      inspectItem.triwulan ?? {},
+                    ) as [string, { predikat: string; jumlah_bulan: number; angka_kredit: number }][]
+                  )
+                    .sort(
+                      ([a], [b]) => Number(a.slice(2)) - Number(b.slice(2)),
+                    )
+                    .map(([qKey, q]) => {
+                      const qNum = Number(qKey.slice(2));
+                      const isSaatIni = qNum === inspectItem.triwulan_ke;
+                      return (
+                        <div
+                          key={qKey}
+                          className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs ${
+                            isSaatIni
+                              ? "bg-secondary/40 border-primary/20"
+                              : "bg-gray-50 border-gray-200"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <span
+                              className={`font-extrabold ${
+                                isSaatIni ? "text-primary" : "text-gray-900"
+                              }`}
+                            >
+                              TW{qNum}{" "}
+                              {isSaatIni
+                                ? "· Baru (import ini)"
+                                : "· Tersimpan di DB"}
+                            </span>
+                            <span className="ml-2 text-[11px] font-semibold text-gray-500">
+                              {q?.predikat ?? "-"} · {q?.jumlah_bulan ?? 0}{" "}
+                              bln
+                            </span>
+                          </div>
+                          <span className="font-mono font-black text-gray-800">
+                            {Number(q?.angka_kredit ?? 0).toFixed(3)} AK
+                          </span>
+                        </div>
+                      );
+                    })}
+                  <div className="p-3.5 bg-secondary/40 border border-primary/20 rounded-xl text-xs">
+                    <div className="flex items-center justify-between font-extrabold text-gray-900">
+                      <span>
+                        PKP TW{inspectItem.triwulan_ke}:{" "}
+                        {inspectItem.pkp ?? "-"}
+                      </span>
+                      <span className="font-mono text-primary">
+                        {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
+                      </span>
+                    </div>
+                    {/* Rumus: (bulan/12) × %PKP × koefisien tahunan */}
+                    <p className="mt-1.5 text-[11px] font-semibold text-gray-600">
+                      PKP {inspectItem.pkp ?? "-"} selama{" "}
+                      {inspectItem.jumlah_bulan ?? 0} bulan ={" "}
                       {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
-                    </span>
+                    </p>
+                    <p className="mt-1 text-[11px] font-semibold text-blue-700">
+                      Proyeksi tahunan:{" "}
+                      {(inspectItem.proyeksi_disetahunkan ?? 0).toFixed(3)} AK (
+                      {inspectItem.total_bulan_aktif ?? 0} bln aktif setahun)
+                    </p>
                   </div>
-                  {/* Rumus: (bulan/12) × %PKP × koefisien tahunan */}
-                  <p className="mt-1.5 text-[11px] font-semibold text-gray-600">
-                    PKP {inspectItem.pkp ?? "-"} selama{" "}
-                    {inspectItem.jumlah_bulan ?? 0} bulan ={" "}
-                    {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
-                  </p>
-                  <p className="mt-1 text-[11px] font-semibold text-blue-700">
-                    Proyeksi tahunan:{" "}
-                    {(inspectItem.proyeksi_disetahunkan ?? 0).toFixed(3)} AK (
-                    {inspectItem.total_bulan_aktif ?? 0} bln aktif setahun)
-                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-4 gap-2 text-center font-mono">
@@ -1016,6 +1144,82 @@ export const ImportKonversi: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* 6. Modal Konfirmasi Overwrite (Re-upload data yang sudah ada) */}
+      <Modal
+        open={confirmOverwrite}
+        onClose={() => setConfirmOverwrite(false)}
+        title="Yakin Menimpa Data yang Sudah Ada?"
+        subtitle={
+          isModeTahunan
+            ? `Tahun ${tahun} sudah memiliki data konversi. Data lama akan diganti oleh file baru ini.`
+            : `TW ${triwulan} tahun ${tahun} sudah memiliki data. Data lama akan diganti oleh file baru ini.`
+        }
+        icon={<AlertTriangle className="h-5 w-5 text-amber-600" />}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmOverwrite(false)}
+              disabled={loadingProcess}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmOverwrite}
+              loading={loadingProcess}
+            >
+              Ya, Timpa Data
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3 text-xs">
+          <div className="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-amber-800 font-semibold leading-relaxed">
+              {jumlahOverwrite} baris memiliki data lama yang nilainya{" "}
+              <strong>berbeda</strong> dari file baru ini. Setelah dikonfirmasi,
+              nilai lama akan diganti dengan nilai baru (proses tidak bisa
+              dibatalkan secara otomatis).
+            </p>
+          </div>
+
+          {listOverwrite.length > 0 && (
+            <>
+              <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[11px]">
+                Baris yang Akan Ditimpa:
+              </h4>
+              <div className="max-h-48 overflow-y-auto space-y-1.5">
+                {listOverwrite.slice(0, 10).map((item) => (
+                  <div
+                    key={item.baris}
+                    className="flex items-center justify-between gap-2 p-2.5 bg-gray-50 border border-gray-200 rounded-lg"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-extrabold text-gray-900 leading-tight truncate">
+                        {item.nama_lengkap}
+                      </p>
+                      <p className="font-mono text-[10px] font-bold text-gray-500 tracking-tight">
+                        {item.nip}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-500 shrink-0 ml-2">
+                      #{item.baris} · TW{item.triwulan_ke}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {listOverwrite.length > 10 && (
+                <p className="text-[11px] font-semibold text-gray-500">
+                  ... dan {listOverwrite.length - 10} baris lainnya.
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   );

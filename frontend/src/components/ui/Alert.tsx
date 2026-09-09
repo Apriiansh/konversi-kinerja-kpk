@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 
-type AlertVariant = 'error' | 'success' | 'info'
+type AlertVariant = 'error' | 'success' | 'info' | 'warning'
 
 interface AlertProps {
   variant: AlertVariant
@@ -27,6 +27,12 @@ const variantStyles: Record<AlertVariant, { bg: string; border: string; text: st
     border: 'border-info/20',
     text: 'text-info',
     icon: 'text-info',
+  },
+  warning: {
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    text: 'text-amber-800',
+    icon: 'text-amber-600',
   },
 }
 

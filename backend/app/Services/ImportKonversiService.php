@@ -840,6 +840,8 @@ class ImportKonversiService
                 // (kecuali quarter ini) + quarter baru, lalu cek kelayakan.
                 $triwulanTersimpan = [];
                 $sumTersimpan = 0.0;
+                $sudahTercatat = false;
+                $dataSebelumnya = null;
                 $pegawaiExisting = Pegawai::where('nip', $row['nip'])->first();
                 if ($pegawaiExisting) {
                     $rowsDb = EvaluasiKinerja::with('predikat')
@@ -855,11 +857,23 @@ class ImportKonversiService
                             'jumlah_bulan' => (int) $ev->jumlah_bulan,
                             'angka_kredit' => (float) $ev->angka_kredit,
                         ];
-                        if ($tq !== $q) {
+                        if ($tq === $q) {
+                            // Quarter yang SAMA sudah pernah di-upload: simpan
+                            // nilai lamanya untuk info & deteksi perubahan.
+                            $sudahTercatat = true;
+                            $dataSebelumnya = $triwulanTersimpan["tw{$tq}"];
+                        } else {
                             $sumTersimpan += (float) $ev->angka_kredit;
                         }
                     }
                 }
+
+                // Apakah data lama pada quarter ini berbeda dari file baru.
+                $berbeda = $sudahTercatat && (
+                    strcasecmp($dataSebelumnya['predikat'] ?? '', $predikatObj->nama) !== 0
+                    || (int) ($dataSebelumnya['jumlah_bulan'] ?? 0) !== $qBulan
+                    || abs((float) ($dataSebelumnya['angka_kredit'] ?? 0) - $akQ) > 0.0005
+                );
 
                 $akParsial = round($akDasar + $akPakPelantikan + $akHistoris + $sumTersimpan + $akQ, 3);
                 $kelayakanParsial = $this->carryOverService->evaluasiKelayakan(
@@ -900,6 +914,9 @@ class ImportKonversiService
                     'pkp'                    => $predikatObj->nama,
                     'jumlah_bulan'           => $qBulan,
                     'ak_triwulan'            => $akQ,
+                    'sudah_ada'              => $sudahTercatat,
+                    'berbeda'                => $berbeda,
+                    'data_sebelumnya'        => $dataSebelumnya,
                     'total_bulan_aktif'      => $totalBulanSetahun,
                     'proyeksi_disetahunkan'  => $proyeksi,
                     'ak_parsial'             => $akParsial,
@@ -1010,6 +1027,16 @@ class ImportKonversiService
                 $countBelumCukup++;
             }
 
+            // Deteksi re-upload Tahunan: sudah ada data evaluasi / penetapan tahun ini.
+            $sudahAdaGanda = false;
+            $pegawaiLama = Pegawai::where('nip', $row['nip'])->first();
+            if ($pegawaiLama) {
+                $sudahAdaGanda = EvaluasiKinerja::where('pegawai_id', $pegawaiLama->id)
+                        ->where('tahun', $tahun)->exists()
+                    || PenetapanAK::where('pegawai_id', $pegawaiLama->id)
+                        ->where('tahun', $tahun)->exists();
+            }
+
             $totalValid++;
             $previewData[] = [
                 'baris'             => $rowNumber,
@@ -1025,6 +1052,8 @@ class ImportKonversiService
                 'ak_dasar'          => $akDasar,
                 'ak_pak_pelantikan' => $akPakPelantikan,
                 'ak_historis'       => $akHistoris,
+                'sudah_ada'         => $sudahAdaGanda,
+                'berbeda'           => $sudahAdaGanda,
                 'total_bulan_aktif' => $totalBulanAktif,
                 'predikat_tw4'      => $predikatTw4Nama,
                 'metode_kalkulasi'  => $metodeKalkulasi,
