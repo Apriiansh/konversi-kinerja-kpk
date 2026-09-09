@@ -785,4 +785,86 @@ class ImportKonversiTest extends TestCase
         // Tanpa finalisasi tahunan
         $this->assertEquals(0, PenetapanAK::where('pegawai_id', $pegawai->id)->count());
     }
+
+    public function test_preview_import_tahunan_pkp_tunggal_disetahunkan_tw1_sd_3_mengikuti_tw4(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // File PKP tunggal (tanpa rincian TW1-TW3): TW1 s.d. TW3 mengikuti predikat
+        // tahunan sehingga Total AK disetahunkan penuh (Putra, III/a, Ahli Pertama).
+        $row = [
+            '199603302026031002', 'Putra', 'putra@kpk.go.id', 'III/a',
+            'JABATAN_FUNGSIONAL', 'Ahli Pertama', 'S1', '', '0', '0', '0',
+            'Sangat Baik',
+        ];
+
+        $file = $this->createPkpCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $file,
+            'triwulan' => 4,
+            'tahun' => 2026,
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(1, $response->json('data.total_valid'));
+        $this->assertEquals(0, $response->json('data.total_error'));
+
+        $item = $response->json('data.data.0');
+        $this->assertFalse((bool) ($item['triwulan_mode'] ?? false));
+
+        // Semua TW mewarisi predikat tahunan (PKP 'Sangat Baik').
+        foreach (range(1, 4) as $q) {
+            $tw = $item['triwulan']["tw{$q}"];
+            $this->assertEquals('Sangat Baik', $tw['predikat']);
+            $this->assertEquals(3, (int) $tw['jumlah_bulan']);
+        }
+
+        // Disetahunkan penuh: (12/12) x 150% x 12.5 = 18.75 (bukan 4.688).
+        $this->assertEquals(12, (int) $item['total_bulan_aktif']);
+        $this->assertEquals('FORMULA_B_TAHUNAN', $item['metode_kalkulasi']);
+        $this->assertEquals(18.75, (float) $item['ak_baru_tahunan']);
+        $this->assertEquals(18.75, (float) $item['ak_kumulatif']);
+
+        // Jumlah badge TW1-TW4 selalu sama persis dengan Total AK.
+        $sumBadge = array_sum(array_map(
+            fn ($q) => (float) $item['triwulan']["tw{$q}"]['angka_kredit'],
+            range(1, 4)
+        ));
+        $this->assertEqualsWithDelta(18.75, $sumBadge, 0.001);
+
+        $this->assertEquals('BELUM_CUKUP', $item['kelayakan']['status']);
+        $this->assertEquals(1, $response->json('data.ringkasan_badge.belum_cukup'));
+    }
+
+    public function test_preview_import_tahunan_pkp_tunggal_sudah_layak_tw3_tidak_disetahunkan(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        // Saldo historis tinggi sehingga TW3 sudah LAYAK -> murni akumulasi periodik
+        // (Formula A), TANPA penyetahunan meski sumbernya PKP tunggal.
+        $row = [
+            '199603302026031003', 'Putra LAYAK', 'putra.layak@kpk.go.id', 'III/a',
+            'JABATAN_FUNGSIONAL', 'Ahli Pertama', 'S1', '', '0', '0', '50',
+            'Sangat Baik',
+        ];
+
+        $file = $this->createPkpCsvFile([$row]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/import/preview', [
+            'file' => $file,
+            'triwulan' => 4,
+            'tahun' => 2026,
+        ]);
+
+        $response->assertOk();
+        $item = $response->json('data.data.0');
+
+        // TW3: saldo 50 + (3 x 4.688) = 64.064 >= target KP 50 -> LAYAK di TW1-TW3.
+        $this->assertEquals('FORMULA_A_PERIODIK', $item['metode_kalkulasi']);
+        $this->assertEquals(18.752, (float) $item['ak_baru_tahunan']);
+        $this->assertEquals(68.752, (float) $item['ak_kumulatif']);
+        $this->assertEquals('LAYAK NAIK PANGKAT', $item['kelayakan']['badge_label']);
+        $this->assertEquals(1, $response->json('data.ringkasan_badge.layak_pangkat'));
+    }
 }

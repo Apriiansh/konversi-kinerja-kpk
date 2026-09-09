@@ -939,18 +939,6 @@ export const ImportKonversi: React.FC = () => {
                         {inspectItem.jumlah_bulan ?? 0} bulan aktif
                       </span>
                     </div>
-                    <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-center">
-                      <span className="text-[10px] uppercase font-bold text-blue-700 block">
-                        Proyeksi Tahunan
-                      </span>
-                      <span className="font-mono font-black text-blue-800 text-sm mt-0.5 block">
-                        {(inspectItem.proyeksi_disetahunkan ?? 0).toFixed(3)}
-                      </span>
-                      <span className="text-[9px] text-blue-600 block">
-                        {/* Formula B dengan PKP sebagai acuan tahunan */}
-                        Acuan PKP tahunan
-                      </span>
-                    </div>
                   </>
                 ) : (
                   <>
@@ -965,23 +953,12 @@ export const ImportKonversi: React.FC = () => {
                         Tahun berjalan
                       </span>
                     </div>
-                    <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-center">
-                      <span className="text-[10px] uppercase font-bold text-emerald-700 block">
-                        Pendidikan (+25%)
-                      </span>
-                      <span className="font-mono font-black text-emerald-800 text-sm mt-0.5 block">
-                        +{(inspectItem.ak_booster ?? 0).toFixed(3)}
-                      </span>
-                      <span className="text-[9px] text-emerald-600 block">
-                        Klaim Ijazah Sah
-                      </span>
-                    </div>
-                  </>
+                    </>
                 )}
-                <div className="p-3 bg-linear-to-br from-primary-dark to-primary text-white rounded-xl text-center shadow-xs">
+                <div className={`p-3 bg-linear-to-br from-primary-dark to-primary text-white rounded-xl text-center shadow-xs col-span-2`}>
                   <span className="text-[10px] uppercase font-bold text-white/70 block">
                     {inspectItem.triwulan_mode
-                      ? `Kumulatif Parsial TW${inspectItem.triwulan_ke}`
+                      ? "Total AK"
                       : "Total AK Kumulatif"}
                   </span>
                   <span className="font-mono font-black text-white text-base mt-0.5 block">
@@ -1004,25 +981,93 @@ export const ImportKonversi: React.FC = () => {
                 2. Evaluasi Ambang Batas Kenaikan Pangkat / Jenjang:
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
-                  <span className="text-gray-500 font-bold block text-[11px]">
+                <div
+                  className={`p-2.5 rounded-lg border ${
+                    inspectItem.kelayakan?.jenis_target !== "JENJANG"
+                      ? "bg-blue-50/60 border-blue-200/80"
+                      : "bg-gray-50 border-gray-200/80"
+                  }`}
+                >
+                  <span
+                    className={`font-bold block text-[11px] ${
+                      inspectItem.kelayakan?.jenis_target !== "JENJANG"
+                        ? "text-blue-600"
+                        : "text-gray-500"
+                    }`}
+                  >
                     Kebutuhan Target Kenaikan Pangkat:
                   </span>
-                  <span className="font-mono font-extrabold text-gray-900 text-sm">
+                  <span
+                    className={`font-mono font-extrabold text-sm ${
+                      inspectItem.kelayakan?.jenis_target !== "JENJANG"
+                        ? "text-blue-800"
+                        : "text-gray-900"
+                    }`}
+                  >
                     {(inspectItem.kelayakan?.target_kp ?? 0).toFixed(3)} AK
                   </span>
+                  {inspectItem.kelayakan?.jenis_target !== "JENJANG" && (
+                    <span
+                      className={`text-[9px] block font-semibold ${
+                        inspectItem.kelayakan?.status === "LAYAK_PANGKAT"
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}
+                    >
+                      {inspectItem.kelayakan?.status === "LAYAK_PANGKAT"
+                        ? "✓ Tercapai — kelebihan jadi carry-over"
+                        : `Target aktif · kurang ${(
+                            inspectItem.kelayakan?.kurang_ak ?? 0
+                          ).toFixed(3)} AK`}
+                    </span>
+                  )}
                 </div>
-                <div className="p-2.5 bg-blue-50/60 rounded-lg border border-blue-200/80">
-                  <span className="text-blue-600 font-bold block text-[11px]">
+                <div
+                  className={`p-2.5 rounded-lg border ${
+                    inspectItem.kelayakan?.jenis_target === "JENJANG"
+                      ? "bg-blue-50/60 border-blue-200/80"
+                      : "bg-gray-50 border-gray-200/80"
+                  }`}
+                >
+                  <span
+                    className={`font-bold block text-[11px] ${
+                      inspectItem.kelayakan?.jenis_target === "JENJANG"
+                        ? "text-blue-600"
+                        : "text-gray-500"
+                    }`}
+                  >
                     Kebutuhan Kenaikan Jenjang:
                   </span>
-                  <span className="font-mono font-extrabold text-blue-800 text-sm">
+                  <span
+                    className={`font-mono font-extrabold text-sm ${
+                      inspectItem.kelayakan?.jenis_target === "JENJANG"
+                        ? "text-blue-800"
+                        : "text-gray-900"
+                    }`}
+                  >
                     {(inspectItem.kelayakan?.target_jenjang ?? 0).toFixed(3)} AK
                   </span>
-                  {inspectItem.kelayakan?.next_jenjang && (
-                    <span className="text-[9px] text-blue-500 block font-semibold">
-                      Target: {inspectItem.kelayakan.next_jenjang}
-                    </span>
+                  {inspectItem.kelayakan?.jenis_target === "JENJANG" && (
+                    <>
+                      {inspectItem.kelayakan?.next_jenjang && (
+                        <span className="text-[9px] text-blue-500 block font-semibold">
+                          Target: {inspectItem.kelayakan.next_jenjang}
+                        </span>
+                      )}
+                      <span
+                        className={`text-[9px] block font-semibold ${
+                          inspectItem.kelayakan?.status === "LAYAK_JENJANG"
+                            ? "text-emerald-600"
+                            : "text-amber-600"
+                        }`}
+                      >
+                        {inspectItem.kelayakan?.status === "LAYAK_JENJANG"
+                          ? "✓ Tercapai"
+                          : `Target aktif · kurang ${(
+                              inspectItem.kelayakan?.kurang_ak ?? 0
+                            ).toFixed(3)} AK`}
+                      </span>
+                    </>
                   )}
                 </div>
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
@@ -1075,8 +1120,8 @@ export const ImportKonversi: React.FC = () => {
                             >
                               TW{qNum}{" "}
                               {isSaatIni
-                                ? "· Baru (import ini)"
-                                : "· Tersimpan di DB"}
+                                ? "· new"
+                                : ""}
                             </span>
                             <span className="ml-2 text-[11px] font-semibold text-gray-500">
                               {q?.predikat ?? "-"} · {q?.jumlah_bulan ?? 0}{" "}
@@ -1089,30 +1134,8 @@ export const ImportKonversi: React.FC = () => {
                         </div>
                       );
                     })}
-                  <div className="p-3.5 bg-secondary/40 border border-primary/20 rounded-xl text-xs">
-                    <div className="flex items-center justify-between font-extrabold text-gray-900">
-                      <span>
-                        PKP TW{inspectItem.triwulan_ke}:{" "}
-                        {inspectItem.pkp ?? "-"}
-                      </span>
-                      <span className="font-mono text-primary">
-                        {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
-                      </span>
-                    </div>
-                    {/* Rumus: (bulan/12) × %PKP × koefisien tahunan */}
-                    <p className="mt-1.5 text-[11px] font-semibold text-gray-600">
-                      PKP {inspectItem.pkp ?? "-"} selama{" "}
-                      {inspectItem.jumlah_bulan ?? 0} bulan ={" "}
-                      {(inspectItem.ak_triwulan ?? 0).toFixed(3)} AK
-                    </p>
-                    <p className="mt-1 text-[11px] font-semibold text-blue-700">
-                      Proyeksi tahunan:{" "}
-                      {(inspectItem.proyeksi_disetahunkan ?? 0).toFixed(3)} AK (
-                      {inspectItem.total_bulan_aktif ?? 0} bln aktif setahun)
-                    </p>
                   </div>
-                </div>
-              ) : (
+                ) : (
                 <div className="grid grid-cols-4 gap-2 text-center font-mono">
                   {(["tw1", "tw2", "tw3", "tw4"] as (keyof Triwulan)[]).map(
                     (qKey, idx) => {

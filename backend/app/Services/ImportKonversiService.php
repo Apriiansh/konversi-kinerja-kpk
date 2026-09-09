@@ -945,12 +945,23 @@ class ImportKonversiService
             $predikatTw4Persen = 1.0;
             $predikatTw4Nama = 'Baik';
 
+            // Predikat tahunan (kolom tunggal PKP) menjadi acuan TW1–TW3 saat rincian
+            // opsional pkp_twX kosong/tidak terisi → total AK ikut disetahunkan penuh.
+            $predikatTahunanNama = $row['pkp'] ?? $row['pkp_tw4'] ?? null;
+            $predikatTahunanObj = $predikatTahunanNama
+                ? $predikatMap->get(strtolower(trim((string) $predikatTahunanNama)))
+                : null;
+
             foreach (range(1, 4) as $q) {
-                // TW4 memakai kolom tunggal PKP; TW1–TW3 dari rincian opsional pkp_twX.
+                // TW4 memakai kolom tunggal PKP; TW1–TW3 dari rincian opsional pkp_twX,
+                // dengan fallback ke predikat tahunan (PKP).
                 $pName = $q === 4
                     ? ($row['pkp'] ?? $row['pkp_tw4'] ?? null)
                     : ($row["pkp_tw{$q}"] ?? null);
                 $predikatObj = $pName ? $predikatMap->get(strtolower(trim((string) $pName))) : null;
+                if (!$predikatObj && $q !== 4) {
+                    $predikatObj = $predikatTahunanObj;
+                }
                 $pBulan = $predikatObj ? $bulanQuarter($q) : 0;
 
                 $akQ = 0.0;
@@ -1005,8 +1016,24 @@ class ImportKonversiService
                 $akBaru = round($sumAkPeriodikFull, 3);
                 $metodeKalkulasi = 'FORMULA_A_PERIODIK';
             } else {
-                // Formula B (Predikat Tahunan Tahunan)
+                // Formula B (Predikat Tahunan): penyetahunan penuh tahun berjalan.
                 $akBaru = round(($totalBulanAktif / 12) * $predikatTw4Persen * $koefisienTahunan, 3);
+
+                // Rekonsiliasi: bagi $akBaru proporsional per triwulan (round 3, TW4
+                // penyerap sisa) agar jumlah TW1–TW4 selalu sama persis dengan Total AK.
+                $akTerbagi = 0.0;
+                foreach (range(1, 3) as $q) {
+                    $b = (int) $triwulanData["tw{$q}"]['jumlah_bulan'];
+                    if ($b > 0) {
+                        $triwulanData["tw{$q}"]['angka_kredit'] = round($akBaru * ($b / $totalBulanAktif), 3);
+                        $akTerbagi += $triwulanData["tw{$q}"]['angka_kredit'];
+                    } else {
+                        $triwulanData["tw{$q}"]['angka_kredit'] = 0.0;
+                    }
+                }
+                $triwulanData['tw4']['angka_kredit'] = (int) $triwulanData['tw4']['jumlah_bulan'] > 0
+                    ? round($akBaru - $akTerbagi, 3)
+                    : 0.0;
             }
 
             // Total AK Kumulatif Akhir
